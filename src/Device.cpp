@@ -39,6 +39,8 @@ namespace vkpt
 
     Device::~Device()
     {
+        iterateTuple(mPools);
+        
         if (mpImGuiContext)
         {
             ImGui_ImplVulkan_DestroyFontsTexture();
@@ -47,7 +49,6 @@ namespace vkpt
             ImGui::DestroyContext();
         }
 
-        iterateTuple(mPools);
         
         glfwTerminate();
     }
