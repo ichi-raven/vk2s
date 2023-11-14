@@ -43,7 +43,7 @@ namespace vkpt
         
         if (mpImGuiContext)
         {
-            ImGui_ImplVulkan_DestroyFontsTexture();
+            //ImGui_ImplVulkan_DestroyFontsTexture();
             ImGui_ImplVulkan_Shutdown();
             ImGui_ImplGlfw_Shutdown();
             ImGui::DestroyContext();
@@ -86,13 +86,8 @@ namespace vkpt
 
     void Device::uploadFontForImGui()
     {
-        vk::CommandBufferAllocateInfo allocInfo(mCommandPool.get(), vk::CommandBufferLevel::ePrimary, 1);
-
-        auto commandBuffers = mDevice->allocateCommandBuffers(allocInfo);
-        auto& commandBuffer = commandBuffers.back();
-
         //impl fonts
-        ImGui_ImplVulkan_CreateFontsTexture();
+        //ImGui_ImplVulkan_CreateFontsTexture();
     }
 
     std::string_view Device::getPhysicalDeviceName() const
