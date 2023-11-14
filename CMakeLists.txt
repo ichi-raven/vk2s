@@ -61,14 +61,14 @@ endif()
 set(CMAKE_DEBUG_POSTFIX "-debug")
 
 # directories
-set(GLFW_DIR  ${CMAKE_SOURCE_DIR}/ThirdParty/GLFW)
-set(STB_DIR   ${CMAKE_SOURCE_DIR}/ThirdParty/stb)
-set(GLM_DIR   ${CMAKE_SOURCE_DIR}/ThirdParty/glm)
-set(IMGUI_DIR ${CMAKE_SOURCE_DIR}/ThirdParty/imgui)
-set(IMGUI_BACKEND_DIR ${CMAKE_SOURCE_DIR}/ThirdParty/imgui/backends)
-set(SPIRV_REFLECT_DIR ${CMAKE_SOURCE_DIR}/ThirdParty/SPIRV-Reflect)
-set(ASSIMP_DIR ${CMAKE_SOURCE_DIR}/ThirdParty/Assimp)
-set(ASSIMP_INCLUDE_DIR ${ASSIMP_DIR}/include ${CMAKE_BINARY_DIR}/ThirdParty/Assimp/include)
+set(GLFW_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/GLFW)
+set(STB_DIR   ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/stb)
+set(GLM_DIR   ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/glm)
+set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/imgui)
+set(IMGUI_BACKEND_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/imgui/backends)
+set(SPIRV_REFLECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/SPIRV-Reflect)
+set(ASSIMP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/Assimp)
+set(ASSIMP_INCLUDE_DIR ${ASSIMP_DIR}/include ${CMAKE_CURRENT_BINARY_DIR}/ThirdParty/Assimp/include)
 
 # GLFW
 add_subdirectory(${GLFW_DIR})
