@@ -2,7 +2,7 @@
 
 #include "../include/Device.hpp"
 
-namespace vkpt
+namespace vk2s
 {
     // BLAS
     AccelerationStructure::AccelerationStructure(Device& device, const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, Handle<Command> buildCommand)
@@ -182,4 +182,4 @@ namespace vkpt
         }
     }
 
-}  // namespace vkpt
+}  // namespace vk2s

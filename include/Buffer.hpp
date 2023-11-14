@@ -5,8 +5,8 @@
  * \author ichi-raven
  * \date   November 2023
  *********************************************************************/
-#ifndef VKPT_INCLUDE_BUFFER_HPP_
-#define VKPT_INCLUDE_BUFFER_HPP_
+#ifndef VK2S_INCLUDE_BUFFER_HPP_
+#define VK2S_INCLUDE_BUFFER_HPP_
 
 #ifndef VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
@@ -15,7 +15,7 @@
 
 #include "Macro.hpp"
 
-namespace vkpt
+namespace vk2s
 {
     class Device;
 
@@ -49,6 +49,6 @@ namespace vkpt
         vk::DeviceSize mSize;
         vk::DeviceSize mOffset;
     };
-}  // namespace vkpt
+}  // namespace vk2s
 
 #endif

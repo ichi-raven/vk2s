@@ -5,8 +5,8 @@
  * \author ichi-raven
  * \date   November 2023
  *********************************************************************/
-#ifndef VKPT_INCLUDE_BINDGROUP_HPP_
-#define VKPT_INCLUDE_BINDGROUP_HPP_
+#ifndef VK2S_INCLUDE_BINDGROUP_HPP_
+#define VK2S_INCLUDE_BINDGROUP_HPP_
 
 #ifndef VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
@@ -19,7 +19,7 @@
 
 #include <variant>
 
-namespace vkpt
+namespace vk2s
 {
     class Device;
 
@@ -56,6 +56,6 @@ namespace vkpt
         std::vector<std::variant<vk::DescriptorBufferInfo, std::vector<vk::DescriptorImageInfo>, vk::WriteDescriptorSetAccelerationStructureKHR>> mInfoCaches;
         std::vector<vk::WriteDescriptorSet> mWriteQueue;
     };
-}  // namespace vkpt
+}  // namespace vk2s
 
 #endif

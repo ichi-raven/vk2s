@@ -25,7 +25,6 @@ set(IMGUI_SOURCE_FILES
 
 # Create executable
 add_library(${LIB_NAME}
-main.cpp
 Compiler.cpp
 AssetLoader.cpp
 Camera.cpp

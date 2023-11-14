@@ -2,7 +2,7 @@
 
 #include "../include/Device.hpp"
 
-namespace vkpt
+namespace vk2s
 {
     BindLayout::BindLayout(Device& device, const vk::ArrayProxy<Handle<Shader>>& shaders)
         : mDevice(device)
@@ -56,4 +56,4 @@ namespace vkpt
     {
         return mDescriptorSetLayouts;
     }
-}  // namespace vkpt
+}  // namespace vk2s

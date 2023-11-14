@@ -2,7 +2,7 @@
 
 #include "../include/Device.hpp"
 
-namespace vkpt
+namespace vk2s
 {
 
     ShaderBindingTable::ShaderBindingTable(Device& device, Pipeline& raytracePipeline, const uint32_t raygenShaderCount, const uint32_t missShaderCount, const uint32_t hitShaderCount, const uint32_t callableShaderCount,
@@ -122,4 +122,4 @@ namespace vkpt
         return physDevRtPipelineProps;
     }
 
-}  // namespace vkpt
+}  // namespace vk2s

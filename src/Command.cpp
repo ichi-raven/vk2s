@@ -5,7 +5,7 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
 
-namespace vkpt
+namespace vk2s
 {
     Command::Command(Device& device)
         : mDevice(device)
@@ -269,4 +269,4 @@ namespace vkpt
         mCommandBuffer->pipelineBarrier(sourceStage, destinationStage, {}, {}, {}, barrier);
     }
 
-}  // namespace vkpt
+}  // namespace vk2s

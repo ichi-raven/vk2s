@@ -6,8 +6,8 @@
  * @date   October 2023
  *********************************************************************/
 
-#ifndef VULKANPLAYGROUND_COMPILER_HPP_
-#define VULKANPLAYGROUND_COMPILER_HPP_
+#ifndef VK2S_COMPILER_HPP_
+#define VK2S_COMPILER_HPP_
 
 #include <glslang/SPIRV/GlslangToSpv.h>
 
@@ -15,6 +15,8 @@
 
 #include <vector>
 
+namespace vk2s
+{
 namespace Compiler
 {
     using SPIRVCode = std::vector<std::uint32_t>;
@@ -40,5 +42,6 @@ namespace Compiler
     uint32_t getSizeOfFormat(const vk::Format format) noexcept;
 
 }  // namespace Compiler
+}
 
 #endif

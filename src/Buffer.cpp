@@ -2,7 +2,7 @@
 
 #include "../include/Device.hpp"
 
-namespace vkpt
+namespace vk2s
 {
     Buffer::Buffer(Device& device, const vk::BufferCreateInfo& bi, vk::MemoryPropertyFlags pbs)
         : mDevice(device)
@@ -67,4 +67,4 @@ namespace vkpt
         return mDevice.getVkDevice()->getBufferAddress(vk::BufferDeviceAddressInfo(mBuffer.get()));
     }
 
-}  // namespace vkpt
+}  // namespace vk2s

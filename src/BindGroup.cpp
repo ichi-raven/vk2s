@@ -2,7 +2,7 @@
 
 #include "../include/Device.hpp"
 
-namespace vkpt
+namespace vk2s
 {
     BindGroup::BindGroup(Device& device, BindLayout& layout)
         : mDevice(device)
@@ -99,4 +99,4 @@ namespace vkpt
 
         return mDescriptorSets;
     }
-}  // namespace vkpt
+}  // namespace vk2s

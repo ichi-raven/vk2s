@@ -3,7 +3,7 @@
 
 #include "../include/Device.hpp"
 
-namespace vkpt
+namespace vk2s
 {
     Window::Window(Device& device, uint32_t width, uint32_t height, uint32_t frameNum, std::string_view windowName)
         : mWindowWidth(width)
@@ -252,4 +252,4 @@ namespace vkpt
         }
     }
 
-}  // namespace vkpt
+}  // namespace vk2s

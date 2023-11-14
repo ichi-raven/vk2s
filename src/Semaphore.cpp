@@ -2,7 +2,7 @@
 
 #include "../include/Device.hpp"
 
-namespace vkpt
+namespace vk2s
 {
     Semaphore::Semaphore(Device& device)
         : mDevice(device)
@@ -20,4 +20,4 @@ namespace vkpt
         return mSemaphore;
     }
 
-}  // namespace vkpt
+}  // namespace vk2s

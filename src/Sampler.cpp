@@ -2,7 +2,7 @@
 
 #include "../include/Device.hpp"
 
-namespace vkpt
+namespace vk2s
 {
     Sampler::Sampler(Device& device, const vk::SamplerCreateInfo& ci)
         : mDevice(device)

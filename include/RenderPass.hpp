@@ -5,8 +5,8 @@
  * \author ichi-raven
  * \date   November 2023
  *********************************************************************/
-#ifndef VKPT_INCLUDE_RENDERPASS_HPP_
-#define VKPT_INCLUDE_RENDERPASS_HPP_
+#ifndef VK2S_INCLUDE_RENDERPASS_HPP_
+#define VK2S_INCLUDE_RENDERPASS_HPP_
 
 #ifndef VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
@@ -16,7 +16,7 @@
 #include "SlotMap.hpp"
 #include "Macro.hpp"
 
-namespace vkpt
+namespace vk2s
 {
     class Device;
 
@@ -53,6 +53,6 @@ namespace vkpt
         vk::UniqueRenderPass mRenderPass;
         std::vector<vk::UniqueFramebuffer> mFrameBuffers;
     };
-}  // namespace vkpt
+}  // namespace vk2s
 
 #endif

@@ -5,8 +5,8 @@
  * \author ichi-raven
  * \date   November 2023
  *********************************************************************/
-#ifndef VKPT_INCLUDE_COMMAND_HPP_
-#define VKPT_INCLUDE_COMMAND_HPP_
+#ifndef VK2S_INCLUDE_COMMAND_HPP_
+#define VK2S_INCLUDE_COMMAND_HPP_
 
 #ifndef VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
@@ -18,7 +18,7 @@
 
 #include <optional>
 
-namespace vkpt
+namespace vk2s
 {
     class Device;
 
@@ -90,6 +90,6 @@ namespace vkpt
         vk::UniqueFence mFence;
         std::optional<Handle<Pipeline>> mNowPipeline;
     };
-}  // namespace vkpt
+}  // namespace vk2s
 
 #endif

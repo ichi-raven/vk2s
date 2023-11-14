@@ -54,10 +54,10 @@ struct InstanceMappingUB  // std430
 struct MeshInstance
 {
     AssetLoader::Mesh hostMesh;
-    Handle<vkpt::Buffer> vertexBuffer;
-    Handle<vkpt::Buffer> indexBuffer;
+    Handle<vk2s::Buffer> vertexBuffer;
+    Handle<vk2s::Buffer> indexBuffer;
 
-    Handle<vkpt::AccelerationStructure> blas;
+    Handle<vk2s::AccelerationStructure> blas;
 };
 
 struct FilterUB  // std430
@@ -71,8 +71,8 @@ struct FilterUB  // std430
     float padding[2];
 };
 
-void load(std::string_view path, vkpt::Device& device, AssetLoader& loader, std::vector<MeshInstance>& meshInstances, Handle<vkpt::Buffer>& materialUB, Handle<vkpt::Buffer>& instanceMapBuffer,
-          std::vector<Handle<vkpt::Image>>& materialTextures)
+void load(std::string_view path, vk2s::Device& device, AssetLoader& loader, std::vector<MeshInstance>& meshInstances, Handle<vk2s::Buffer>& materialUB, Handle<vk2s::Buffer>& instanceMapBuffer,
+          std::vector<Handle<vk2s::Image>>& materialTextures)
 {
     std::vector<AssetLoader::Mesh> hostMeshes;
     std::vector<AssetLoader::Material> hostMaterials;
@@ -91,7 +91,7 @@ void load(std::string_view path, vkpt::Device& device, AssetLoader& loader, std:
             vk::BufferCreateInfo ci({}, vbSize, vbUsage);
             vk::MemoryPropertyFlags fb = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
 
-            mesh.vertexBuffer = device.create<vkpt::Buffer>(ci, fb);
+            mesh.vertexBuffer = device.create<vk2s::Buffer>(ci, fb);
             mesh.vertexBuffer->write(hostMesh.vertices.data(), vbSize);
         }
 
@@ -103,7 +103,7 @@ void load(std::string_view path, vkpt::Device& device, AssetLoader& loader, std:
             vk::BufferCreateInfo ci({}, ibSize, ibUsage);
             vk::MemoryPropertyFlags fb = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
 
-            mesh.indexBuffer = device.create<vkpt::Buffer>(ci, fb);
+            mesh.indexBuffer = device.create<vk2s::Buffer>(ci, fb);
             mesh.indexBuffer->write(hostMesh.indices.data(), ibSize);
         }
     }
@@ -126,7 +126,7 @@ void load(std::string_view path, vkpt::Device& device, AssetLoader& loader, std:
         vk::BufferCreateInfo ci({}, ubSize, vk::BufferUsageFlagBits::eStorageBuffer);
         vk::MemoryPropertyFlags fb = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
 
-        instanceMapBuffer = device.create<vkpt::Buffer>(ci, fb);
+        instanceMapBuffer = device.create<vk2s::Buffer>(ci, fb);
         instanceMapBuffer->write(meshMappings.data(), ubSize);
     }
 
@@ -164,7 +164,7 @@ void load(std::string_view path, vkpt::Device& device, AssetLoader& loader, std:
             ci.usage         = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
             ci.initialLayout = vk::ImageLayout::eUndefined;
 
-            texture = device.create<vkpt::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
+            texture = device.create<vk2s::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
 
             texture->write(hostTexture.pData, size);
         }
@@ -195,7 +195,7 @@ void load(std::string_view path, vkpt::Device& device, AssetLoader& loader, std:
         vk::BufferCreateInfo ci({}, ubSize, vk::BufferUsageFlagBits::eStorageBuffer);
         vk::MemoryPropertyFlags fb = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
 
-        materialUB = device.create<vkpt::Buffer>(ci, fb);
+        materialUB = device.create<vk2s::Buffer>(ci, fb);
         materialUB->write(materialData.data(), ubSize);
     }
 }
@@ -219,45 +219,45 @@ int main()
 
         try
     {
-        vkpt::Device device;
+        vk2s::Device device;
 
-        auto window = device.create<vkpt::Window>(1200, 1000, 3, "test window");
+        auto window = device.create<vk2s::Window>(1200, 1000, 3, "test window");
 
         const auto extent   = window->getVkSwapchainExtent();
         const auto frameNum = window->getVkImageViews().size();
 
-        auto renderpass = device.create<vkpt::RenderPass>(window.get());
+        auto renderpass = device.create<vk2s::RenderPass>(window.get());
 
         device.initImGui(frameNum, window.get(), renderpass.get());
 
         std::vector<MeshInstance> meshInstances;
-        Handle<vkpt::Buffer> materialBuffer;
-        Handle<vkpt::Buffer> instanceMapBuffer;
-        std::vector<Handle<vkpt::Image>> materialTextures;
-        auto sampler = device.create<vkpt::Sampler>(vk::SamplerCreateInfo());
+        Handle<vk2s::Buffer> materialBuffer;
+        Handle<vk2s::Buffer> instanceMapBuffer;
+        std::vector<Handle<vk2s::Image>> materialTextures;
+        auto sampler = device.create<vk2s::Sampler>(vk::SamplerCreateInfo());
         AssetLoader loader;
 
         load("../../resources/model/CornellBox/CornellBox-Water.obj", device, loader, meshInstances, materialBuffer, instanceMapBuffer, materialTextures);
         //load("../../resources/model/viking_room.obj", device, loader, meshInstances, materialBuffer, instanceMapBuffer, materialTextures);
 
         // create scene UB
-        Handle<vkpt::DynamicBuffer> sceneBuffer;
+        Handle<vk2s::DynamicBuffer> sceneBuffer;
         {
             const auto ubSize = sizeof(SceneUB) * frameNum;
-            sceneBuffer       = device.create<vkpt::DynamicBuffer>(vk::BufferCreateInfo({}, ubSize, vk::BufferUsageFlagBits::eUniformBuffer), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, frameNum);
+            sceneBuffer       = device.create<vk2s::DynamicBuffer>(vk::BufferCreateInfo({}, ubSize, vk::BufferUsageFlagBits::eUniformBuffer), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, frameNum);
         }
 
         // create film (compute) UB
-        Handle<vkpt::DynamicBuffer> filterBuffer;
+        Handle<vk2s::DynamicBuffer> filterBuffer;
         {
             const auto ubSize = sizeof(FilterUB) * frameNum;
-            filterBuffer      = device.create<vkpt::DynamicBuffer>(vk::BufferCreateInfo({}, ubSize, vk::BufferUsageFlagBits::eUniformBuffer), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, frameNum);
+            filterBuffer      = device.create<vk2s::DynamicBuffer>(vk::BufferCreateInfo({}, ubSize, vk::BufferUsageFlagBits::eUniformBuffer), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, frameNum);
         }
 
         //create result image, event image and compute result image
-        Handle<vkpt::Image> resultImage;
-        Handle<vkpt::Image> computeResultImage;
-        Handle<vkpt::Image> eventImage;
+        Handle<vk2s::Image> resultImage;
+        Handle<vk2s::Image> computeResultImage;
+        Handle<vk2s::Image> eventImage;
         {
             const auto format   = window->getVkSwapchainImageFormat();
             const uint32_t size = extent.width * extent.height * Compiler::getSizeOfFormat(format);
@@ -271,13 +271,13 @@ int main()
             ci.usage         = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eStorage;
             ci.initialLayout = vk::ImageLayout::eUndefined;
 
-            resultImage        = device.create<vkpt::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
-            computeResultImage = device.create<vkpt::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
+            resultImage        = device.create<vk2s::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
+            computeResultImage = device.create<vk2s::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
             // event format
             ci.format  = vk::Format::eR32Sfloat;
-            eventImage = device.create<vkpt::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
+            eventImage = device.create<vk2s::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
 
-            UniqueHandle<vkpt::Command> cmd = device.create<vkpt::Command>();
+            UniqueHandle<vk2s::Command> cmd = device.create<vk2s::Command>();
             cmd->begin(true);
             cmd->transitionImageLayout(resultImage.get(), vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral);
             cmd->transitionImageLayout(computeResultImage.get(), vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral);
@@ -287,8 +287,8 @@ int main()
         }
 
         // create envmap
-        Handle<vkpt::Image> envmap;
-        Handle<vkpt::Sampler> envmapSampler;
+        Handle<vk2s::Image> envmap;
+        Handle<vk2s::Sampler> envmapSampler;
         {
             const auto& hostTexture = loader.loadTexture("../../resources/envmap1.png", "envmap");
             const auto width        = hostTexture.width;
@@ -304,19 +304,19 @@ int main()
             ci.usage         = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
             ci.initialLayout = vk::ImageLayout::eUndefined;
 
-            envmap = device.create<vkpt::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
+            envmap = device.create<vk2s::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
 
             envmap->write(hostTexture.pData, size);
 
             vk::SamplerCreateInfo sci;
             sci.magFilter = vk::Filter::eLinear;
-            envmapSampler = device.create<vkpt::Sampler>(sci);
+            envmapSampler = device.create<vk2s::Sampler>(sci);
         }
 
         // create BLAS
         for (auto& mesh : meshInstances)
         {
-            mesh.blas = device.create<vkpt::AccelerationStructure>(mesh.hostMesh.vertices.size(), sizeof(AssetLoader::Vertex), mesh.vertexBuffer.get(), mesh.hostMesh.indices.size() / 3, mesh.indexBuffer.get());
+            mesh.blas = device.create<vk2s::AccelerationStructure>(mesh.hostMesh.vertices.size(), sizeof(AssetLoader::Vertex), mesh.vertexBuffer.get(), mesh.hostMesh.indices.size() / 3, mesh.indexBuffer.get());
         }
 
         // deploy instances
@@ -342,13 +342,13 @@ int main()
         }
 
         // create TLAS
-        auto tlas = device.create<vkpt::AccelerationStructure>(asInstances);
+        auto tlas = device.create<vk2s::AccelerationStructure>(asInstances);
 
         // load shaders
-        const auto raygenShader  = device.create<vkpt::Shader>("../../shaders/PathTracing/raygen.rgen", "main");
-        const auto missShader    = device.create<vkpt::Shader>("../../shaders/PathTracing/miss.rmiss", "main");
-        const auto chitShader    = device.create<vkpt::Shader>("../../shaders/PathTracing/closesthit.rchit", "main");
-        const auto computeShader = device.create<vkpt::Shader>("../../shaders/PathTracing/compute.comp", "main");
+        const auto raygenShader  = device.create<vk2s::Shader>("../../shaders/PathTracing/raygen.rgen", "main");
+        const auto missShader    = device.create<vk2s::Shader>("../../shaders/PathTracing/miss.rmiss", "main");
+        const auto chitShader    = device.create<vk2s::Shader>("../../shaders/PathTracing/closesthit.rchit", "main");
+        const auto computeShader = device.create<vk2s::Shader>("../../shaders/PathTracing/compute.comp", "main");
 
         // create bind layout
         std::array bindings = {
@@ -368,7 +368,7 @@ int main()
             vk::DescriptorSetLayoutBinding(6, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eAll),
         };
 
-        auto bindLayout = device.create<vkpt::BindLayout>(bindings);
+        auto bindLayout = device.create<vk2s::BindLayout>(bindings);
 
         std::array compBindings = {
             // 0 : input image
@@ -381,7 +381,7 @@ int main()
             vk::DescriptorSetLayoutBinding(3, vk::DescriptorType::eStorageImage, 1, vk::ShaderStageFlagBits::eCompute),
         };
 
-        auto computeBindLayout = device.create<vkpt::BindLayout>(compBindings);
+        auto computeBindLayout = device.create<vk2s::BindLayout>(compBindings);
 
         // create shader groups
         constexpr int indexRaygen     = 0;
@@ -389,7 +389,7 @@ int main()
         constexpr int indexClosestHit = 2;
 
         // create pipeline
-        vkpt::Pipeline::VkRayTracingPipelineInfo rpi{
+        vk2s::Pipeline::VkRayTracingPipelineInfo rpi{
             .raygenShader = raygenShader,
             .missShader   = missShader,
             .chitShader   = chitShader,
@@ -399,20 +399,20 @@ int main()
                               vk::RayTracingShaderGroupCreateInfoKHR(vk::RayTracingShaderGroupTypeKHR::eTrianglesHitGroup, VK_SHADER_UNUSED_KHR, indexClosestHit, VK_SHADER_UNUSED_KHR, VK_SHADER_UNUSED_KHR) },
         };
 
-        auto raytracePipeline = device.create<vkpt::Pipeline>(rpi);
+        auto raytracePipeline = device.create<vk2s::Pipeline>(rpi);
 
-        vkpt::Pipeline::ComputePipelineInfo cpi{
+        vk2s::Pipeline::ComputePipelineInfo cpi{
             .cs         = computeShader,
             .bindLayout = computeBindLayout,
         };
 
-        auto computePipeline = device.create<vkpt::Pipeline>(cpi);
+        auto computePipeline = device.create<vk2s::Pipeline>(cpi);
 
         // create shader binding table
-        auto shaderBindingTable = device.create<vkpt::ShaderBindingTable>(raytracePipeline.get(), 1, 1, 1, 0, rpi.shaderGroups);
+        auto shaderBindingTable = device.create<vk2s::ShaderBindingTable>(raytracePipeline.get(), 1, 1, 1, 0, rpi.shaderGroups);
 
         // create bindgroup
-        auto bindGroup = device.create<vkpt::BindGroup>(bindLayout.get());
+        auto bindGroup = device.create<vk2s::BindGroup>(bindLayout.get());
         bindGroup->bind(0, 0, tlas.get());
         bindGroup->bind(0, 1, vk::DescriptorType::eStorageImage, resultImage);
         bindGroup->bind(0, 2, vk::DescriptorType::eUniformBufferDynamic, sceneBuffer.get());
@@ -424,21 +424,21 @@ int main()
             bindGroup->bind(0, 5, vk::DescriptorType::eCombinedImageSampler, materialTextures, sampler);
         bindGroup->bind(0, 6, vk::DescriptorType::eCombinedImageSampler, envmap, envmapSampler);
 
-        auto computeBindGroup = device.create<vkpt::BindGroup>(computeBindLayout.get());
+        auto computeBindGroup = device.create<vk2s::BindGroup>(computeBindLayout.get());
         computeBindGroup->bind(0, 0, vk::DescriptorType::eStorageImage, resultImage);
         computeBindGroup->bind(0, 1, vk::DescriptorType::eStorageImage, eventImage);
         computeBindGroup->bind(0, 2, vk::DescriptorType::eUniformBufferDynamic, filterBuffer.get());
         computeBindGroup->bind(0, 3, vk::DescriptorType::eStorageImage, computeResultImage);
 
-        std::vector<Handle<vkpt::Command>> commands(frameNum);
-        std::vector<Handle<vkpt::Semaphore>> imageAvailableSems(frameNum);
-        std::vector<Handle<vkpt::Semaphore>> renderCompletedSems(frameNum);
+        std::vector<Handle<vk2s::Command>> commands(frameNum);
+        std::vector<Handle<vk2s::Semaphore>> imageAvailableSems(frameNum);
+        std::vector<Handle<vk2s::Semaphore>> renderCompletedSems(frameNum);
 
         for (int i = 0; i < frameNum; ++i)
         {
-            commands[i]            = device.create<vkpt::Command>();
-            imageAvailableSems[i]  = device.create<vkpt::Semaphore>();
-            renderCompletedSems[i] = device.create<vkpt::Semaphore>();
+            commands[i]            = device.create<vk2s::Command>();
+            imageAvailableSems[i]  = device.create<vk2s::Semaphore>();
+            renderCompletedSems[i] = device.create<vk2s::Semaphore>();
         }
 
         auto clearValue = vk::ClearValue(std::array{ 0.0f, 0.0f, 0.0f, 1.0f });

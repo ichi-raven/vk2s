@@ -5,8 +5,8 @@
  * \author ichi-raven
  * \date   November 2023
  *********************************************************************/
-#ifndef VKPT_INCLUDE_SHADERBINDINGTABLE_HPP_
-#define VKPT_INCLUDE_SHADERBINDINGTABLE_HPP_
+#ifndef VK2S_INCLUDE_SHADERBINDINGTABLE_HPP_
+#define VK2S_INCLUDE_SHADERBINDINGTABLE_HPP_
 
 #ifndef VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
@@ -16,7 +16,7 @@
 #include "Macro.hpp"
 #include "SlotMap.hpp"
 
-namespace vkpt
+namespace vk2s
 {
     class Device;
     class Buffer;
@@ -54,6 +54,6 @@ namespace vkpt
         VkShaderBindingTableInfo mSBTInfo;
         Handle<Buffer> mShaderBindingTable;
     };
-}  // namespace vkpt
+}  // namespace vk2s
 
 #endif

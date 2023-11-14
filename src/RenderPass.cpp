@@ -4,7 +4,7 @@
 
 #include <array>
 
-namespace vkpt
+namespace vk2s
 {
     RenderPass::RenderPass(Device& device, const vk::ArrayProxy<Handle<Image>>& colorTargets, const Handle<Image> depthTarget)
         : mDevice(device)
@@ -156,4 +156,4 @@ namespace vkpt
         assert(!"failed to find supported format!");
         return candidates.front();
     }
-}  // namespace vkpt
+}  // namespace vk2s

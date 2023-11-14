@@ -2,7 +2,7 @@
 
 #include "../include/Device.hpp"
 
-namespace vkpt
+namespace vk2s
 {
 
     DynamicBuffer::DynamicBuffer(Device& device, const vk::BufferCreateInfo& bi, vk::MemoryPropertyFlags pbs, const uint32_t blockNum)
@@ -78,4 +78,4 @@ namespace vkpt
         return mDevice.getVkDevice()->getBufferAddress(vk::BufferDeviceAddressInfo(mBuffer.get()));
     }
 
-}  // namespace vkpt
+}  // namespace vk2s

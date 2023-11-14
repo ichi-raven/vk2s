@@ -9,7 +9,7 @@
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
-namespace vkpt
+namespace vk2s
 {
     Device::Device()
         : mpImGuiContext(nullptr)
@@ -141,7 +141,7 @@ namespace vkpt
     void Device::createInstance()
     {
         // TODO: change application name
-        constexpr std::string_view applicationName = "vkpt";
+        constexpr std::string_view applicationName = "vk2s";
 
         // get the instance independent function pointers
         static vk::DynamicLoader dl;
@@ -446,4 +446,4 @@ namespace vkpt
         return VK_FALSE;
     }
 
-}  // namespace vkpt
+}  // namespace vk2s

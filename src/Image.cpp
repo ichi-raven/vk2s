@@ -2,7 +2,7 @@
 
 #include "../include/Device.hpp"
 
-namespace vkpt
+namespace vk2s
 {
 
     Image::Image(Device& device, const vk::ImageCreateInfo& ii, vk::MemoryPropertyFlags pbs, const size_t size, vk::ImageAspectFlags aspectFlags)
@@ -86,4 +86,4 @@ namespace vkpt
         return mAspectFlag;
     }
 
-}  // namespace vkpt
+}  // namespace vk2s

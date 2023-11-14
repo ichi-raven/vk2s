@@ -6,8 +6,8 @@
  * @date   November 2023
  *********************************************************************/
 
-#ifndef VKPT_INCLUDE_DEVICE_HPP_
-#define VKPT_INCLUDE_DEVICE_HPP_
+#ifndef VK2S_INCLUDE_DEVICE_HPP_
+#define VK2S_INCLUDE_DEVICE_HPP_
 
 #include "SlotMap.hpp"
 #include "Macro.hpp"
@@ -36,7 +36,7 @@
 #include <tuple>
 #include <type_traits>
 
-namespace vkpt
+namespace vk2s
 {
     template <class T, class TypeList>
     struct IsContainedIn;
@@ -189,6 +189,6 @@ namespace vkpt
                    Pool<ShaderBindingTable>, Pool<DynamicBuffer>>
             mPools;
     };
-}  // namespace vkpt
+}  // namespace vk2s
 
 #endif

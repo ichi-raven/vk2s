@@ -5,8 +5,8 @@
  * @author ichi-raven
  * @date   November 2023
  *********************************************************************/
-#ifndef VKPT_INCLUDE_WINDOW_HPP_
-#define VKPT_INCLUDE_WINDOW_HPP_
+#ifndef VK2S_INCLUDE_WINDOW_HPP_
+#define VK2S_INCLUDE_WINDOW_HPP_
 
 #include "Macro.hpp"
 
@@ -18,7 +18,7 @@
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 
-namespace vkpt
+namespace vk2s
 {
     class Device;
     class Semaphore;
@@ -90,6 +90,6 @@ namespace vkpt
         vk::Extent2D mSwapChainExtent;
         std::vector<vk::UniqueImageView> mSwapChainImageViews;
     };
-}  // namespace vkpt
+}  // namespace vk2s
 
 #endif

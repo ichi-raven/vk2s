@@ -5,13 +5,15 @@
  * @author ichi-raven
  * @date   October 2023
  *********************************************************************/
-#ifndef VULKANPLAYGROUND_CAMERA_HPP_
-#define VULKANPLAYGROUND_CAMERA_HPP_
+#ifndef VK2S_CAMERA_HPP_
+#define VK2S_CAMERA_HPP_
 
 #include <glm/glm.hpp>
 
 #include <GLFW/glfw3.h>
 
+namespace vk2s
+{
 class Camera
 {
 public:
@@ -56,5 +58,5 @@ private:
     glm::mat4 mViewMat;
     glm::mat4 mProjectionMat;
 };
-
+}
 #endif

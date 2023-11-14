@@ -2,7 +2,7 @@
 
 #include "../include/Device.hpp"
 
-namespace vkpt
+namespace vk2s
 {
     Shader::Shader(Device& device, std::string_view path, std::string_view entryPoint)
         : mDevice(device)
@@ -35,4 +35,4 @@ namespace vkpt
     {
         return *mReflection;
     }
-}  // namespace vkpt
+}  // namespace vk2s

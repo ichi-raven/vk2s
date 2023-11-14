@@ -5,8 +5,8 @@
  * @author ichi-raven
  * @date   October 2023
  *********************************************************************/
-#ifndef VULKANPLAYGROUND_ASSETLOADER_HPP_
-#define VULKANPLAYGROUND_ASSETLOADER_HPP_
+#ifndef VK2S_ASSETLOADER_HPP_
+#define VK2S_ASSETLOADER_HPP_
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -23,6 +23,9 @@
 #include <variant>
 
 #include <cstdint>
+
+namespace vk2s
+{
 
 class AssetLoader
 {
@@ -158,5 +161,5 @@ private:
     Assimp::Importer mImporter;
     std::vector<const aiScene*> mpScenes;
 };
-
+}
 #endif

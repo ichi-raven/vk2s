@@ -2,7 +2,7 @@
 
 #include "../include/Device.hpp"
 
-namespace vkpt
+namespace vk2s
 {
     Pipeline::Pipeline(Device& device, const VkGraphicsPipelineInfo& info)
         : mDevice(device)
@@ -145,4 +145,4 @@ namespace vkpt
         return mBindPoint;
     }
 
-}  // namespace vkpt
+}  // namespace vk2s
