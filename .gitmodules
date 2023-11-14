@@ -1,0 +1,18 @@
+[submodule "ThirdParty/GLFW"]
+	path = ThirdParty/GLFW
+	url = git@github.com:glfw/glfw.git
+[submodule "ThirdParty/stb"]
+	path = ThirdParty/stb
+	url = git@github.com:nothings/stb.git
+[submodule "ThirdParty/glm"]
+	path = ThirdParty/glm
+	url = git@github.com:g-truc/glm.git
+[submodule "ThirdParty/imgui"]
+	path = ThirdParty/imgui
+	url = git@github.com:ocornut/imgui.git
+[submodule "ThirdParty/SPIRV-Reflect"]
+	path = ThirdParty/SPIRV-Reflect
+	url = https://github.com/KhronosGroup/SPIRV-Reflect
+[submodule "ThirdParty/Assimp"]
+	path = ThirdParty/Assimp
+	url = git@github.com:assimp/assimp.git
