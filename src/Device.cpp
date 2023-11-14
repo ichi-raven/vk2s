@@ -39,15 +39,16 @@ namespace vkpt
 
     Device::~Device()
     {
-        iterateTuple(mPools);
-
         if (mpImGuiContext)
         {
+            ImGui_ImplVulkan_DestroyFontsTexture();
             ImGui_ImplVulkan_Shutdown();
             ImGui_ImplGlfw_Shutdown();
             ImGui::DestroyContext();
         }
 
+        iterateTuple(mPools);
+        
         glfwTerminate();
     }
 
