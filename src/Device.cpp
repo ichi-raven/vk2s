@@ -57,8 +57,8 @@ namespace vkpt
     {
         vk::DescriptorPoolSize size(vk::DescriptorType::eCombinedImageSampler, 1);
 
-        vk::DescriptorPoolCreateInfo ci({}, 1, size);
-
+        vk::DescriptorPoolCreateInfo ci(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1, size);
+        
         mDescriptorPoolForImGui = mDevice->createDescriptorPoolUnique(ci);
     }
 
