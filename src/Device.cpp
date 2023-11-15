@@ -40,7 +40,7 @@ namespace vk2s
     Device::~Device()
     {
         iterateTuple(mPools);
-        
+
         if (mpImGuiContext)
         {
             //ImGui_ImplVulkan_DestroyFontsTexture();
@@ -49,7 +49,6 @@ namespace vk2s
             ImGui::DestroyContext();
         }
 
-        
         glfwTerminate();
     }
 
@@ -58,7 +57,7 @@ namespace vk2s
         vk::DescriptorPoolSize size(vk::DescriptorType::eCombinedImageSampler, 1);
 
         vk::DescriptorPoolCreateInfo ci(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1, size);
-        
+
         mDescriptorPoolForImGui = mDevice->createDescriptorPoolUnique(ci);
     }
 
@@ -130,12 +129,49 @@ namespace vk2s
         return mCommandPool;
     }
 
-    const std::vector<vk::DescriptorSet> Device::allocateVkDescriptorSets(const std::vector<vk::DescriptorSetLayout>& layouts)
+    const std::pair<std::vector<vk::DescriptorSet>, size_t> Device::allocateVkDescriptorSets(const std::vector<vk::DescriptorSetLayout>& layouts, const DescriptorPoolAllocationInfo& allocInfo)
     {
-        // TODO: implement descriptor allocator
-        vk::DescriptorSetAllocateInfo ai(mDescriptorPool.get(), layouts);
+        size_t idx = 0;
+        for (const auto& pool : mDescriptorPools)
+        {
+            if (pool.now.accelerationStructureNum < allocInfo.accelerationStructureNum || pool.now.combinedImageSamplerNum < allocInfo.combinedImageSamplerNum || pool.now.storageBufferNum < allocInfo.storageBufferNum ||
+                pool.now.storageImageNum < allocInfo.storageImageNum || pool.now.uniformBufferNum < allocInfo.uniformBufferNum || pool.now.uniformBufferDynamicNum < allocInfo.uniformBufferDynamicNum)
+            {
+                break;
+            }
+            ++idx;
+        }
 
-        return mDevice->allocateDescriptorSets(ai);
+        if (idx == mDescriptorPools.size())
+        {
+            createDescriptorPool();
+        }
+
+        auto& allocatedPool = mDescriptorPools[idx];
+        allocatedPool.now.accelerationStructureNum -= allocInfo.accelerationStructureNum;
+        allocatedPool.now.combinedImageSamplerNum -= allocInfo.combinedImageSamplerNum;
+        allocatedPool.now.storageBufferNum -= allocInfo.storageBufferNum;
+        allocatedPool.now.storageImageNum -= allocInfo.storageImageNum;
+        allocatedPool.now.uniformBufferNum -= allocInfo.uniformBufferNum;
+        allocatedPool.now.uniformBufferDynamicNum -= allocInfo.uniformBufferDynamicNum;
+
+        vk::DescriptorSetAllocateInfo ai(allocatedPool.descriptorPool.get(), layouts);
+
+        return { mDevice->allocateDescriptorSets(ai), idx };
+    }
+
+    void Device::deallocateVkDescriptorSets(std::vector<vk::DescriptorSet>& sets, const size_t poolIndex, const DescriptorPoolAllocationInfo& allocInfo)
+    {
+        auto& allocatedPool = mDescriptorPools[poolIndex];
+
+        allocatedPool.now.accelerationStructureNum += allocInfo.accelerationStructureNum;
+        allocatedPool.now.combinedImageSamplerNum += allocInfo.combinedImageSamplerNum;
+        allocatedPool.now.storageBufferNum += allocInfo.storageBufferNum;
+        allocatedPool.now.storageImageNum += allocInfo.storageImageNum;
+        allocatedPool.now.uniformBufferNum += allocInfo.uniformBufferNum;
+        allocatedPool.now.uniformBufferDynamicNum += allocInfo.uniformBufferDynamicNum;
+
+        mDevice->freeDescriptorSets(allocatedPool.descriptorPool.get(), sets);
     }
 
     void Device::createInstance()
@@ -281,7 +317,16 @@ namespace vk2s
             createInfo.setPEnabledLayerNames(validationLayers);
         }
 
-        mDevice        = mPhysicalDevice.createDeviceUnique(createInfo);
+        mDevice = mPhysicalDevice.createDeviceUnique(createInfo);
+        if (!mDevice)
+        {
+            // failed to activate ray tracing feature
+            createInfo.pNext = nullptr;
+            mDevice          = mPhysicalDevice.createDeviceUnique(createInfo);
+
+            assert(mDevice || !"failed to create logical device!");
+        }
+
         mGraphicsQueue = mDevice->getQueue(mQueueFamilyIndices.graphicsFamily.value(), 0);
         mPresentQueue  = mDevice->getQueue(mQueueFamilyIndices.presentFamily.value(), 0);
     }
@@ -297,13 +342,19 @@ namespace vk2s
     void Device::createDescriptorPool()
     {
         std::array arr = {
-            vk::DescriptorPoolSize(vk::DescriptorType::eAccelerationStructureKHR, 32), vk::DescriptorPoolSize(vk::DescriptorType::eStorageImage, 32),
-            vk::DescriptorPoolSize(vk::DescriptorType::eUniformBufferDynamic, 32),     vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, 32),
-            vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 32),
+            vk::DescriptorPoolSize(vk::DescriptorType::eAccelerationStructureKHR, kMaxDescriptorNum),
+            vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, kMaxDescriptorNum),
+            vk::DescriptorPoolSize(vk::DescriptorType::eStorageImage, kMaxDescriptorNum),
+            vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, kMaxDescriptorNum),
+            vk::DescriptorPoolSize(vk::DescriptorType::eUniformBufferDynamic, kMaxDescriptorNum),
+            vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, kMaxDescriptorNum),
         };
 
-        vk::DescriptorPoolCreateInfo ci(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 32, arr);
-        mDescriptorPool = mDevice->createDescriptorPoolUnique(ci);
+        auto& added = mDescriptorPools.emplace_back();
+
+        vk::DescriptorPoolCreateInfo ci(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, kMaxDescriptorNum, arr);
+        added.descriptorPool = mDevice->createDescriptorPoolUnique(ci);
+        added.now            = DescriptorPoolAllocationInfo(kMaxDescriptorNum);
     }
 
     // utility----------------------------------------------

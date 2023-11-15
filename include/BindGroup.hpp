@@ -42,18 +42,20 @@ namespace vk2s
 
         void bind(const uint8_t set, const uint8_t binding, const vk::DescriptorType type, Buffer& buffer);
         void bind(const uint8_t set, const uint8_t binding, const vk::DescriptorType type, DynamicBuffer& buffer);
-        void bind(const uint8_t set, const uint8_t binding, const vk::DescriptorType type, Image& image, Handle<Sampler> sampler = Handle<Sampler>());
         void bind(const uint8_t set, const uint8_t binding, const vk::DescriptorType type, const vk::ArrayProxyNoTemporaries<Handle<Image>>& image, Handle<Sampler> sampler = Handle<Sampler>());
         void bind(const uint8_t set, const uint8_t binding, AccelerationStructure& as);
 
         const std::vector<vk::DescriptorSet>& getVkDescriptorSets();
 
-    private:  // methods
+    private:  // types
+        using DescriptorInfo = std::variant<vk::DescriptorBufferInfo, std::vector<vk::DescriptorImageInfo>, vk::WriteDescriptorSetAccelerationStructureKHR>;
+
     private:  // member variables
         Device& mDevice;
 
         std::vector<vk::DescriptorSet> mDescriptorSets;
-        std::vector<std::variant<vk::DescriptorBufferInfo, std::vector<vk::DescriptorImageInfo>, vk::WriteDescriptorSetAccelerationStructureKHR>> mInfoCaches;
+        size_t mPoolIndex;
+        std::unordered_map<std::pair<uint8_t, uint8_t>, DescriptorInfo> mInfoCaches;
         std::vector<vk::WriteDescriptorSet> mWriteQueue;
     };
 }  // namespace vk2s

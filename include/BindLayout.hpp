@@ -37,10 +37,12 @@ namespace vk2s
 
         const std::vector<vk::DescriptorSetLayout>& getVkDescriptorSetLayouts();
 
-    private:  // methods
+        const Device::DescriptorPoolAllocationInfo& getDescriptorPoolAllocationInfo();
+
     private:  // member variables
         Device& mDevice;
 
+        Device::DescriptorPoolAllocationInfo mInfo;
         std::vector<vk::DescriptorSetLayout> mDescriptorSetLayouts;
     };
 }  // namespace vk2s

@@ -71,6 +71,25 @@ namespace vk2s
             SwapChainSupportDetails static querySwapChainSupport(vk::PhysicalDevice device, const vk::UniqueSurfaceKHR& testSurface);
         };
 
+        struct DescriptorPoolAllocationInfo
+        {
+            DescriptorPoolAllocationInfo(const uint32_t init)
+                : accelerationStructureNum(init)
+                , combinedImageSamplerNum(init)
+                , storageBufferNum(init)
+                , storageImageNum(init)
+                , uniformBufferNum(init)
+                , uniformBufferDynamicNum(init)
+                {}
+
+            uint32_t accelerationStructureNum = 0;
+            uint32_t combinedImageSamplerNum  = 0;
+            uint32_t storageBufferNum         = 0;
+            uint32_t storageImageNum          = 0;
+            uint32_t uniformBufferNum         = 0;
+            uint32_t uniformBufferDynamicNum  = 0;
+        };
+
     public:  // methods
         Device();
 
@@ -115,7 +134,9 @@ namespace vk2s
         const vk::UniqueCommandPool& getVkCommandPool();
 
         // to trace allocation
-        const std::vector<vk::DescriptorSet> allocateVkDescriptorSets(const std::vector<vk::DescriptorSetLayout>& layouts);
+        const std::pair<std::vector<vk::DescriptorSet>, size_t> allocateVkDescriptorSets(const std::vector<vk::DescriptorSetLayout>& layouts, const DescriptorPoolAllocationInfo& allocInfo);
+
+        void deallocateVkDescriptorSets(std::vector<vk::DescriptorSet>& sets, const size_t poolIndex, const DescriptorPoolAllocationInfo& allocInfo);
 
         template <class T>
         T align(T size, uint32_t align)
@@ -123,6 +144,26 @@ namespace vk2s
             return (size + align - 1) & ~static_cast<T>((align - 1));
         }
 
+    private:  // types
+        struct DescriptorPool
+        {
+            vk::UniqueDescriptorPool descriptorPool;
+            DescriptorPoolAllocationInfo now;
+        };
+
+    private:  // compile time constant
+#ifdef NDEBUG
+        constexpr static bool enableValidationLayers = false;
+#else
+        constexpr static bool enableValidationLayers = true;
+#endif
+
+        constexpr static std::array validationLayers = { "VK_LAYER_KHRONOS_validation" };
+
+        constexpr static std::array deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, VK_KHR_RAY_QUERY_EXTENSION_NAME,
+                                                         VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME };
+
+        constexpr static uint32_t kMaxDescriptorNum = 256;
     private:  // methods
         void createInstance();
 
@@ -152,18 +193,6 @@ namespace vk2s
         static VKAPI_ATTR VkBool32 VKAPI_CALL debugUtilsMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes, VkDebugUtilsMessengerCallbackDataEXT const* pCallbackData,
                                                                           void* pUserData);
 
-    private:  // compile time constant
-#ifdef NDEBUG
-        constexpr static bool enableValidationLayers = false;
-#else
-        constexpr static bool enableValidationLayers = true;
-#endif
-
-        constexpr static std::array validationLayers = { "VK_LAYER_KHRONOS_validation" };
-
-        constexpr static std::array deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, VK_KHR_RAY_QUERY_EXTENSION_NAME,
-                                                         VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME };
-
     private:  // member variables
         vk::UniqueInstance mInstance;
         vk::UniqueDebugUtilsMessengerEXT mDebugUtilsMessenger;
@@ -178,7 +207,7 @@ namespace vk2s
 
         vk::UniqueCommandPool mCommandPool;
 
-        vk::UniqueDescriptorPool mDescriptorPool;
+        std::vector<DescriptorPool> mDescriptorPools;
 
         // imgui--------------
         vk::UniqueDescriptorPool mDescriptorPoolForImGui;

@@ -7,48 +7,29 @@ namespace vk2s
     BindGroup::BindGroup(Device& device, BindLayout& layout)
         : mDevice(device)
     {
-        mDescriptorSets = mDevice.allocateVkDescriptorSets(layout.getVkDescriptorSetLayouts());
+        auto [mDescriptorSets, mPoolIndex] = mDevice.allocateVkDescriptorSets(layout.getVkDescriptorSetLayouts());
 
-        // TODO: HACK; !!!!!!!!!!!!!!!!!
+        // HACK:
         mInfoCaches.reserve(16);
     }
 
     BindGroup::~BindGroup()
     {
+        mDevice.deallocateVkDescriptorSets(mDescriptorSets);
     }
 
     void BindGroup::bind(const uint8_t set, const uint8_t binding, const vk::DescriptorType type, Buffer& buffer)
     {
-        mInfoCaches.emplace_back(vk::DescriptorBufferInfo(buffer.getVkBuffer().get(), buffer.getOffset(), VK_WHOLE_SIZE));
+        const auto& info = mInfoCaches.emplace(std::make_pair(set, binding), vk::DescriptorBufferInfo(buffer.getVkBuffer().get(), buffer.getOffset(), VK_WHOLE_SIZE)).first->second;
 
-        mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSets[set], binding, 0, type, {}, std::get<0>(mInfoCaches.back())));
+        mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSets[set], binding, 0, type, {}, std::get<0>(info)));
     }
 
     void BindGroup::bind(const uint8_t set, const uint8_t binding, const vk::DescriptorType type, DynamicBuffer& buffer)
     {
-        mInfoCaches.emplace_back(vk::DescriptorBufferInfo(buffer.getVkBuffer().get(), buffer.getOffset(), buffer.getBlockSize()));
+        const auto& info = mInfoCaches.emplace(std::make_pair(set, binding), vk::DescriptorBufferInfo(buffer.getVkBuffer().get(), buffer.getOffset(), buffer.getBlockSize())).first->second;
 
-        mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSets[set], binding, 0, type, {}, std::get<0>(mInfoCaches.back())));
-    }
-
-    void BindGroup::bind(const uint8_t set, const uint8_t binding, const vk::DescriptorType type, Image& image, Handle<Sampler> sampler)
-    {
-        // HACK:
-        const auto imageLayout = type == vk::DescriptorType::eStorageImage ? vk::ImageLayout::eGeneral : vk::ImageLayout::eShaderReadOnlyOptimal;
-
-        std::vector<vk::DescriptorImageInfo> infos;
-        if (sampler)
-        {
-            infos.emplace_back(vk::DescriptorImageInfo(sampler->getVkSampler().get(), image.getVkImageView().get(), imageLayout));
-        }
-        else
-        {
-            infos.emplace_back(vk::DescriptorImageInfo({}, image.getVkImageView().get(), imageLayout));
-        }
-
-        mInfoCaches.emplace_back(infos);
-
-        mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSets[set], binding, 0, type, std::get<1>(mInfoCaches.back())));
+        mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSets[set], binding, 0, type, {}, std::get<0>(info)));
     }
 
     void BindGroup::bind(const uint8_t set, const uint8_t binding, const vk::DescriptorType type, const vk::ArrayProxyNoTemporaries<Handle<Image>>& images, Handle<Sampler> sampler)
@@ -74,16 +55,16 @@ namespace vk2s
             }
         }
 
-        mInfoCaches.emplace_back(infos);
+        const auto& info = mInfoCaches.emplace(std::make_pair(set, binding), infos).first->second;
         
-        mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSets[set], binding, 0, type, std::get<1>(mInfoCaches.back())));
+        mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSets[set], binding, 0, type, std::get<1>(info)));
     }
 
     void BindGroup::bind(const uint8_t set, const uint8_t binding, AccelerationStructure& as)
     {
-        mInfoCaches.emplace_back(vk::WriteDescriptorSetAccelerationStructureKHR(as.getVkAccelerationStructure().get()));
+        const auto& info = mInfoCaches.emplace(std::make_pair(set, binding), vk::WriteDescriptorSetAccelerationStructureKHR(as.getVkAccelerationStructure().get())).first->second;
 
-        mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSets[set], binding, 0, vk::DescriptorType::eAccelerationStructureKHR, {}).setDescriptorCount(1).setPNext(&mInfoCaches.back()));
+        mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSets[set], binding, 0, vk::DescriptorType::eAccelerationStructureKHR, {}).setDescriptorCount(1).setPNext(&info));
     }
 
     const std::vector<vk::DescriptorSet>& BindGroup::getVkDescriptorSets()
