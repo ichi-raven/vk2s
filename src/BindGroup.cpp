@@ -7,7 +7,12 @@ namespace vk2s
     BindGroup::BindGroup(Device& device, BindLayout& layout)
         : mDevice(device)
     {
-        auto [mDescriptorSets, mPoolIndex] = mDevice.allocateVkDescriptorSets(layout.getVkDescriptorSetLayouts());
+        // get mAllocationInfo from BindLayout
+
+        const auto&& [descriptorSets, poolIndex] = mDevice.allocateVkDescriptorSets(layout.getVkDescriptorSetLayouts(), );
+
+        mDescriptorSets = descriptorSets;
+        mPoolIndex      = poolIndex;
 
         // HACK:
         mInfoCaches.reserve(16);
@@ -15,7 +20,7 @@ namespace vk2s
 
     BindGroup::~BindGroup()
     {
-        mDevice.deallocateVkDescriptorSets(mDescriptorSets);
+        mDevice.deallocateVkDescriptorSets(mDescriptorSets, mPoolIndex, mAllocationInfo);
     }
 
     void BindGroup::bind(const uint8_t set, const uint8_t binding, const vk::DescriptorType type, Buffer& buffer)
