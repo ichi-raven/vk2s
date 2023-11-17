@@ -1,6 +1,6 @@
-#include "../include/AccelerationStructure.hpp"
+#include "../include/vk2s/AccelerationStructure.hpp"
 
-#include "../include/Device.hpp"
+#include "../include/vk2s/Device.hpp"
 
 namespace vk2s
 {

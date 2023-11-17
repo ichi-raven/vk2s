@@ -1,4 +1,4 @@
-#include "../include/Device.hpp"
+#include "../include/vk2s/Device.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -109,7 +109,7 @@ namespace vk2s
         return mDevice;
     }
 
-    const Device::QueueFamilyIndices Device::getVkQueueFamilyIndices()
+    const QueueFamilyIndices Device::getVkQueueFamilyIndices()
     {
         return mQueueFamilyIndices;
     }
@@ -414,7 +414,7 @@ namespace vk2s
         return indices.isComplete() && extensionsSupported && swapChainAdequate;
     }
 
-    Device::QueueFamilyIndices Device::QueueFamilyIndices::findQueueFamilies(vk::PhysicalDevice physDev, const vk::UniqueSurfaceKHR& testSurface)
+    QueueFamilyIndices QueueFamilyIndices::findQueueFamilies(vk::PhysicalDevice physDev, const vk::UniqueSurfaceKHR& testSurface)
     {
         QueueFamilyIndices indices;
 

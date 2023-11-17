@@ -1,6 +1,6 @@
-#include "../include/DynamicBuffer.hpp"
+#include "../include/vk2s/DynamicBuffer.hpp"
 
-#include "../include/Device.hpp"
+#include "../include/vk2s/Device.hpp"
 
 namespace vk2s
 {

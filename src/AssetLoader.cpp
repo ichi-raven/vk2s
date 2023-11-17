@@ -5,7 +5,7 @@
  * \author ichi-raven
  * \date   October 2023
  *********************************************************************/
-#include "../include/AssetLoader.hpp"
+#include "../include/vk2s/AssetLoader.hpp"
 
 #include <iostream>
 #include <unordered_map>

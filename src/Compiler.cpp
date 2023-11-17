@@ -1,4 +1,4 @@
-#include "../include/Compiler.hpp"
+#include "../include/vk2s/Compiler.hpp"
 
 #include <glslang/SPIRV/GlslangToSpv.h>
 

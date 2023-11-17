@@ -1,7 +1,7 @@
 
-#include "../include/Window.hpp"
+#include "../include/vk2s/Window.hpp"
 
-#include "../include/Device.hpp"
+#include "../include/vk2s/Device.hpp"
 
 namespace vk2s
 {
@@ -134,7 +134,7 @@ namespace vk2s
                                               vk::CompositeAlphaFlagBitsKHR::eOpaque, presentMode,
                                               /* clipped = */ VK_TRUE, nullptr);
 
-        Device::QueueFamilyIndices indices = Device::QueueFamilyIndices::findQueueFamilies(physDev, mSurface);
+        QueueFamilyIndices indices = QueueFamilyIndices::findQueueFamilies(physDev, mSurface);
         if (indices.graphicsFamily != indices.presentFamily)
         {
             createInfo.setImageSharingMode(vk::SharingMode::eConcurrent);

@@ -1,21 +1,22 @@
-#include "../include/BindGroup.hpp"
+#include "../include/vk2s/BindGroup.hpp"
 
-#include "../include/Device.hpp"
+#include "../include/vk2s/Device.hpp"
 
 namespace vk2s
 {
     BindGroup::BindGroup(Device& device, BindLayout& layout)
         : mDevice(device)
+        , mAllocationInfo(layout.getDescriptorPoolAllocationInfo())
     {
         // get mAllocationInfo from BindLayout
 
-        const auto&& [descriptorSets, poolIndex] = mDevice.allocateVkDescriptorSets(layout.getVkDescriptorSetLayouts(), );
+        const auto&& [descriptorSets, poolIndex] = mDevice.allocateVkDescriptorSets(layout.getVkDescriptorSetLayouts(), mAllocationInfo);
 
         mDescriptorSets = descriptorSets;
         mPoolIndex      = poolIndex;
 
         // HACK:
-        mInfoCaches.reserve(16);
+        //mInfoCaches.reserve(16);
     }
 
     BindGroup::~BindGroup()
@@ -49,7 +50,7 @@ namespace vk2s
 
         for (const auto& image : images)
         {
-            const auto vkImageView = image->getVkImageView().get();
+            const vk::ImageView vkImageView = image->getVkImageView().get();
             if (sampler)
             {
                 infos.emplace_back(vk::DescriptorImageInfo(sampler->getVkSampler().get(), vkImageView, imageLayout));

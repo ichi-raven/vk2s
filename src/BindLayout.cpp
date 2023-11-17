@@ -1,6 +1,6 @@
-#include "../include/BindLayout.hpp"
+#include "../include/vk2s/BindLayout.hpp"
 
-#include "../include/Device.hpp"
+#include "../include/vk2s/Device.hpp"
 
 namespace vk2s
 {
@@ -12,11 +12,11 @@ namespace vk2s
 
         const auto& vkDevice = mDevice.getVkDevice();
 
-        auto table = std::get<1>(shaders.front()->getReflection());
+        Compiler::ShaderResourceMap table = std::get<1>(shaders.front()->getReflection());
 
         for (const auto& shader : shaders)
         {
-            auto t = std::get<1>(shaders.front()->getReflection());
+            Compiler::ShaderResourceMap t = std::get<1>(shaders.front()->getReflection());
             table.merge(t);
         }
 
@@ -30,33 +30,7 @@ namespace vk2s
             descLayoutci.bindingCount = static_cast<uint32_t>(bindings.size());
             descLayoutci.pBindings    = bindings.data();
 
-            for (const auto& b : bindings)
-            {
-                switch (b.descriptorType)
-                {
-                case vk::DescriptorType::eAccelerationStructureKHR:
-                    mInfo.accelerationStructureNum += 1;
-                    break;
-                case vk::DescriptorType::eCombinedImageSampler:
-                    mInfo.combinedImageSamplerNum += 1;
-                    break;
-                case vk::DescriptorType::eStorageBuffer:
-                    mInfo.storageBufferNum += 1;
-                    break;
-                case vk::DescriptorType::eStorageImage:
-                    mInfo.storageImageNum += 1;
-                    break;
-                case vk::DescriptorType::eUniformBuffer:
-                    mInfo.uniformBufferNum += 1;
-                    break;
-                case vk::DescriptorType::eUniformBufferDynamic:
-                    mInfo.uniformBufferDynamicNum += 1;
-                    break;
-                default:
-                    assert(!"invalid (or unsupported) descriptor type!");
-                    break;
-                }
-            }
+            initAllocationInfo(bindings);
 
             mDescriptorSetLayouts.emplace_back(vkDevice->createDescriptorSetLayout(descLayoutci));
         }
@@ -64,11 +38,14 @@ namespace vk2s
 
     BindLayout::BindLayout(Device& device, const vk::ArrayProxy<vk::DescriptorSetLayoutBinding>& bindings)
         : mDevice(device)
+        , mInfo(0)
     {
         vk::DescriptorSetLayoutCreateInfo descLayoutci;
 
         descLayoutci.bindingCount = static_cast<uint32_t>(bindings.size());
         descLayoutci.pBindings    = bindings.data();
+
+        initAllocationInfo(bindings);
 
         mDescriptorSetLayouts.emplace_back(mDevice.getVkDevice()->createDescriptorSetLayout(descLayoutci));
     }
@@ -81,12 +58,43 @@ namespace vk2s
         }
     }
 
+    inline void BindLayout::initAllocationInfo(const vk::ArrayProxy<vk::DescriptorSetLayoutBinding>& bindings)
+    {
+        for (const auto& b : bindings)
+        {
+            switch (b.descriptorType)
+            {
+            case vk::DescriptorType::eAccelerationStructureKHR:
+                mInfo.accelerationStructureNum += 1;
+                break;
+            case vk::DescriptorType::eCombinedImageSampler:
+                mInfo.combinedImageSamplerNum += 1;
+                break;
+            case vk::DescriptorType::eStorageBuffer:
+                mInfo.storageBufferNum += 1;
+                break;
+            case vk::DescriptorType::eStorageImage:
+                mInfo.storageImageNum += 1;
+                break;
+            case vk::DescriptorType::eUniformBuffer:
+                mInfo.uniformBufferNum += 1;
+                break;
+            case vk::DescriptorType::eUniformBufferDynamic:
+                mInfo.uniformBufferDynamicNum += 1;
+                break;
+            default:
+                assert(!"invalid (or unsupported) descriptor type!");
+                break;
+            }
+        }
+    }
+
     const std::vector<vk::DescriptorSetLayout>& BindLayout::getVkDescriptorSetLayouts()
     {
         return mDescriptorSetLayouts;
     }
 
-    const Device::DescriptorPoolAllocationInfo& BindLayout::getDescriptorPoolAllocationInfo()
+    const DescriptorPoolAllocationInfo& BindLayout::getDescriptorPoolAllocationInfo()
     {
         return mInfo;
     }

@@ -1,6 +1,6 @@
-#include "../include/Sampler.hpp"
+#include "../include/vk2s/Sampler.hpp"
 
-#include "../include/Device.hpp"
+#include "../include/vk2s/Device.hpp"
 
 namespace vk2s
 {

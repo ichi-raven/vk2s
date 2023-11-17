@@ -1,6 +1,6 @@
-#include "../include/Pipeline.hpp"
+#include "../include/vk2s/Pipeline.hpp"
 
-#include "../include/Device.hpp"
+#include "../include/vk2s/Device.hpp"
 
 namespace vk2s
 {

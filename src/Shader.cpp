@@ -1,6 +1,6 @@
-#include "../include/Shader.hpp"
+#include "../include/vk2s/Shader.hpp"
 
-#include "../include/Device.hpp"
+#include "../include/vk2s/Device.hpp"
 
 namespace vk2s
 {

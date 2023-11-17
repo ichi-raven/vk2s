@@ -1,6 +1,6 @@
 
 include_directories(
-  ${CMAKE_SOURCE_DIR}/include
+  ${CMAKE_SOURCE_DIR}/include/vk2s
   ${GLFW_DIR}/include
   ${STB_DIR}
   ${GLM_DIR}
@@ -22,8 +22,7 @@ set(IMGUI_SOURCE_FILES
     ${IMGUI_BACKENDS_DIR}/imgui_impl_glfw.cpp
 )
 
-
-# Create executable
+# Create library
 add_library(${LIB_NAME}
 Compiler.cpp
 AssetLoader.cpp

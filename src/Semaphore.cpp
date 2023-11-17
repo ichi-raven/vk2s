@@ -1,6 +1,6 @@
-#include "../include/Semaphore.hpp"
+#include "../include/vk2s/Semaphore.hpp"
 
-#include "../include/Device.hpp"
+#include "../include/vk2s/Device.hpp"
 
 namespace vk2s
 {

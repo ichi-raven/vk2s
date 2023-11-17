@@ -1,6 +1,6 @@
-#include "../include/RenderPass.hpp"
+#include "../include/vk2s/RenderPass.hpp"
 
-#include "../include/Device.hpp"
+#include "../include/vk2s/Device.hpp"
 
 #include <array>
 

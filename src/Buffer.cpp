@@ -1,6 +1,6 @@
-#include "../include/Buffer.hpp"
+#include "../include/vk2s/Buffer.hpp"
 
-#include "../include/Device.hpp"
+#include "../include/vk2s/Device.hpp"
 
 namespace vk2s
 {

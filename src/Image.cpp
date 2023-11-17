@@ -1,6 +1,6 @@
-#include "../include/Image.hpp"
+#include "../include/vk2s/Image.hpp"
 
-#include "../include/Device.hpp"
+#include "../include/vk2s/Device.hpp"
 
 namespace vk2s
 {

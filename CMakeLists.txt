@@ -6,7 +6,6 @@ list(PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 # Options
 set(LIB_NAME "vk2s")
 
-
 # C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED 20)
@@ -79,3 +78,6 @@ add_subdirectory(${ASSIMP_DIR})
 set(ASSIMP_LIB_NAME assimp-vc143-mt)
 
 add_subdirectory(src)
+
+# examples
+add_subdirectory(examples)

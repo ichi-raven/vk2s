@@ -1,6 +1,6 @@
-#include "../include/ShaderBindingTable.hpp"
+#include "../include/vk2s/ShaderBindingTable.hpp"
 
-#include "../include/Device.hpp"
+#include "../include/vk2s/Device.hpp"
 
 namespace vk2s
 {

@@ -1,6 +1,6 @@
-#include "../include/Command.hpp"
+#include "../include/vk2s/Command.hpp"
 
-#include "../include/Device.hpp"
+#include "../include/vk2s/Device.hpp"
 
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
