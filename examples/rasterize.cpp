@@ -2,7 +2,9 @@
 
 #include <vk2s/Device.hpp>
 
-void rasterize()
+#include "utility.hpp"
+
+void rasterize(const uint32_t windowWidth, const uint32_t windowHeight, const uint32_t frameCount)
 {
     std::cout << "hello rasterize!\n";
 }

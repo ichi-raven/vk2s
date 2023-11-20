@@ -4,20 +4,23 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-void pathtracing();
+void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const uint32_t frameCount);
 
-void rasterize();
+void rasterize(const uint32_t windowWidth, const uint32_t windowHeight, const uint32_t frameCount);
 
-void raytracing();
+void raytracing(const uint32_t windowWidth, const uint32_t windowHeight, const uint32_t frameCount);
 
 int main()
 {
+    constexpr uint32_t kWidth = 1200;
+    constexpr uint32_t kHeight = 1000;
+    constexpr uint32_t kFrameCount = 3;
 
-    pathtracing();
+    pathtracing(kWidth, kHeight, kFrameCount);
 
-    rasterize();
+    rasterize(kWidth, kHeight, kFrameCount);
 
-    raytracing();
+    raytracing(kWidth, kHeight, kFrameCount);
 
     return 0;
 }

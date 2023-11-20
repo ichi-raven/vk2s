@@ -41,11 +41,13 @@ namespace vk2s
         NONCOPYABLE(Command);
         NONMOVABLE(Command);
 
+        void reset();
+
         void begin(const bool singleTimeUse = false, const bool secondaryUse = false, const bool simultaneousUse = false);
 
         void end();
 
-        void beginRenderPass(RenderPass& renderpass, const uint32_t frameBufferIndex, const vk::Rect2D& area, const vk::ArrayProxyNoTemporaries<vk::ClearValue>& clearValues);
+        void beginRenderPass(RenderPass& renderpass, const uint32_t frameBufferIndex, const vk::Rect2D& area, const vk::ArrayProxyNoTemporaries<const vk::ClearValue>& clearValues);
 
         void endRenderPass();
 
@@ -88,7 +90,7 @@ namespace vk2s
 
         vk::UniqueCommandBuffer mCommandBuffer;
         vk::UniqueFence mFence;
-        std::optional<Handle<Pipeline>> mNowPipeline;
+        Handle<Pipeline> mNowPipeline;
     };
 }  // namespace vk2s
 

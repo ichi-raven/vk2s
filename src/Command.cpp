@@ -26,6 +26,11 @@ namespace vk2s
         mCommandBuffer->reset();
     }
 
+    void Command::reset()
+    {
+        mCommandBuffer->reset();
+    }
+
     void Command::begin(const bool singleTimeUse, const bool secondaryUse, const bool simultaneousUse)
     {
         vk::CommandBufferUsageFlags usage{};
@@ -45,6 +50,8 @@ namespace vk2s
         const auto res = mDevice.getVkDevice()->waitForFences(mFence.get(), true, UINT64_MAX);
         assert(res == vk::Result::eSuccess || !"failed to wait command fence!");
 
+        mDevice.getVkDevice()->resetFences(mFence.get());
+
         mCommandBuffer->begin(vk::CommandBufferBeginInfo(usage));
     }
 
@@ -53,7 +60,7 @@ namespace vk2s
         mCommandBuffer->end();
     }
 
-    void Command::beginRenderPass(RenderPass& renderpass, const uint32_t frameBufferIndex, const vk::Rect2D& area, const vk::ArrayProxyNoTemporaries<vk::ClearValue>& clearValues)
+    void Command::beginRenderPass(RenderPass& renderpass, const uint32_t frameBufferIndex, const vk::Rect2D& area, const vk::ArrayProxyNoTemporaries<const vk::ClearValue>& clearValues)
     {
         vk::RenderPassBeginInfo bi(renderpass.getVkRenderPass().get(), renderpass.getVkFrameBuffers()[frameBufferIndex].get(), area, clearValues);
         mCommandBuffer->beginRenderPass(bi, vk::SubpassContents::eInline);
@@ -73,7 +80,7 @@ namespace vk2s
     void Command::setBindGroup(BindGroup& bindGroup, vk::ArrayProxy<const uint32_t> const& dynamicOffsets)
     {
         assert(mNowPipeline || !"pipeline isn't set yet!");
-        mCommandBuffer->bindDescriptorSets((*mNowPipeline)->getVkPipelineBindPoint(), (*mNowPipeline)->getVkPipelineLayout().get(), 0, bindGroup.getVkDescriptorSets(), dynamicOffsets);
+        mCommandBuffer->bindDescriptorSets(mNowPipeline->getVkPipelineBindPoint(), mNowPipeline->getVkPipelineLayout().get(), 0, bindGroup.getVkDescriptorSets(), dynamicOffsets);
     }
 
     void Command::bindVertexBuffer(Buffer& vertexBuffer)
@@ -160,7 +167,7 @@ namespace vk2s
         if (wait)
         {
             // TODO: change wait stage
-            const vk::PipelineStageFlags waitStage(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+            constexpr vk::PipelineStageFlags waitStage(vk::PipelineStageFlagBits::eColorAttachmentOutput);
 
             submitInfo.setWaitSemaphores(wait->getVkSemaphore().get());
             submitInfo.setWaitDstStageMask(waitStage);
@@ -171,7 +178,7 @@ namespace vk2s
             submitInfo.setSignalSemaphores(signal->getVkSemaphore().get());
         }
 
-        mDevice.getVkDevice()->resetFences(mFence.get());
+        //mDevice.getVkDevice()->resetFences(mFence.get());
         mDevice.getVkGraphicsQueue().submit(submitInfo, mFence.get());
     }
 

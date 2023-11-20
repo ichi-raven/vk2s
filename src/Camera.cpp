@@ -102,14 +102,15 @@ namespace vk2s
     {
         const auto diff = glm::normalize(lookAt - mPos);
 
-        mTheta = acos(diff.z / sqrt(diff.x * diff.x + diff.y * diff.y + diff.z * diff.z));
+        mPhi = glm::degrees(acos(diff.z / sqrt(diff.x * diff.x + diff.y * diff.y + diff.z * diff.z)));
+
         if (diff.x == 0. && diff.y == 0.)
         {
-            mPhi = 0.;
+            mTheta = 0.;
         }
         else
         {
-            mPhi = sgn(diff.y) * acos(diff.x / sqrt(diff.x * diff.x + diff.y * diff.y));
+            mTheta = glm::degrees(sgn(diff.y) * acos(diff.x / sqrt(diff.x * diff.x + diff.y * diff.y)));
         }
 
         updateViewMat();
