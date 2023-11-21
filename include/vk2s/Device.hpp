@@ -18,6 +18,7 @@
 #include "Window.hpp"
 #include "Buffer.hpp"
 #include "DynamicBuffer.hpp"
+#include "Fence.hpp"
 #include "Image.hpp"
 #include "Sampler.hpp"
 #include "RenderPass.hpp"
@@ -196,7 +197,7 @@ namespace vk2s
         ImGuiContext* mpImGuiContext;
 
     private:  // pools
-        std::tuple<Pool<Window>, Pool<Buffer>, Pool<Image>, Pool<Sampler>, Pool<RenderPass>, Pool<Shader>, Pool<BindLayout>, Pool<BindGroup>, Pool<Pipeline>, Pool<Semaphore>, Pool<Command>, Pool<AccelerationStructure>,
+        std::tuple<Pool<Window>, Pool<Buffer>, Pool<Image>, Pool<Sampler>, Pool<RenderPass>, Pool<Shader>, Pool<BindLayout>, Pool<BindGroup>, Pool<Pipeline>, Pool<Semaphore>, Pool<Fence>, Pool<Command>, Pool<AccelerationStructure>,
                    Pool<ShaderBindingTable>, Pool<DynamicBuffer>>
             mPools;
     };

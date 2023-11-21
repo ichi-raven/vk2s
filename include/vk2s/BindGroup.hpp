@@ -19,7 +19,7 @@
 #include "Compiler.hpp"
 
 #include <variant>
-#include <map>
+#include <unordered_map>
 
 namespace vk2s
 {
@@ -52,13 +52,29 @@ namespace vk2s
     private:  // types
         using DescriptorInfo = std::variant<vk::DescriptorBufferInfo, std::vector<vk::DescriptorImageInfo>, vk::WriteDescriptorSetAccelerationStructureKHR>;
 
+        struct HashPair
+        {
+            template <class T1, class T2>
+            size_t operator()(const std::pair<T1, T2>& p) const
+            {
+                const auto hash1 = std::hash<T1>{}(p.first);
+
+                const auto hash2 = std::hash<T2>{}(p.second);
+
+                size_t seed = 0;
+                seed ^= hash1 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+                seed ^= hash2 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+                return seed;
+            }
+        };
+
     private:  // member variables
         Device& mDevice;
 
         std::vector<vk::DescriptorSet> mDescriptorSets;
         size_t mPoolIndex;
         DescriptorPoolAllocationInfo mAllocationInfo;
-        std::map<std::pair<uint8_t, uint8_t>, DescriptorInfo> mInfoCaches;
+        std::unordered_map<std::pair<uint8_t, uint8_t>, DescriptorInfo, HashPair> mInfoCaches;
         std::vector<vk::WriteDescriptorSet> mWriteQueue;
     };
 }  // namespace vk2s

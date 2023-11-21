@@ -56,17 +56,6 @@ struct MeshInstance
     Handle<vk2s::AccelerationStructure> blas;
 };
 
-struct FilterUB  // std430
-{
-    float sigma;
-    float h;
-    uint32_t filterMode;
-    int32_t kernelSize;
-    int32_t windowSize;
-    float threshold;
-    float padding[2];
-};
-
 inline void load(std::string_view path, vk2s::Device& device, vk2s::AssetLoader& loader, std::vector<MeshInstance>& meshInstances, Handle<vk2s::Buffer>& materialUB, Handle<vk2s::Buffer>& instanceMapBuffer,
           std::vector<Handle<vk2s::Image>>& materialTextures)
 {
@@ -182,7 +171,7 @@ inline void load(std::string_view path, vk2s::Device& device, vk2s::AssetLoader&
         if (hostMat.emissive && glm::length(*hostMat.emissive) > threshold)
         {
             mat.materialType = static_cast<uint32_t>(MaterialType::eEmitter);
-            mat.albedo       = *hostMat.emissive;
+            mat.albedo       = glm::vec4(1.0);
         }
     }
 

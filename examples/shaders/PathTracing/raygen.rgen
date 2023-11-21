@@ -26,6 +26,8 @@ layout(binding=2, set=0) uniform SceneParameters
     float padding;
 } sceneParams;
 
+#define M_PI  (3.1415926535897932384626433832795)
+
 float stepAndOutputRNGFloat(inout uint rngState)
 {
   // Condensed version of pcg_output_rxs_m_xs_32_32, with simple conversion to floating-point [0,1].
@@ -37,7 +39,7 @@ float stepAndOutputRNGFloat(inout uint rngState)
 
 vec3 randomUnitVector(inout uint rngState) 
 {
-  float a = stepAndOutputRNGFloat(rngState) * 2. * 3.1415926535;
+  float a = stepAndOutputRNGFloat(rngState) * 2. * M_PI;
   float z = stepAndOutputRNGFloat(rngState) * 2. - 1.;
   float r = sqrt(1 - z * z);
   return vec3(r * cos(a), r * sin(a), z);
@@ -62,17 +64,21 @@ vec3 getRayDirection(inout uint randState)
   return normalize(direction);
 }
 
-vec3 lambertScatter(vec3 normal, inout uint randState)
+vec3 lambertScatter(vec3 normal, inout uint randState, out float pdf)
 {
-  return normal + randomUnitVector(randState);
+  vec3 dir = normalize(normal + randomUnitVector(randState));
+  pdf = dot(normal, dir) / M_PI;
+  return dir;
 }
 
-vec3 conductorScatter(vec3 inDirection, vec3 normal, float alpha, inout uint randState)
+vec3 conductorScatter(vec3 inDirection, vec3 normal, float alpha, inout uint randState, inout float pdf)
 {
+  // TODO:
+  pdf = 1.0;
   return reflect(inDirection, normalize(normal)) + alpha * randomUnitVector(randState);
 }
 
-vec3 dielectricScatter(vec3 inDirection, vec3 normal, float IOR, inout uint randState)
+vec3 dielectricScatter(vec3 inDirection, vec3 normal, float IOR, inout uint randState, inout float pdf)
 {
   float nr = dot(normal, inDirection);
   float eta = 1.0 / IOR;
@@ -92,6 +98,8 @@ vec3 dielectricScatter(vec3 inDirection, vec3 normal, float IOR, inout uint rand
     return reflect(inDirection, normalize(normal));
   }
 
+  // TODO:
+  pdf = 1.0;
   return refract(inDirection, normal, eta);
 
 }
@@ -111,19 +119,21 @@ void main()
   const float tmax = 10000.0;
   const float offset = 0.001;
   const uint spp = sceneParams.spp;
-  const uint maxRecursive = 8;
+  const uint maxRecursive = 4;
   
   vec3 colorSum = vec3(0.);
   // init randState
   uint randState = uint(gl_LaunchIDEXT.x * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.y);
   if (sceneParams.seedMode != 0)
   {
-    randState *= uint(sceneParams.time * 10000);
+    randState *= uint(sceneParams.time * 1000);
   }
 
   for (int i = 0; i < spp; ++i)
   {
     vec3 color = vec3(1.0);
+    float pdf = 1.0;
+    float scatterPDF = 1.0;
     
     // primary ray
     vec3 inDirection = getRayDirection(randState);
@@ -135,15 +145,17 @@ void main()
       vec3 direction = vec3(1.);
       if (hitInfo.matType == 0)
       {
-        direction = lambertScatter(hitInfo.worldNormal, randState);
+        direction = lambertScatter(hitInfo.worldNormal, randState, pdf);
+        float cosine = dot(hitInfo.worldNormal, direction);
+        scatterPDF = cosine < 0.0 ? 0.0 : cosine / M_PI;
       }
       else if (hitInfo.matType == 1)
       {
-        direction = conductorScatter(inDirection, hitInfo.worldNormal, hitInfo.alpha, randState);
+        direction = conductorScatter(inDirection, hitInfo.worldNormal, hitInfo.alpha, randState, pdf);
       }
       else if (hitInfo.matType == 2)
       {
-        direction = dielectricScatter(inDirection, hitInfo.worldNormal, hitInfo.IOR, randState);
+        direction = dielectricScatter(inDirection, hitInfo.worldNormal, hitInfo.IOR, randState, pdf);
       }
 
       traceRayEXT(topLevelAS, flags, 0xFF, 0, 0, 0, hitInfo.worldPosition, tmin + offset, direction, tmax, 0);

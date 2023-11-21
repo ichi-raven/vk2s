@@ -118,7 +118,7 @@ namespace vk2s
             }
 
             vk::FramebufferCreateInfo framebufferInfo({}, mRenderPass.get(), attachments, extent.width, extent.height, 1);
-            mFrameBuffers.push_back(vkDevice->createFramebufferUnique(framebufferInfo));
+            mFrameBuffers.emplace_back(vkDevice->createFramebufferUnique(framebufferInfo));
         }
     }
 

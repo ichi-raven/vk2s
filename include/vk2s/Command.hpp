@@ -21,7 +21,7 @@
 namespace vk2s
 {
     class Device;
-
+    class Fence;
     class RenderPass;
     class Pipeline;
     class Buffer;
@@ -78,7 +78,7 @@ namespace vk2s
 
         void drawImGui();
 
-        void execute(Handle<Semaphore> waitSem = Handle<Semaphore>(), Handle<Semaphore> signalSem = Handle<Semaphore>());
+        void execute(Handle<Fence> signalFence = Handle<Fence>(), Handle<Semaphore> waitSem = Handle<Semaphore>(), Handle<Semaphore> signalSem = Handle<Semaphore>());
 
         const vk::UniqueCommandBuffer& getVkCommandBuffer();
 
@@ -89,7 +89,6 @@ namespace vk2s
         Device& mDevice;
 
         vk::UniqueCommandBuffer mCommandBuffer;
-        vk::UniqueFence mFence;
         Handle<Pipeline> mNowPipeline;
     };
 }  // namespace vk2s

@@ -16,7 +16,7 @@ namespace vk2s
         mPoolIndex      = poolIndex;
 
         // HACK:
-        //mInfoCaches.reserve(16);
+        mInfoCaches.reserve(mAllocationInfo.sum());
     }
 
     BindGroup::~BindGroup()
@@ -81,7 +81,7 @@ namespace vk2s
             vkDevice->updateDescriptorSets(mWriteQueue, {});
 
             mWriteQueue.clear();
-            mInfoCaches.clear();
+            //mInfoCaches.clear();
         }
 
         return mDescriptorSets;

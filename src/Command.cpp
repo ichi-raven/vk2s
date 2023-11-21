@@ -14,15 +14,11 @@ namespace vk2s
 
         mCommandBuffer = std::move(mDevice.getVkDevice()->allocateCommandBuffersUnique(allocInfo).front());
 
-        mFence = mDevice.getVkDevice()->createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
     }
 
     Command::~Command()
     {
-        const auto res = mDevice.getVkDevice()->waitForFences(mFence.get(), true, UINT64_MAX);
-
-        assert(res == vk::Result::eSuccess || !"failed to wait command fence!");
-
+        mDevice.getVkDevice()->waitIdle();
         mCommandBuffer->reset();
     }
 
@@ -46,11 +42,6 @@ namespace vk2s
         {
             usage |= vk::CommandBufferUsageFlagBits::eSimultaneousUse;
         }
-
-        const auto res = mDevice.getVkDevice()->waitForFences(mFence.get(), true, UINT64_MAX);
-        assert(res == vk::Result::eSuccess || !"failed to wait command fence!");
-
-        mDevice.getVkDevice()->resetFences(mFence.get());
 
         mCommandBuffer->begin(vk::CommandBufferBeginInfo(usage));
     }
@@ -160,7 +151,7 @@ namespace vk2s
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), mCommandBuffer.get());
     }
 
-    void Command::execute(Handle<Semaphore> wait, Handle<Semaphore> signal)
+    void Command::execute(Handle<Fence> fence, Handle<Semaphore> wait, Handle<Semaphore> signal)
     {
         vk::SubmitInfo submitInfo(nullptr, nullptr, mCommandBuffer.get(), nullptr);
 
@@ -178,8 +169,14 @@ namespace vk2s
             submitInfo.setSignalSemaphores(signal->getVkSemaphore().get());
         }
 
-        //mDevice.getVkDevice()->resetFences(mFence.get());
-        mDevice.getVkGraphicsQueue().submit(submitInfo, mFence.get());
+        if (fence)
+        {
+            mDevice.getVkGraphicsQueue().submit(submitInfo, fence->getVkFence().get());
+        }
+        else
+        {
+            mDevice.getVkGraphicsQueue().submit(submitInfo);
+        }
     }
 
     const vk::UniqueCommandBuffer& Command::getVkCommandBuffer()

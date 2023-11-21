@@ -9,6 +9,9 @@ layout(location = 0) rayPayloadInEXT HitInfo
   vec3 worldPosition;
   vec3 worldNormal;
   bool endTrace;
+  int matType;
+  float alpha;
+  float IOR;
 } hitInfo;
 
 layout(binding=6, set=0) uniform sampler2D envmap;

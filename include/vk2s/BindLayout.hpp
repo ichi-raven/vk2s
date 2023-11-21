@@ -40,6 +40,11 @@ namespace vk2s
         {
         }
 
+        uint32_t sum()
+        {
+            return accelerationStructureNum + combinedImageSamplerNum + storageBufferNum + storageImageNum + uniformBufferNum + uniformBufferDynamicNum;
+        }
+
         uint32_t accelerationStructureNum = 0;
         uint32_t combinedImageSamplerNum  = 0;
         uint32_t storageBufferNum         = 0;
