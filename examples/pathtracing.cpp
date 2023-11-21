@@ -2,6 +2,18 @@
 
 #include "utility.hpp"
 
+struct SceneUB  // std430
+{
+    glm::mat4 view;
+    glm::mat4 proj;
+    glm::mat4 viewInv;
+    glm::mat4 projInv;
+    float elapsedTime;
+    uint32_t spp;
+    uint32_t seedMode;
+    float padding;
+};
+
 void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const uint32_t frameCount)
 {
     constexpr int kMaxSpp = 4096;
@@ -18,18 +30,41 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
 
         std::vector<MeshInstance> meshInstances;
         Handle<vk2s::Buffer> materialBuffer;
-        Handle<vk2s::Buffer> instanceMapBuffer;
         std::vector<Handle<vk2s::Image>> materialTextures;
         auto sampler = device.create<vk2s::Sampler>(vk::SamplerCreateInfo());
         vk2s::AssetLoader loader;
 
-        load("../../examples/resources/model/CornellBox/CornellBox-Sphere.obj", device, loader, meshInstances, materialBuffer, instanceMapBuffer, materialTextures);
+        load("../../examples/resources/model/CornellBox/CornellBox-Sphere.obj", device, loader, meshInstances, materialBuffer, materialTextures);
 
         // create scene UB
         Handle<vk2s::DynamicBuffer> sceneBuffer;
         {
             const auto size = sizeof(SceneUB) * frameCount;
             sceneBuffer     = device.create<vk2s::DynamicBuffer>(vk::BufferCreateInfo({}, size, vk::BufferUsageFlagBits::eUniformBuffer), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, frameCount);
+        }
+
+        // create instance mapping UB
+        Handle<vk2s::Buffer> instanceMapBuffer;
+        {
+            // instance mapping
+            std::vector<InstanceMappingUB> meshMappings;
+            meshMappings.reserve(meshInstances.size());
+
+            for (int i = 0; i < meshInstances.size(); ++i)
+            {
+                const auto& mesh      = meshInstances[i];
+                auto& mapping         = meshMappings.emplace_back();
+                mapping.VBAddress     = mesh.vertexBuffer->getVkDeviceAddress();
+                mapping.IBAddress     = mesh.indexBuffer->getVkDeviceAddress();
+                mapping.materialIndex = i;  //simple
+            }
+
+            const auto ubSize = sizeof(InstanceMappingUB) * meshInstances.size();
+            vk::BufferCreateInfo ci({}, ubSize, vk::BufferUsageFlagBits::eStorageBuffer);
+            vk::MemoryPropertyFlags fb = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+
+            instanceMapBuffer = device.create<vk2s::Buffer>(ci, fb);
+            instanceMapBuffer->write(meshMappings.data(), ubSize);
         }
 
         //create result image
@@ -191,7 +226,7 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
             fences[i]              = device.create<vk2s::Fence>();
         }
 
-        const auto clearValue = vk::ClearValue(std::array{ 0.0f, 0.0f, 0.0f, 1.0f });
+        const auto clearValue = vk::ClearValue(std::array{ 0.2f, 0.2f, 0.2f, 1.0f });
         double lastTime       = 0;
         vk2s::Camera camera(60., 1. * windowWidth / windowHeight);
         camera.setPos(glm::vec3(0.0, 0.8, 3.0));

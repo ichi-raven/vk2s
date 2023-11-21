@@ -9,18 +9,6 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
 
-struct SceneUB  // std430
-{
-    glm::mat4 view;
-    glm::mat4 proj;
-    glm::mat4 viewInv;
-    glm::mat4 projInv;
-    float elapsedTime;
-    uint32_t spp;
-    uint32_t seedMode;
-    float padding;
-};
-
 enum class MaterialType : int32_t
 {
     eLambert    = 0,
@@ -56,7 +44,7 @@ struct MeshInstance
     Handle<vk2s::AccelerationStructure> blas;
 };
 
-inline void load(std::string_view path, vk2s::Device& device, vk2s::AssetLoader& loader, std::vector<MeshInstance>& meshInstances, Handle<vk2s::Buffer>& materialUB, Handle<vk2s::Buffer>& instanceMapBuffer,
+inline void load(std::string_view path, vk2s::Device& device, vk2s::AssetLoader& loader, std::vector<MeshInstance>& meshInstances, Handle<vk2s::Buffer>& materialUB,
           std::vector<Handle<vk2s::Image>>& materialTextures)
 {
     std::vector<vk2s::AssetLoader::Mesh> hostMeshes;
@@ -93,30 +81,7 @@ inline void load(std::string_view path, vk2s::Device& device, vk2s::AssetLoader&
         }
     }
 
-    // instance mapping
-    std::vector<InstanceMappingUB> meshMappings;
-    meshMappings.reserve(meshInstances.size());
-
-    for (int i = 0; i < meshInstances.size(); ++i)
-    {
-        const auto& mesh      = meshInstances[i];
-        auto& mapping         = meshMappings.emplace_back();
-        mapping.VBAddress     = mesh.vertexBuffer->getVkDeviceAddress();
-        mapping.IBAddress     = mesh.indexBuffer->getVkDeviceAddress();
-        mapping.materialIndex = i;  //simple
-    }
-
-    {
-        const auto ubSize = sizeof(InstanceMappingUB) * meshInstances.size();
-        vk::BufferCreateInfo ci({}, ubSize, vk::BufferUsageFlagBits::eStorageBuffer);
-        vk::MemoryPropertyFlags fb = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
-
-        instanceMapBuffer = device.create<vk2s::Buffer>(ci, fb);
-        instanceMapBuffer->write(meshMappings.data(), ubSize);
-    }
-
     // materials
-
     constexpr double threshold = 1.;
     std::vector<MaterialUB> materialData;
     materialData.reserve(hostMaterials.size());
