@@ -100,17 +100,16 @@ namespace vk2s
             const auto shaderSource = readFile(path);
             const auto kind         = getShaderStage(path);
 
-            const char* const shaderName = "compiling_shader";
-
             shaderc::Compiler compiler;
             shaderc::CompileOptions options;
             options.SetTargetSpirv(shaderc_spirv_version_1_6);
             options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
             const std::string directory = std::string(path).substr(0, path.find_last_of("/\\"));
+            const std::string fileName  = std::string(path).substr(path.find_last_of("/\\") + 1, path.size());
             options.SetIncluder(std::make_unique<ShaderIncluder>(directory));
 
             // Preprocessing
-            shaderc::PreprocessedSourceCompilationResult result = compiler.PreprocessGlsl(shaderSource, kind, shaderName, options);
+            shaderc::PreprocessedSourceCompilationResult result = compiler.PreprocessGlsl(shaderSource, kind, fileName.c_str(), options);
 
             if (result.GetCompilationStatus() != shaderc_compilation_status_success)
             {
@@ -128,7 +127,7 @@ namespace vk2s
             }
 
             // disassemble
-            //result = compiler.CompileGlslToSpvAssembly(preprocessed, kind, shaderName, options);
+            //result = compiler.CompileGlslToSpvAssembly(preprocessed, kind, fileName.c_str(), options);
 
             //if (result.GetCompilationStatus() != shaderc_compilation_status_success)
             //{
@@ -138,7 +137,7 @@ namespace vk2s
             //std::string assembly = { result.cbegin(), result.cend() };
             //std::cout << "SPIR-V assembly:" << std::endl << assembly << std::endl;
 
-            shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(preprocessed, kind, shaderName, options);
+            shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(preprocessed, kind, fileName.c_str(), options);
 
             if (module.GetCompilationStatus() != shaderc_compilation_status_success)
             {

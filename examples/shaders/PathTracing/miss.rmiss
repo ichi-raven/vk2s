@@ -1,28 +1,14 @@
 #version 460
 #extension GL_EXT_ray_tracing : enable
-//#extension GL_EXT_debug_printf : enable
 
+#include "common.glsl"
 
-layout(location = 0) rayPayloadInEXT HitInfo
-{
-  vec3 color;
-  vec3 worldPosition;
-  vec3 worldNormal;
-  bool endTrace;
-  int matType;
-  float alpha;
-  float IOR;
-} hitInfo;
-
-layout(binding=6, set=0) uniform sampler2D envmap;
+layout(location = 0) rayPayloadInEXT HitInfo hitInfo;
 
 float sgn(float x)
 {
   return x >= 0 ? 1.f : -1.f;
 }
-
-#define M_PI  (3.1415926535897932384626433832795)
-#define M_PI2 (6.28318530718)
 
 void main()
 {

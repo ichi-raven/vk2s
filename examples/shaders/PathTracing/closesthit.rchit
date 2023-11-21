@@ -7,60 +7,9 @@
 
 hitAttributeEXT vec3 attribs;
 
-layout(location = 0) rayPayloadInEXT HitInfo
-{
-  vec3 color;
-  vec3 worldPosition;
-  vec3 worldNormal;
-  bool endTrace;
-  int matType;
-  float alpha;
-  float IOR;
-} hitInfo;
+#include "common.glsl"
 
-layout(binding=0, set=0) uniform accelerationStructureEXT topLevelAS;
-layout(binding=2, set=0) uniform SceneParameters 
-{
-    mat4 mtxView;
-    mat4 mtxProj;
-    mat4 mtxViewInv;
-    mat4 mtxProjInv;
-    float time;
-    uint spp;
-    vec2 padding_sceneParams;
-} sceneParams;
-
-struct InstanceMapping
-{
-  uint64_t vertexBuffer;
-  uint64_t indexBuffer;
-  int32_t materialIndex;
-  uint32_t padding_instanceMapping[3];
-};
-
-struct Material
-{
-  vec4 albedo;
-  int32_t texIndex;
-  int32_t matType;
-  float alpha;
-  float IOR;
-};
-
-layout(binding=3, set=0) readonly buffer InstanceMappings { InstanceMapping instanceMappings[]; };
-
-layout(binding=4, set=0) readonly buffer Materials { Material materials[]; };
-
-layout(binding=5, set=0) uniform sampler2D texSamplers[];
-
-struct Vertex 
-{
-  vec3 position;
-  vec3 normal;
-  vec2 texCoord;
-  vec4 joint;
-  vec4 weight;
-};
+layout(location = 0) rayPayloadInEXT HitInfo hitInfo;
 
 layout(buffer_reference, buffer_reference_align = 4, scalar) readonly buffer VertexBuffer 
 {
@@ -94,7 +43,7 @@ Vertex FetchVertexInterleaved(
 
   return v;
 }
-                
+
 void main() 
 {
   const vec3 barys = vec3(1.0 - attribs.x - attribs.y, attribs.x, attribs.y);

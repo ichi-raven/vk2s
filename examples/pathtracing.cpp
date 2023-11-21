@@ -115,9 +115,9 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
         auto tlas = device.create<vk2s::AccelerationStructure>(asInstances);
 
         // load shaders
-        const auto raygenShader = device.create<vk2s::Shader>("../../examples/shaders/PathTracing/raygen.rgen", "main");
-        const auto missShader   = device.create<vk2s::Shader>("../../examples/shaders/PathTracing/miss.rmiss", "main");
-        const auto chitShader   = device.create<vk2s::Shader>("../../examples/shaders/PathTracing/closesthit.rchit", "main");
+        const auto raygenShader = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/raygen.rgen", "main");
+        const auto missShader   = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/miss.rmiss", "main");
+        const auto chitShader   = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/closesthit.rchit", "main");
 
         // create bind layout
         std::array bindings = {
