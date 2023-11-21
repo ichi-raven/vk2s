@@ -29,7 +29,7 @@ elseif (MSVC)
 endif()
 
 # Vulkan
-find_package(Vulkan REQUIRED glslang SPIRV-Tools)
+find_package(Vulkan REQUIRED SPIRV-Tools shaderc_combined)
 
 # Output directories
 if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)

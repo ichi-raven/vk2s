@@ -54,8 +54,8 @@ target_link_directories(${LIB_NAME} PRIVATE ${CMAKE_BINARY_DIR}/lib ${VULKAN_LIB
 target_link_libraries(${LIB_NAME} 
   PRIVATE
   Vulkan::Vulkan
-  Vulkan::glslang
   Vulkan::SPIRV-Tools
+  Vulkan::shaderc_combined
   # HACK : CMake's FindVulkan can't find SPIRV-Tools-opt
   optimized SPIRV-Tools-opt debug SPIRV-Tools-optd
   optimized ${GLFW_LIB_NAME} debug ${GLFW_LIB_NAME}${CMAKE_DEBUG_POSTFIX}

@@ -1,6 +1,5 @@
 #include "../include/vk2s/Compiler.hpp"
 
-#include <glslang/SPIRV/GlslangToSpv.h>
 
 #include <spirv_reflect.h>
 
@@ -14,115 +13,53 @@ namespace vk2s
 {
     namespace Compiler
     {
-        TBuiltInResource initResources()
+
+        class ShaderIncluder : public shaderc::CompileOptions::IncluderInterface
         {
-            TBuiltInResource Resources{};
+        public:
 
-            Resources.maxLights                                 = 32;
-            Resources.maxClipPlanes                             = 6;
-            Resources.maxTextureUnits                           = 32;
-            Resources.maxTextureCoords                          = 32;
-            Resources.maxVertexAttribs                          = 64;
-            Resources.maxVertexUniformComponents                = 4096;
-            Resources.maxVaryingFloats                          = 64;
-            Resources.maxVertexTextureImageUnits                = 32;
-            Resources.maxCombinedTextureImageUnits              = 80;
-            Resources.maxTextureImageUnits                      = 32;
-            Resources.maxFragmentUniformComponents              = 4096;
-            Resources.maxDrawBuffers                            = 32;
-            Resources.maxVertexUniformVectors                   = 128;
-            Resources.maxVaryingVectors                         = 8;
-            Resources.maxFragmentUniformVectors                 = 16;
-            Resources.maxVertexOutputVectors                    = 16;
-            Resources.maxFragmentInputVectors                   = 15;
-            Resources.minProgramTexelOffset                     = -8;
-            Resources.maxProgramTexelOffset                     = 7;
-            Resources.maxClipDistances                          = 8;
-            Resources.maxComputeWorkGroupCountX                 = 65535;
-            Resources.maxComputeWorkGroupCountY                 = 65535;
-            Resources.maxComputeWorkGroupCountZ                 = 65535;
-            Resources.maxComputeWorkGroupSizeX                  = 1024;
-            Resources.maxComputeWorkGroupSizeY                  = 1024;
-            Resources.maxComputeWorkGroupSizeZ                  = 64;
-            Resources.maxComputeUniformComponents               = 1024;
-            Resources.maxComputeTextureImageUnits               = 16;
-            Resources.maxComputeImageUniforms                   = 8;
-            Resources.maxComputeAtomicCounters                  = 8;
-            Resources.maxComputeAtomicCounterBuffers            = 1;
-            Resources.maxVaryingComponents                      = 60;
-            Resources.maxVertexOutputComponents                 = 64;
-            Resources.maxGeometryInputComponents                = 64;
-            Resources.maxGeometryOutputComponents               = 128;
-            Resources.maxFragmentInputComponents                = 128;
-            Resources.maxImageUnits                             = 8;
-            Resources.maxCombinedImageUnitsAndFragmentOutputs   = 8;
-            Resources.maxCombinedShaderOutputResources          = 8;
-            Resources.maxImageSamples                           = 0;
-            Resources.maxVertexImageUniforms                    = 0;
-            Resources.maxTessControlImageUniforms               = 0;
-            Resources.maxTessEvaluationImageUniforms            = 0;
-            Resources.maxGeometryImageUniforms                  = 0;
-            Resources.maxFragmentImageUniforms                  = 8;
-            Resources.maxCombinedImageUniforms                  = 8;
-            Resources.maxGeometryTextureImageUnits              = 16;
-            Resources.maxGeometryOutputVertices                 = 256;
-            Resources.maxGeometryTotalOutputComponents          = 1024;
-            Resources.maxGeometryUniformComponents              = 1024;
-            Resources.maxGeometryVaryingComponents              = 64;
-            Resources.maxTessControlInputComponents             = 128;
-            Resources.maxTessControlOutputComponents            = 128;
-            Resources.maxTessControlTextureImageUnits           = 16;
-            Resources.maxTessControlUniformComponents           = 1024;
-            Resources.maxTessControlTotalOutputComponents       = 4096;
-            Resources.maxTessEvaluationInputComponents          = 128;
-            Resources.maxTessEvaluationOutputComponents         = 128;
-            Resources.maxTessEvaluationTextureImageUnits        = 16;
-            Resources.maxTessEvaluationUniformComponents        = 1024;
-            Resources.maxTessPatchComponents                    = 120;
-            Resources.maxPatchVertices                          = 32;
-            Resources.maxTessGenLevel                           = 64;
-            Resources.maxViewports                              = 16;
-            Resources.maxVertexAtomicCounters                   = 0;
-            Resources.maxTessControlAtomicCounters              = 0;
-            Resources.maxTessEvaluationAtomicCounters           = 0;
-            Resources.maxGeometryAtomicCounters                 = 0;
-            Resources.maxFragmentAtomicCounters                 = 8;
-            Resources.maxCombinedAtomicCounters                 = 8;
-            Resources.maxAtomicCounterBindings                  = 1;
-            Resources.maxVertexAtomicCounterBuffers             = 0;
-            Resources.maxTessControlAtomicCounterBuffers        = 0;
-            Resources.maxTessEvaluationAtomicCounterBuffers     = 0;
-            Resources.maxGeometryAtomicCounterBuffers           = 0;
-            Resources.maxFragmentAtomicCounterBuffers           = 1;
-            Resources.maxCombinedAtomicCounterBuffers           = 1;
-            Resources.maxAtomicCounterBufferSize                = 16384;
-            Resources.maxTransformFeedbackBuffers               = 4;
-            Resources.maxTransformFeedbackInterleavedComponents = 64;
-            Resources.maxCullDistances                          = 8;
-            Resources.maxCombinedClipAndCullDistances           = 8;
-            Resources.maxSamples                                = 4;
-            Resources.maxMeshOutputVerticesNV                   = 256;
-            Resources.maxMeshOutputPrimitivesNV                 = 512;
-            Resources.maxMeshWorkGroupSizeX_NV                  = 32;
-            Resources.maxMeshWorkGroupSizeY_NV                  = 1;
-            Resources.maxMeshWorkGroupSizeZ_NV                  = 1;
-            Resources.maxTaskWorkGroupSizeX_NV                  = 32;
-            Resources.maxTaskWorkGroupSizeY_NV                  = 1;
-            Resources.maxTaskWorkGroupSizeZ_NV                  = 1;
-            Resources.maxMeshViewCountNV                        = 4;
+            ShaderIncluder(std::string_view directory)
+                : mDirectory(directory)
+                , shaderc::CompileOptions::IncluderInterface()
+            {
 
-            Resources.limits.nonInductiveForLoops                 = 1;
-            Resources.limits.whileLoops                           = 1;
-            Resources.limits.doWhileLoops                         = 1;
-            Resources.limits.generalUniformIndexing               = 1;
-            Resources.limits.generalAttributeMatrixVectorIndexing = 1;
-            Resources.limits.generalVaryingIndexing               = 1;
-            Resources.limits.generalSamplerIndexing               = 1;
-            Resources.limits.generalVariableIndexing              = 1;
-            Resources.limits.generalConstantMatrixVectorIndexing  = 1;
+            }
 
-            return Resources;
-        }
+            shaderc_include_result* GetInclude(const char* requested_source, shaderc_include_type type, const char* requesting_source, size_t include_depth)
+            {
+                //std::cout << std::string(mDirectory) + "/" + std::string(requested_source) << "\n";
+                //std::cout << std::to_string(type) << "\n";
+                //std::cout << requesting_source << "\n";
+                //std::cout << include_depth << "\n";
+
+                const std::string name     = std::string(mDirectory) + "/" + std::string(requested_source);
+                const std::string contents = readFile(name);
+
+                auto container  = new std::array<std::string, 2>;
+                (*container)[0] = name;
+                (*container)[1] = contents;
+
+                auto data = new shaderc_include_result;
+
+                data->user_data = container;
+
+                data->source_name        = (*container)[0].data();
+                data->source_name_length = (*container)[0].size();
+
+                data->content        = (*container)[1].data();
+                data->content_length = (*container)[1].size();
+
+                return data;
+            };
+
+            void ReleaseInclude(shaderc_include_result* data) override
+            {
+                delete static_cast<std::array<std::string, 2>*>(data->user_data);
+                delete data;
+            };
+
+            std::string_view mDirectory;
+        };
 
         std::string readFile(std::string_view path)
         {
@@ -136,65 +73,82 @@ namespace vk2s
             return buffer.str();
         }
 
-        EShLanguage translateShaderStage(std::string_view filepath)
+        shaderc_shader_kind getShaderStage(std::string_view filepath)
         {
             if (filepath.ends_with("vert"))
-                return EShLangVertex;
+                return shaderc_shader_kind::shaderc_vertex_shader;
             else if (filepath.ends_with("frag"))
-                return EShLangFragment;
+                return shaderc_shader_kind::shaderc_fragment_shader;
             else if (filepath.ends_with("comp"))
-                return EShLangCompute;
+                return shaderc_shader_kind::shaderc_compute_shader;
             else if (filepath.ends_with("rgen"))
-                return EShLangRayGenNV;
+                return shaderc_shader_kind::shaderc_raygen_shader;
             else if (filepath.ends_with("rmiss"))
-                return EShLangMissNV;
+                return shaderc_shader_kind::shaderc_miss_shader;
             else if (filepath.ends_with("rchit"))
-                return EShLangClosestHitNV;
+                return shaderc_shader_kind::shaderc_closesthit_shader;
             else if (filepath.ends_with("rahit"))
-                return EShLangAnyHitNV;
+                return shaderc_shader_kind::shaderc_anyhit_shader;
 
-            assert(!"Unknown shader stage");
+            assert(!"Unknown shader stage!");
 
-            return EShLangVertex;
+            return shaderc_shader_kind::shaderc_vertex_shader;
         }
 
-        SPIRVCode compileText(EShLanguage stage, const std::string& glslShader)
+        SPIRVCode compileFile(std::string_view path, const bool optimize)
         {
-            glslang::InitializeProcess();
+            const auto shaderSource = readFile(path);
+            const auto kind         = getShaderStage(path);
 
-            const char* shaderStrings[1];
-            shaderStrings[0] = glslShader.data();
+            const char* const shaderName = "compiling_shader";
 
-            glslang::TShader shader(stage);
+            shaderc::Compiler compiler;
+            shaderc::CompileOptions options;
+            options.SetTargetSpirv(shaderc_spirv_version_1_6);
+            options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
+            const std::string directory = std::string(path).substr(0, path.find_last_of("/\\"));
+            options.SetIncluder(std::make_unique<ShaderIncluder>(directory));
 
-            shader.setEnvTarget(glslang::EShTargetLanguage::EShTargetSpv, glslang::EShTargetLanguageVersion::EShTargetSpv_1_5);
-            shader.setStrings(shaderStrings, 1);
+            // Preprocessing
+            shaderc::PreprocessedSourceCompilationResult result = compiler.PreprocessGlsl(shaderSource, kind, shaderName, options);
 
-            EShMessages messages  = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules);
-            auto defaultResources = initResources();
-            if (!shader.parse(&defaultResources, 100, false, messages))
+            if (result.GetCompilationStatus() != shaderc_compilation_status_success)
             {
-                throw std::runtime_error(glslShader + "\n" + shader.getInfoLog());
+                std::cerr << result.GetErrorMessage();
+                return SPIRVCode();
             }
 
-            glslang::TProgram program;
-            program.addShader(&shader);
+            std::string preprocessed = { result.cbegin(), result.cend() };
 
-            if (!program.link(messages))
+            // Compiling
+
+            if (optimize)
             {
-                throw std::runtime_error(glslShader + "\n" + shader.getInfoLog());
+                options.SetOptimizationLevel(shaderc_optimization_level_performance);
             }
 
-            std::vector<uint32_t> spvShader;
-            glslang::GlslangToSpv(*program.getIntermediate(stage), spvShader);
-            glslang::FinalizeProcess();
-            return spvShader;
-        }
+            // disassemble
+            //result = compiler.CompileGlslToSpvAssembly(preprocessed, kind, shaderName, options);
 
-        SPIRVCode compileFile(std::string_view path)
-        {
-            EShLanguage stage = translateShaderStage(path);
-            return compileText(stage, readFile(path));
+            //if (result.GetCompilationStatus() != shaderc_compilation_status_success)
+            //{
+            //    std::cerr << result.GetErrorMessage();
+            //    return SPIRVCode();
+            //}
+            //std::string assembly = { result.cbegin(), result.cend() };
+            //std::cout << "SPIR-V assembly:" << std::endl << assembly << std::endl;
+
+            shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(preprocessed, kind, shaderName, options);
+
+            if (module.GetCompilationStatus() != shaderc_compilation_status_success)
+            {
+                std::cerr << module.GetErrorMessage();
+                return SPIRVCode();
+            }
+
+            //std::cout << "Compiled to an binary module with " << spirv.size() << " words." << std::endl;
+
+            return { module.cbegin(), module.cend() };
         }
 
         ReflectionResult getReflection(const SPIRVCode& fileData)
@@ -204,12 +158,12 @@ namespace vk2s
             SpvReflectResult result = spvReflectCreateShaderModule(sizeof(fileData[0]) * fileData.size(), fileData.data(), &module);
             if (result != SPV_REFLECT_RESULT_SUCCESS)
             {
-                throw std::runtime_error("failed to create SPIRV-Reflect shader module!");
+                assert(!"failed to create SPIRV-Reflect shader module!");
             }
 
             if (!module.entry_points)
             {
-                throw std::runtime_error("missing entry point from shader!");
+                assert(!"missing entry point from shader!");
             }
 
             //get desecriptor set layout

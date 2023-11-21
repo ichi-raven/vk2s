@@ -9,39 +9,38 @@
 #ifndef VK2S_COMPILER_HPP_
 #define VK2S_COMPILER_HPP_
 
-#include <glslang/SPIRV/GlslangToSpv.h>
-
 #include <vulkan/vulkan.hpp>
 
+#include <shaderc/shaderc.hpp>
+
 #include <vector>
+#include <map>
 
 namespace vk2s
 {
-namespace Compiler
-{
-    using SPIRVCode = std::vector<std::uint32_t>;
+    namespace Compiler
+    {
+        using SPIRVCode = std::vector<std::uint32_t>;
 
-    TBuiltInResource initResources();
+        std::string readFile(std::string_view path);
 
-    std::string readFile(std::string_view path);
+        shaderc_shader_kind getShaderStage(std::string_view filepath);
 
-    EShLanguage translateShaderStage(std::string_view filepath);
+        SPIRVCode compileText(shaderc_shader_kind stage, const std::string& glslShader);
 
-    SPIRVCode compileText(EShLanguage stage, const std::string &glslShader);
+        SPIRVCode compileFile(std::string_view path, const bool optimize = false);
 
-    SPIRVCode compileFile(std::string_view path);
+        // SPIRV-Reflect (vertex layout, descriptor set layout bindings)
+        using VertexInputAttributes = std::vector<vk::VertexInputAttributeDescription>;
+        using ShaderResourceMap     = std::map<std::pair<uint32_t, uint32_t>, vk::DescriptorType>;
+        using ReflectionResult      = std::tuple<VertexInputAttributes, ShaderResourceMap>;
+        ReflectionResult getReflection(const SPIRVCode& fileData);
 
-    // SPIRV-Reflect (vertex layout, descriptor set layout bindings)
-    using VertexInputAttributes = std::vector<vk::VertexInputAttributeDescription>;
-    using ShaderResourceMap = std::map<std::pair<uint32_t, uint32_t>, vk::DescriptorType>;
-    using ReflectionResult = std::tuple<VertexInputAttributes, ShaderResourceMap>; 
-    ReflectionResult getReflection(const SPIRVCode &fileData);
+        std::vector<std::vector<vk::DescriptorSetLayoutBinding>> createDescriptorSetLayoutBindings(const ShaderResourceMap& resourceMap);
 
-    std::vector<std::vector<vk::DescriptorSetLayoutBinding>> createDescriptorSetLayoutBindings(const ShaderResourceMap& resourceMap);
+        uint32_t getSizeOfFormat(const vk::Format format) noexcept;
 
-    uint32_t getSizeOfFormat(const vk::Format format) noexcept;
-
-}  // namespace Compiler
-}
+    }  // namespace Compiler
+}  // namespace vk2s
 
 #endif

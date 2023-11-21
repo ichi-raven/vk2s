@@ -40,7 +40,6 @@ target_link_directories(${APP_NAME} PRIVATE ${CMAKE_BINARY_DIR}/lib ${VULKAN_LIB
 target_link_libraries(${APP_NAME} 
   PRIVATE
   Vulkan::Vulkan
-  Vulkan::glslang
   Vulkan::SPIRV-Tools
   # HACK : CMake's FindVulkan can't find SPIRV-Tools-opt
   optimized SPIRV-Tools-opt debug SPIRV-Tools-optd
