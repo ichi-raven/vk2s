@@ -37,7 +37,7 @@ void rasterize(const uint32_t windowWidth, const uint32_t windowHeight, const ui
             depthBuffer = device.create<vk2s::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eDepth);
         }
 
-        auto renderpass = device.create<vk2s::RenderPass>(window.get(), depthBuffer);
+        auto renderpass = device.create<vk2s::RenderPass>(window.get(), vk::AttachmentLoadOp::eClear, depthBuffer);
 
         device.initImGui(frameCount, window.get(), renderpass.get());
 
@@ -63,7 +63,7 @@ void rasterize(const uint32_t windowWidth, const uint32_t windowHeight, const ui
             .inputState    = vk::PipelineVertexInputStateCreateInfo({}, inputBinding, std::get<0>(vertexShader->getReflection())),
             .inputAssembly = vk::PipelineInputAssemblyStateCreateInfo({}, vk::PrimitiveTopology::eTriangleList),
             .viewportState = vk::PipelineViewportStateCreateInfo({}, 1, &viewport, 1, &scissor),
-            .rasterizer    = vk::PipelineRasterizationStateCreateInfo({}, VK_FALSE, VK_FALSE, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eClockwise, VK_FALSE, 0.0f, 0.0f, 0.0f, 1.0f),
+            .rasterizer    = vk::PipelineRasterizationStateCreateInfo({}, VK_FALSE, VK_FALSE, vk::PolygonMode::eFill, vk::CullModeFlagBits::eNone, vk::FrontFace::eClockwise, VK_FALSE, 0.0f, 0.0f, 0.0f, 1.0f),
             .multiSampling = vk::PipelineMultisampleStateCreateInfo({}, vk::SampleCountFlagBits::e1, VK_FALSE),
             .depthStencil  = vk::PipelineDepthStencilStateCreateInfo({}, VK_TRUE, VK_TRUE, vk::CompareOp::eLess, VK_FALSE),
             .colorBlending = vk::PipelineColorBlendStateCreateInfo({}, VK_FALSE, vk::LogicOp::eCopy, 1, &colorBlendAttachment),
@@ -149,8 +149,6 @@ void rasterize(const uint32_t windowWidth, const uint32_t windowHeight, const ui
             fences[now]->reset();
 
             {  // write data
-                //clamp spp
-
                 SceneUB sceneUBO{
                     .model = glm::mat4(1.0),
                     .view  = camera.getViewMatrix(),

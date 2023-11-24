@@ -24,7 +24,7 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
 
         auto window = device.create<vk2s::Window>(windowWidth, windowHeight, frameCount, "pathtracing window");
 
-        auto renderpass = device.create<vk2s::RenderPass>(window.get());
+        auto renderpass = device.create<vk2s::RenderPass>(window.get(), vk::AttachmentLoadOp::eLoad);
 
         device.initImGui(frameCount, window.get(), renderpass.get());
 

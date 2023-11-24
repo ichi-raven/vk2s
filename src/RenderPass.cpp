@@ -68,18 +68,18 @@ namespace vk2s
         mFrameBuffers.push_back(vkDevice->createFramebufferUnique(framebufferInfo));
     }
 
-    RenderPass::RenderPass(Device& device, Window& window, const Handle<Image> depthTarget)
+    RenderPass::RenderPass(Device& device, Window& window, const vk::AttachmentLoadOp colorLoadOp, Handle<Image> depthTarget, const vk::AttachmentLoadOp depthLoadOp)
         : mDevice(device)
     {
         const auto& vkDevice = mDevice.getVkDevice();
 
-        vk::AttachmentDescription colorAttachment({}, window.getVkSwapchainImageFormat(), vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
+        vk::AttachmentDescription colorAttachment({}, window.getVkSwapchainImageFormat(), vk::SampleCountFlagBits::e1, colorLoadOp, vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
                                                   vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
         vk::AttachmentReference colorAttachmentRef(0, vk::ImageLayout::eColorAttachmentOptimal);
 
         if (depthTarget)
         {
-            vk::AttachmentDescription depthAttachment({}, depthTarget->getVkFormat(), vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eDontCare, vk::AttachmentLoadOp::eDontCare,
+            vk::AttachmentDescription depthAttachment({}, depthTarget->getVkFormat(), vk::SampleCountFlagBits::e1, depthLoadOp, vk::AttachmentStoreOp::eDontCare, vk::AttachmentLoadOp::eDontCare,
                                                       vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
             vk::AttachmentReference depthAttachmentRef(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);

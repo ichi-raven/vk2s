@@ -28,7 +28,7 @@ namespace vk2s
     public:  // methods
         RenderPass(Device& device, const vk::ArrayProxy<Handle<Image>>& colorTargets, Handle<Image> depthTargets = Handle<Image>());
 
-        RenderPass(Device& device, Window& window, Handle<Image> depthTargets = Handle<Image>());
+        RenderPass(Device& device, Window& window, const vk::AttachmentLoadOp colorLoadOp, Handle<Image> depthTargets = Handle<Image>(), const vk::AttachmentLoadOp depthLoadOp = vk::AttachmentLoadOp::eClear);
 
         ~RenderPass();
 
