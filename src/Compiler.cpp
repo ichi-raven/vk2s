@@ -85,6 +85,8 @@ namespace vk2s
                 return shaderc_shader_kind::shaderc_closesthit_shader;
             else if (filepath.ends_with("rahit"))
                 return shaderc_shader_kind::shaderc_anyhit_shader;
+            else if (filepath.ends_with("spv"))
+                return shaderc_shader_kind::shaderc_spirv_assembly;
 
             assert(!"Unknown shader stage!");
 
@@ -97,7 +99,7 @@ namespace vk2s
             const auto shaderSource = readFile(path);
             const auto kind         = getShaderStage(path);
 
-            if (path.ends_with("spv"))// already compiled (load only)
+            if (kind == shaderc_spirv_assembly)  // already compiled (load only)
             {
                 SPIRVCode rtn(shaderSource.size() / sizeof(SPIRVCode::value_type));
                 std::memcpy(rtn.data(), shaderSource.data(), shaderSource.size());
