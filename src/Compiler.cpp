@@ -27,10 +27,6 @@ namespace vk2s
 
             shaderc_include_result* GetInclude(const char* requested_source, shaderc_include_type type, const char* requesting_source, size_t include_depth)
             {
-                //std::cout << std::string(mDirectory) + "/" + std::string(requested_source) << "\n";
-                //std::cout << std::to_string(type) << "\n";
-                //std::cout << requesting_source << "\n";
-                //std::cout << include_depth << "\n";
 
                 const std::string name     = std::string(mDirectory) + "/" + std::string(requested_source);
                 const std::string contents = readFile(name);
@@ -66,7 +62,7 @@ namespace vk2s
             std::ifstream file(path.data());
             if (!file.is_open())
             {
-                throw std::runtime_error("Failed to open file: " + std::string(path));
+                throw std::runtime_error("failed to open file: " + std::string(path));
             }
             std::stringstream buffer;
             buffer << file.rdbuf();
@@ -97,16 +93,26 @@ namespace vk2s
 
         SPIRVCode compileFile(std::string_view path, const bool optimize)
         {
+
             const auto shaderSource = readFile(path);
             const auto kind         = getShaderStage(path);
 
+            if (path.ends_with("spv"))// already compiled (load only)
+            {
+                SPIRVCode rtn(shaderSource.size() / sizeof(SPIRVCode::value_type));
+                std::memcpy(rtn.data(), shaderSource.data(), shaderSource.size());
+                return rtn;
+            }
+
             shaderc::Compiler compiler;
             shaderc::CompileOptions options;
-            options.SetTargetSpirv(shaderc_spirv_version_1_6);
-            options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
+            options.SetTargetSpirv(kSpirvVersion);
+            options.SetTargetEnvironment(shaderc_target_env_vulkan, kVulkanEnvVersion);
             const std::string directory = std::string(path).substr(0, path.find_last_of("/\\"));
             const std::string fileName  = std::string(path).substr(path.find_last_of("/\\") + 1, path.size());
             options.SetIncluder(std::make_unique<ShaderIncluder>(directory));
+
+            // TODO: separate GLSL and HLSL
 
             // Preprocessing
             shaderc::PreprocessedSourceCompilationResult result = compiler.PreprocessGlsl(shaderSource, kind, fileName.c_str(), options);
@@ -142,6 +148,7 @@ namespace vk2s
             if (module.GetCompilationStatus() != shaderc_compilation_status_success)
             {
                 std::cerr << module.GetErrorMessage();
+                assert(!"failed to compile shader!");
                 return SPIRVCode();
             }
 

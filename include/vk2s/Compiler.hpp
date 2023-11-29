@@ -22,6 +22,9 @@ namespace vk2s
     {
         using SPIRVCode = std::vector<std::uint32_t>;
 
+        constexpr auto kSpirvVersion = shaderc_spirv_version_1_6;
+        constexpr auto kVulkanEnvVersion = shaderc_env_version_vulkan_1_3;
+
         std::string readFile(std::string_view path);
 
         shaderc_shader_kind getShaderStage(std::string_view filepath);
