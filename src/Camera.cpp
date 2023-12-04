@@ -18,6 +18,7 @@ namespace vk2s
         , mFar(far)
         , mPos(0., 0., 0.)
         , mUp(0., 0., 1.)
+        , mMoved(false)
     {
         setLookAt(glm::vec3(0.f, 0.f, 1.f));
 
@@ -27,6 +28,8 @@ namespace vk2s
 
     void Camera::update(GLFWwindow* pWindow, const double moveSpeed, const double mouseSpeed)
     {
+        mMoved = false;
+
         if (glfwGetMouseButton(pWindow, GLFW_MOUSE_BUTTON_RIGHT))
         {
             double mx = 0, my = 0;
@@ -39,6 +42,8 @@ namespace vk2s
 
             if (mTheta > 89.f) mTheta = 89.f;
             if (mTheta < -89.f) mTheta = -89.f;
+
+            mMoved = true;
         }
 
         glm::vec3 direction(cos(glm::radians(mTheta)) * sin(glm::radians(mPhi)), sin(glm::radians(mTheta)), cos(glm::radians(mTheta)) * cos(glm::radians(mPhi)));
@@ -49,6 +54,7 @@ namespace vk2s
         {
             mTheta = 0.;
             mPhi   = 0.;
+            mMoved = true;
         }
 
         double moveSpeedMod = moveSpeed;
@@ -61,26 +67,32 @@ namespace vk2s
         if (glfwGetKey(pWindow, GLFW_KEY_W))
         {
             mPos += static_cast<float>(moveSpeedMod) * direction;
+            mMoved = true;
         }
         if (glfwGetKey(pWindow, GLFW_KEY_S))
         {
             mPos -= static_cast<float>(moveSpeedMod) * direction;
+            mMoved = true;
         }
         if (glfwGetKey(pWindow, GLFW_KEY_A))
         {
             mPos -= static_cast<float>(moveSpeedMod) * right;
+            mMoved = true;
         }
         if (glfwGetKey(pWindow, GLFW_KEY_D))
         {
             mPos += static_cast<float>(moveSpeedMod) * right;
+            mMoved = true;
         }
         if (glfwGetKey(pWindow, GLFW_KEY_LEFT_SHIFT))
         {
             mPos -= static_cast<float>(moveSpeedMod) * mUp;
+            mMoved = true;
         }
         if (glfwGetKey(pWindow, GLFW_KEY_RIGHT_SHIFT))
         {
             mPos += static_cast<float>(moveSpeedMod) * mUp;
+            mMoved = true;
         }
 
         updateViewMat();
@@ -91,6 +103,7 @@ namespace vk2s
     {
         mPos = pos;
         updateViewMat();
+        mMoved = true;
     }
 
     const glm::vec3& Camera::getPos() const
@@ -163,6 +176,11 @@ namespace vk2s
     double Camera::getFar() const
     {
         return mFar;
+    }
+
+    bool Camera::moved() const
+    {
+        return mMoved;
     }
 
     void Camera::updateViewMat()

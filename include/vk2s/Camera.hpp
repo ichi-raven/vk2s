@@ -40,6 +40,8 @@ public:
     void setFar(const double far);
     double getFar() const;
 
+    bool moved() const;
+
     const glm::mat4& getViewMatrix() const;
     const glm::mat4& getProjectionMatrix() const;
 
@@ -57,6 +59,8 @@ private:
     glm::vec3 mUp;
     glm::mat4 mViewMat;
     glm::mat4 mProjectionMat;
+
+    bool mMoved;
 };
 }
 #endif
