@@ -84,12 +84,12 @@ namespace vk2s
             mPos += static_cast<float>(moveSpeedMod) * right;
             mMoved = true;
         }
-        if (glfwGetKey(pWindow, GLFW_KEY_LEFT_SHIFT))
+        if (glfwGetKey(pWindow, GLFW_KEY_DOWN))
         {
             mPos -= static_cast<float>(moveSpeedMod) * mUp;
             mMoved = true;
         }
-        if (glfwGetKey(pWindow, GLFW_KEY_RIGHT_SHIFT))
+        if (glfwGetKey(pWindow, GLFW_KEY_UP))
         {
             mPos += static_cast<float>(moveSpeedMod) * mUp;
             mMoved = true;
