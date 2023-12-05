@@ -8,6 +8,32 @@ namespace vk2s
     AccelerationStructure::AccelerationStructure(Device& device, const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, Handle<Command> buildCommand)
         : mDevice(device)
     {
+        build(vertexNum, vertexStride, vertexBuffer, faceNum, indexBuffer, buildCommand);
+    }
+
+    // TLAS
+    AccelerationStructure::AccelerationStructure(Device& device, const vk::ArrayProxy<vk::AccelerationStructureInstanceKHR>& instances, Handle<Command> buildCommand)
+        : mDevice(device)
+    {
+        build(instances, buildCommand);
+    }
+
+    AccelerationStructure ::~AccelerationStructure()
+    {
+    }
+
+    const vk::UniqueAccelerationStructureKHR& AccelerationStructure::getVkAccelerationStructure()
+    {
+        return mAccelerationStructure;
+    }
+
+    const vk::DeviceAddress AccelerationStructure::getVkDeviceAddress() const
+    {
+        return mDeviceAddress;
+    }
+
+    void AccelerationStructure::build(const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, Handle<Command> buildCommand)
+    {
         const auto& vkDevice = mDevice.getVkDevice();
 
         vk::AccelerationStructureGeometryKHR geometryInfo;
@@ -32,14 +58,12 @@ namespace vk2s
         std::array geometries = { geometryInfo };
         std::array ranges     = { asBuildRangeInfo };
 
-        build(vk::AccelerationStructureTypeKHR::eBottomLevel, geometries, ranges, {}, buildCommand);
+        buildInternal(vk::AccelerationStructureTypeKHR::eBottomLevel, geometries, ranges, {}, buildCommand);
 
         mDevice.destroy(mScratchBuffer);
     }
 
-    // TLAS
-    AccelerationStructure::AccelerationStructure(Device& device, const vk::ArrayProxy<vk::AccelerationStructureInstanceKHR>& instances, Handle<Command> buildCommand)
-        : mDevice(device)
+    void AccelerationStructure::build(const vk::ArrayProxy<vk::AccelerationStructureInstanceKHR>& instances, Handle<Command> buildCommand)
     {
         const auto& vkDevice = mDevice.getVkDevice();
 
@@ -65,26 +89,12 @@ namespace vk2s
         std::array geometries = { asGeometry };
         std::array ranges     = { asBuildRangeInfo };
 
-        build(vk::AccelerationStructureTypeKHR::eTopLevel, geometries, ranges, {});
+        buildInternal(vk::AccelerationStructureTypeKHR::eTopLevel, geometries, ranges, {});
 
         mDevice.destroy(mScratchBuffer);
     }
 
-    AccelerationStructure ::~AccelerationStructure()
-    {
-    }
-
-    const vk::UniqueAccelerationStructureKHR& AccelerationStructure::getVkAccelerationStructure()
-    {
-        return mAccelerationStructure;
-    }
-
-    const vk::DeviceAddress AccelerationStructure::getVkDeviceAddress() const
-    {
-        return mDeviceAddress;
-    }
-
-    void AccelerationStructure::build(const vk::AccelerationStructureTypeKHR type, const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureGeometryKHR>& asGeometry,
+    void AccelerationStructure::buildInternal(const vk::AccelerationStructureTypeKHR type, const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureGeometryKHR>& asGeometry,
                                       const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureBuildRangeInfoKHR>& asBuildRangeInfo, vk::BuildAccelerationStructureFlagsKHR flags, Handle<Command> buildCommand)
     {
         const auto& vkDevice = mDevice.getVkDevice();

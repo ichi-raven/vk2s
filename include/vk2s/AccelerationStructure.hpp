@@ -33,6 +33,10 @@ namespace vk2s
 
         ~AccelerationStructure();
 
+        void build(const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, Handle<Command> buildCommand = Handle<Command>());
+
+        void build(const vk::ArrayProxy<vk::AccelerationStructureInstanceKHR>& instances, Handle<Command> buildCommand = Handle<Command>());
+
         NONCOPYABLE(AccelerationStructure);
         NONMOVABLE(AccelerationStructure);
 
@@ -41,8 +45,8 @@ namespace vk2s
         const vk::DeviceAddress getVkDeviceAddress() const;
 
     private:  // methods
-        void build(const vk::AccelerationStructureTypeKHR type, const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureGeometryKHR>& asGeometry,
-                     const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureBuildRangeInfoKHR>& asBuildRangeInfo, vk::BuildAccelerationStructureFlagsKHR flags, Handle<Command> buildCommand = Handle<Command>());
+        void buildInternal(const vk::AccelerationStructureTypeKHR type, const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureGeometryKHR>& asGeometry,
+                   const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureBuildRangeInfoKHR>& asBuildRangeInfo, vk::BuildAccelerationStructureFlagsKHR flags, Handle<Command> buildCommand = Handle<Command>());
 
     private:  // member variables
         Device& mDevice;

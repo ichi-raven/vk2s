@@ -252,7 +252,6 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
             ImGui::NewFrame();
             ImGui::Begin("configuration");
             ImGui::Text("device = %s", device.getPhysicalDeviceName().data());
-            ImGui::Text("moved = %d", camera.moved());
             ImGui::Text("fps = %lf", 1. / deltaTime);
             const auto& pos    = camera.getPos();
             const auto& lookAt = camera.getLookAt();
