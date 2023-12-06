@@ -78,6 +78,7 @@ public:
 
     struct Material
     {
+        std::string name;
         std::variant<glm::vec4, Texture> diffuse;
         std::optional<glm::vec4> specular;
         std::optional<glm::vec4> emissive;

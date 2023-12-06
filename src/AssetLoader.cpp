@@ -413,6 +413,8 @@ namespace vk2s
         if (mesh->mMaterialIndex >= 0 && mesh->mMaterialIndex < scene->mNumMaterials)
         {
             aiMaterial* pMat = scene->mMaterials[mesh->mMaterialIndex];
+            retMaterial.name = pMat->GetName().C_Str();
+            
             diffuseMaps      = loadMaterialTextures(pMat, aiTextureType_DIFFUSE, "texture_diffuse");
 
             if (!diffuseMaps.empty())

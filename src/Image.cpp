@@ -31,7 +31,7 @@ namespace vk2s
 
         mFormat = ii.format;
 
-        mExtent = ii.extent;
+        mExtent     = ii.extent;
         mAspectFlag = aspectFlags;
     }
 
