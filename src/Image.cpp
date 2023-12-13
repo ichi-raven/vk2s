@@ -66,6 +66,11 @@ namespace vk2s
         return mImage;
     }
 
+    const vk::UniqueDeviceMemory& Image::getVkDeviceMemory()
+    {
+        return mMemory;
+    }
+
     const vk::UniqueImageView& Image::getVkImageView()
     {
         return mImageView;

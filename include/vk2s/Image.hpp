@@ -33,6 +33,8 @@ namespace vk2s
 
         const vk::UniqueImage& getVkImage();
 
+        const vk::UniqueDeviceMemory& getVkDeviceMemory();
+
         const vk::UniqueImageView& getVkImageView();
 
         vk::Format getVkFormat() const;

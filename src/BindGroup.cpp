@@ -38,7 +38,7 @@ namespace vk2s
         mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSets[set], binding, 0, type, {}, std::get<0>(info)));
     }
 
-    void BindGroup::bind(const uint8_t set, const uint8_t binding, const vk::DescriptorType type, const vk::ArrayProxyNoTemporaries<Handle<Image>>& images, Handle<Sampler> sampler)
+    void BindGroup::bind(const uint8_t set, const uint8_t binding, const vk::DescriptorType type, const vk::ArrayProxy<Handle<Image>>& images, Handle<Sampler> sampler)
     {
         assert(!images.empty() || !"images must be greater than 0");
 
