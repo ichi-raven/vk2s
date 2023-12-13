@@ -26,14 +26,14 @@ namespace vk2s
 
     void BindGroup::bind(const uint8_t set, const uint8_t binding, const vk::DescriptorType type, Buffer& buffer)
     {
-        const auto& info = mInfoCaches.emplace(std::make_pair(set, binding), vk::DescriptorBufferInfo(buffer.getVkBuffer().get(), buffer.getOffset(), VK_WHOLE_SIZE)).first->second;
+        const auto& info = mInfoCaches[std::make_pair(set, binding)]= vk::DescriptorBufferInfo(buffer.getVkBuffer().get(), buffer.getOffset(), VK_WHOLE_SIZE);
 
         mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSets[set], binding, 0, type, {}, std::get<0>(info)));
     }
 
     void BindGroup::bind(const uint8_t set, const uint8_t binding, const vk::DescriptorType type, DynamicBuffer& buffer)
     {
-        const auto& info = mInfoCaches.emplace(std::make_pair(set, binding), vk::DescriptorBufferInfo(buffer.getVkBuffer().get(), buffer.getOffset(), buffer.getBlockSize())).first->second;
+        const auto& info = mInfoCaches[std::make_pair(set, binding)] = vk::DescriptorBufferInfo(buffer.getVkBuffer().get(), buffer.getOffset(), buffer.getBlockSize());
 
         mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSets[set], binding, 0, type, {}, std::get<0>(info)));
     }
@@ -61,14 +61,14 @@ namespace vk2s
             }
         }
 
-        const auto& info = mInfoCaches.emplace(std::make_pair(set, binding), infos).first->second;
+        const auto& info = mInfoCaches[std::make_pair(set, binding)] = infos;
         
         mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSets[set], binding, 0, type, std::get<1>(info)));
     }
 
     void BindGroup::bind(const uint8_t set, const uint8_t binding, AccelerationStructure& as)
     {
-        const auto& info = mInfoCaches.emplace(std::make_pair(set, binding), vk::WriteDescriptorSetAccelerationStructureKHR(as.getVkAccelerationStructure().get())).first->second;
+        const auto& info = mInfoCaches[std::make_pair(set, binding)] = vk::WriteDescriptorSetAccelerationStructureKHR(as.getVkAccelerationStructure().get());
 
         mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSets[set], binding, 0, vk::DescriptorType::eAccelerationStructureKHR, {}).setDescriptorCount(1).setPNext(&info));
     }
