@@ -12,7 +12,7 @@ namespace vk2s
 
         mImage                      = vkDevice->createImageUnique(ii);
         vk::MemoryRequirements reqs = vkDevice->getImageMemoryRequirements(mImage.get());
-        vk::MemoryAllocateInfo ai(reqs.size, mDevice.getVkMemoryTypeIndex(reqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal));
+        vk::MemoryAllocateInfo ai(reqs.size, mDevice.getVkMemoryTypeIndex(reqs.memoryTypeBits, pbs));
         mMemory = vkDevice->allocateMemoryUnique(ai);
 
         vkDevice->bindImageMemory(mImage.get(), mMemory.get(), 0);
