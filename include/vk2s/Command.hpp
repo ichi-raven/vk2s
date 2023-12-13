@@ -69,9 +69,11 @@ namespace vk2s
         void pipelineBarrier(const vk::MemoryBarrier barrier, const vk::PipelineStageFlagBits from, const vk::PipelineStageFlagBits to);
 
         void transitionImageLayout(Image& image, const vk::ImageLayout from, const vk::ImageLayout to);
-        
+
         void copyBufferToImage(Buffer& buffer, Image& image, const uint32_t width, const uint32_t height);
-        
+
+        void copyImageToBuffer(Image& image, Buffer& buffer, const uint32_t width, const uint32_t height);
+
         void copyImage(Image& src, Image& dst, const vk::ImageCopy& region);
 
         void copyImageToSwapchain(Image& src, Window& window, const vk::ImageCopy& region, const uint32_t frameBufferIndex);
@@ -82,7 +84,7 @@ namespace vk2s
 
         const vk::UniqueCommandBuffer& getVkCommandBuffer();
 
-    private: // methods
+    private:  // methods
         inline void transitionLayoutInternal(vk::Image image, vk::ImageAspectFlags flag, const vk::ImageLayout from, const vk::ImageLayout to);
 
     private:  // member variables

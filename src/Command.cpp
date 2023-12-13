@@ -13,7 +13,6 @@ namespace vk2s
         vk::CommandBufferAllocateInfo allocInfo(mDevice.getVkCommandPool().get(), vk::CommandBufferLevel::ePrimary, 1);
 
         mCommandBuffer = std::move(mDevice.getVkDevice()->allocateCommandBuffersUnique(allocInfo).front());
-
     }
 
     Command::~Command()
@@ -131,6 +130,24 @@ namespace vk2s
         region.imageExtent = vk::Extent3D(width, height, 1);
 
         mCommandBuffer->copyBufferToImage(buffer.getVkBuffer().get(), image.getVkImage().get(), vk::ImageLayout::eTransferDstOptimal, region);
+    }
+
+    void Command::copyImageToBuffer(Image& image, Buffer& buffer, const uint32_t width, const uint32_t height)
+    {
+        vk::BufferImageCopy region;
+        region.bufferOffset      = 0;
+        region.bufferRowLength   = 0;
+        region.bufferImageHeight = 0;
+
+        region.imageSubresource.aspectMask     = vk::ImageAspectFlagBits::eColor;
+        region.imageSubresource.mipLevel       = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount     = 1;
+
+        region.imageOffset = vk::Offset3D(0, 0, 0);
+        region.imageExtent = vk::Extent3D(width, height, 1);
+
+        mCommandBuffer->copyImageToBuffer(image.getVkImage().get(), vk::ImageLayout::eTransferSrcOptimal, buffer.getVkBuffer().get(), region);
     }
 
     void Command::copyImage(Image& src, Image& dst, const vk::ImageCopy& region)
