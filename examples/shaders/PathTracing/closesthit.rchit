@@ -50,6 +50,7 @@ void main()
   const InstanceMapping mapping = instanceMappings[gl_InstanceID];
   const Material material = materials[nonuniformEXT(mapping.materialIndex)];
   const Vertex vtx = FetchVertexInterleaved(barys, mapping.vertexBuffer, mapping.indexBuffer);
+  uint randState = tea16(tea8(gl_InstanceID, gl_PrimitiveID), tea8(uint(gl_LaunchIDEXT.x * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.y), sceneParams.frame));
 
   vec3 vtxAlbedo = material.albedo.xyz;
   if (material.texIndex != -1)

@@ -8,11 +8,12 @@ struct SceneUB  // std430
     glm::mat4 proj;
     glm::mat4 viewInv;
     glm::mat4 projInv;
-    float elapsedTime;
+    uint32_t elapsedFrame;
     uint32_t spp;
-    uint32_t seedMode;
     uint32_t prevSpp;
+    float padding;
 };
+
 
 struct FilterUB  // std430
 {
@@ -295,7 +296,7 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
         int inputWindow    = 2;
         bool applyFilter   = false;
 
-        for (uint32_t now = 0; window->update() && !window->getKey(GLFW_KEY_ESCAPE); now = (now + 1) % frameCount)
+        for (uint32_t now = 0, accumulatedFrame = 0; window->update() && !window->getKey(GLFW_KEY_ESCAPE); now = (++accumulatedFrame) % frameCount)
         {
             // update time
             const double currentTime = glfwGetTime();
@@ -410,10 +411,10 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
                     .proj        = camera.getProjectionMatrix(),
                     .viewInv     = glm::inverse(sceneUBO.view),
                     .projInv     = glm::inverse(sceneUBO.proj),
-                    .elapsedTime = static_cast<float>(currentTime),
+                    .elapsedFrame = timeSeed ? accumulatedFrame : 1,
                     .spp         = static_cast<uint32_t>(inputSpp),
-                    .seedMode    = (timeSeed ? static_cast<uint32_t>(currentTime * 1000) : 1),
                     .prevSpp     = static_cast<uint32_t>(accumulatedSpp),
+                    .padding = 0.f
                 };
 
                 FilterUB filterUBO{

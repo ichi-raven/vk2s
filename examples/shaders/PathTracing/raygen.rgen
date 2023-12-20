@@ -153,13 +153,11 @@ void main()
   const ivec2 imageUV = ivec2(gl_LaunchIDEXT.xy);
   vec2 d = screenPos * 2.0 - 1.0;
 
-
   const uint spp = sceneParams.spp;
   const uint sppSum = spp + sceneParams.untilSPP;
   
   // init randState
-  uint randState = uint(gl_LaunchIDEXT.x * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.y);
-  randState *= uint(sceneParams.seed);
+  uint randState = tea16(uint(gl_LaunchIDEXT.x * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.y), sceneParams.frame);
 
   vec3 sum = vec3(0.);
   for (int i = 0; i < spp; ++i)
