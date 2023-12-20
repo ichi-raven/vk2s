@@ -14,13 +14,13 @@ enum class MaterialType : int32_t
     eLambert    = 0,
     eConductor  = 1,
     eDielectric = 2,
-    eEmitter    = 3,
     eMaterialNum
 };
 
 struct MaterialUB  // std430
 {
     glm::vec4 albedo;
+    glm::vec4 emissive;
     int32_t texIndex;
     int32_t materialType;
     float alpha;
@@ -89,6 +89,8 @@ inline void load(std::string_view path, vk2s::Device& device, vk2s::AssetLoader&
     {
         auto& mat        = materialData.emplace_back();
         mat.materialType = static_cast<uint32_t>(MaterialType::eLambert);  // default
+        mat.emissive     = glm::vec4(0.);
+
         if (std::holds_alternative<glm::vec4>(hostMat.diffuse))
         {
             mat.albedo   = std::get<glm::vec4>(hostMat.diffuse);
@@ -135,8 +137,7 @@ inline void load(std::string_view path, vk2s::Device& device, vk2s::AssetLoader&
 
         if (hostMat.emissive && glm::length(*hostMat.emissive) > threshold)
         {
-            mat.materialType = static_cast<uint32_t>(MaterialType::eEmitter);
-            mat.albedo       = glm::vec4(1.0);
+            mat.emissive = *hostMat.emissive;
         }
     }
 

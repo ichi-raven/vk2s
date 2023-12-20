@@ -5,7 +5,7 @@
 
 layout(location = 0) rayPayloadEXT HitInfo hitInfo;
 
-vec3 getRayDirection(inout uint randState)
+Ray getCameraRay(inout uint randState)
 {
   const vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
   const vec2 screenPos = pixelCenter / vec2(gl_LaunchSizeEXT.xy);
@@ -13,114 +13,174 @@ vec3 getRayDirection(inout uint randState)
   const vec2 offset = vec2(stepAndOutputRNGFloat(randState), stepAndOutputRNGFloat(randState)) / vec2(gl_LaunchSizeEXT.xy);
   const vec2 d = (screenPos + offset) * 2.0 - 1.0;
   const vec4 target = sceneParams.mtxProjInv * vec4(d.x, d.y, 1, 1);
-  vec3 direction = (sceneParams.mtxViewInv * vec4(target.xyz, 0)).xyz;
-  return normalize(direction);
+  const vec3 direction = (sceneParams.mtxViewInv * vec4(target.xyz, 0)).xyz;
+
+  Ray ray;
+  ray.origin = (sceneParams.mtxViewInv * vec4(0, 0, 0, 1)).xyz;
+  ray.direction = normalize(direction);
+  return ray;
 }
 
 vec3 lambertScatter(vec3 normal, inout uint randState, out float pdf)
 {
-  vec3 dir = normalize(normal + randomUnitVector(randState));
-  pdf = dot(normal, dir) / M_PI;
-  return dir;
+  ONB onb = buildFromW(normal);
+  vec3 dir = local(onb, randomCosDirection(randState));
+  pdf = dot(onb.w, dir) / M_PI;
+  return normalize(dir);
 }
 
-vec3 conductorScatter(vec3 inDirection, vec3 normal, float alpha, inout uint randState, inout float pdf)
+vec3 conductorScatter(vec3 wo, vec3 normal, float alpha, inout uint randState, inout float pdf)
 {
   // TODO:
   pdf = 1.0;
-  return reflect(inDirection, normalize(normal)) + alpha * randomUnitVector(randState);
+
+  return reflect(-wo, normalize(normal)) + alpha * randomUnitVector(randState);
 }
 
-vec3 dielectricScatter(vec3 inDirection, vec3 normal, float IOR, inout uint randState, inout float pdf)
+vec3 dielectricScatter(vec3 wo, vec3 normal, bool frontFace, float IOR, inout uint randState, inout float pdf)
 {
-  float nr = dot(normal, inDirection);
-  float eta = 1.0 / IOR;
+  float eta = frontFace ? 1.0 / IOR : IOR;
 
-  if(nr >= 0.0) // back
-  {  
-    eta = IOR;
-    normal = -normal;
-  }
+  const vec3 unitDir = -normalize(wo);
 
-  const float cosine = min(dot(-normalize(inDirection), normal), 1.0);
+  const float cosine = min(dot(-unitDir, normal), 1.0);
   const float sine = sqrt(1.0 - cosine * cosine);
   const float reflectProb = schlick(cosine, eta);
 
   if (eta * sine > 1.0 || stepAndOutputRNGFloat(randState) < reflectProb) 
   {
-    return reflect(inDirection, normalize(normal));
+    return reflect(unitDir, normalize(normal));
   }
 
   // TODO:
   pdf = 1.0;
-  return refract(inDirection, normal, eta);
+  return refract(unitDir, normal, eta);
 
+}
+
+BSDFSample sampleBSDF(vec3 albedo, vec3 wo, vec3 normal, int matType, float alpha, float IOR, inout uint randState)
+{
+  BSDFSample ret;
+  ret.f = albedo;
+  ret.pdf = 1.0;
+  ret.flags = 0;
+  ret.eta = 1.0;
+  ret.pdfIsProportional = false;
+
+  vec3 faceNormal = setFaceNormal(-wo, normal);
+  bool front = faceNormal == normal;
+
+  if (matType == MAT_LAMBERT)
+  {
+    ret.flags = BSDF_FLAGS_DIFFUSE | BSDF_FLAGS_REFLECTION;
+    ret.wi = lambertScatter(faceNormal, randState, ret.pdf);
+    ret.f *= M_INVPI * abs(dot(ret.wi, normal));
+  }
+  else if (matType == MAT_CONDUCTOR)
+  {
+    // HACK:
+    ret.flags = alpha< 0.1 ? BSDF_FLAGS_SPECULAR : BSDF_FLAGS_GLOSSY;
+    ret.flags |= BSDF_FLAGS_REFLECTION;
+    ret.wi = conductorScatter(wo, faceNormal, alpha, randState, ret.pdf);
+  }
+  else if (matType == MAT_DIELECTRIC)
+  {
+    ret.flags = BSDF_FLAGS_TRANSMISSION;
+    // HACK:
+    ret.flags |= IOR == 1.0 ? BSDF_FLAGS_REFLECTION : 0;
+    ret.wi = dielectricScatter(wo, faceNormal, front, IOR, randState, ret.pdf);
+  }
+  else
+  {
+    // ERROR
+  }
+
+  return ret;
+}
+
+vec3 Li(Ray primaryRay, inout uint randState)
+{
+    const uint flags = gl_RayFlagsOpaqueEXT;
+
+    vec3 L = vec3(0.);
+    vec3 beta = vec3(1.0);
+    bool specularBounce = true;
+    Ray ray = primaryRay;
+    BSDFSample sampled;
+
+    for(int recursiveNum = 0; recursiveNum < MAX_DEPTH; ++recursiveNum)
+    {
+      // intersect ray with scene
+      hitInfo.endTrace = true;
+      traceRayEXT(topLevelAS, flags, 0xFF, 0, 0, 0, ray.origin, tmin + offset, ray.direction, tmax, 0);
+
+      // account for infinite lights if ray has no intersection (missed)
+      if (hitInfo.endTrace)
+      {
+        L += beta * hitInfo.emitted;
+        break;
+      }
+
+      // account for emissive surface if light was not sampled
+      L += beta * hitInfo.emitted;
+
+      // skip participating media (TODO:?)
+      // do nothing
+
+      // sample direct illumination
+      // TODO:
+
+      // sample outgoing direction to continue path (uniform sample)
+      vec3 wo = -(ray.direction);
+      
+      // HACK: BSDFSample have to be returned by (closest) hit shader
+      BSDFSample sampled = sampleBSDF(hitInfo.albedo, wo, hitInfo.worldNormal, hitInfo.matType, hitInfo.alpha, hitInfo.IOR, randState);
+
+      // update
+      ray.origin = hitInfo.worldPosition;
+      ray.direction = sampled.wi;
+      specularBounce = isSpecular(sampled.flags);
+      beta *= sampled.f / sampled.pdf;
+    }
+
+    return L;
 }
 
 void main() 
 {
   const vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
   const vec2 screenPos = pixelCenter / vec2(gl_LaunchSizeEXT.xy);
+  const ivec2 imageUV = ivec2(gl_LaunchIDEXT.xy);
   vec2 d = screenPos * 2.0 - 1.0;
 
-  vec3 origin = (sceneParams.mtxViewInv * vec4(0, 0, 0, 1)).xyz;
-  vec4 target = sceneParams.mtxProjInv * vec4(d.x, -d.y, 1, 1);
 
-  uint flags = gl_RayFlagsOpaqueEXT;
-
-  const float tmin = 0.00;
-  const float tmax = 10000.0;
-  const float offset = 0.001;
   const uint spp = sceneParams.spp;
-  const uint maxRecursive = 4;
+  const uint sppSum = spp + sceneParams.untilSPP;
   
-  vec3 colorSum = vec3(0.);
   // init randState
   uint randState = uint(gl_LaunchIDEXT.x * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.y);
-  if (sceneParams.seedMode != 0)
-  {
-    randState *= uint(sceneParams.time * 1000);
-  }
+  randState *= uint(sceneParams.seed);
 
+  vec3 sum = vec3(0.);
   for (int i = 0; i < spp; ++i)
   {
-    vec3 color = vec3(1.0);
-    float pdf = 1.0;
-    float scatterPDF = 1.0;
-    
-    // primary ray
-    vec3 inDirection = getRayDirection(randState);
-    traceRayEXT(topLevelAS, flags, 0xFF, 0, 0, 0, origin, tmin, inDirection, tmax, 0);
-    color *= hitInfo.color;
+    const vec3 L = Li(getCameraRay(randState), randState);
 
-    for(int recursiveNum = 0; recursiveNum < maxRecursive && !hitInfo.endTrace; ++recursiveNum)
-    {
-      vec3 direction = vec3(1.);
-      if (hitInfo.matType == 0)
-      {
-        direction = lambertScatter(hitInfo.worldNormal, randState, pdf);
-        float cosine = dot(hitInfo.worldNormal, direction);
-        scatterPDF = cosine < 0.0 ? 0.0 : cosine / M_PI;
-      }
-      else if (hitInfo.matType == 1)
-      {
-        direction = conductorScatter(inDirection, hitInfo.worldNormal, hitInfo.alpha, randState, pdf);
-      }
-      else if (hitInfo.matType == 2)
-      {
-        direction = dielectricScatter(inDirection, hitInfo.worldNormal, hitInfo.IOR, randState, pdf);
-      }
-
-      traceRayEXT(topLevelAS, flags, 0xFF, 0, 0, 0, hitInfo.worldPosition, tmin + offset, direction, tmax, 0);
-      color *= hitInfo.color;
-      inDirection = direction;
-    }
-
-    colorSum += color;
+    sum += correctNaN(L);
   }
 
-  colorSum /= float(spp);
-  colorSum = sqrt(colorSum);
+  sum /= float(spp);
 
-  imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(colorSum, 1.0));
+  vec4 prev = imageLoad(poolImage, imageUV);
+  float rate = float(spp) / float(sppSum);
+  if (sceneParams.untilSPP == 0)
+  {
+    prev = vec4(0.0);
+    rate = 1.0;
+  }
+
+  vec4 final = mix(prev, vec4(sum, 1.0), rate);
+  imageStore(poolImage, imageUV, final);
+
+  imageStore(image, imageUV, sqrt(final));
 }

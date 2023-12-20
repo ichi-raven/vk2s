@@ -20,6 +20,7 @@ void main()
   const float phi = sgn(y) * acos(x / sqrt(x * x + y * y));
   const float theta = acos(z / length(worldRayDirection));
 
-  hitInfo.color = texture(envmap, vec2(phi / M_PI2, theta / M_PI)).xyz;
+  hitInfo.emitted = vec3(0.3);
+  //hitInfo.emitted = texture(envmap, vec2(phi / M_PI2, theta / M_PI)).xyz;
   hitInfo.endTrace = true;
 }

@@ -11,12 +11,23 @@ struct SceneUB  // std430
     float elapsedTime;
     uint32_t spp;
     uint32_t seedMode;
-    float padding;
+    uint32_t prevSpp;
+};
+
+struct FilterUB  // std430
+{
+    float sigma;
+    float h;
+    uint32_t filterMode;
+    int32_t kernelSize;
+    int32_t windowSize;
+    float padding[3];
 };
 
 void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const uint32_t frameCount)
 {
-    constexpr int kMaxSpp = 4096;
+    constexpr int kMaxSpp    = 4096;
+    constexpr int kMaxSumSpp = std::numeric_limits<int>::max() - 1;
 
     try
     {
@@ -41,6 +52,13 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
         {
             const auto size = sizeof(SceneUB) * frameCount;
             sceneBuffer     = device.create<vk2s::DynamicBuffer>(vk::BufferCreateInfo({}, size, vk::BufferUsageFlagBits::eUniformBuffer), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, frameCount);
+        }
+
+        // create filter (compute) UB
+        Handle<vk2s::DynamicBuffer> filterBuffer;
+        {
+            const auto ubSize = sizeof(FilterUB) * frameCount;
+            filterBuffer      = device.create<vk2s::DynamicBuffer>(vk::BufferCreateInfo({}, ubSize, vk::BufferUsageFlagBits::eUniformBuffer), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, frameCount);
         }
 
         // create instance mapping UB
@@ -69,6 +87,8 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
 
         //create result image
         Handle<vk2s::Image> resultImage;
+        Handle<vk2s::Image> poolImage;
+        Handle<vk2s::Image> computeResultImage;
         {
             const auto format   = window->getVkSwapchainImageFormat();
             const uint32_t size = windowWidth * windowHeight * vk2s::Compiler::getSizeOfFormat(format);
@@ -82,11 +102,18 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
             ci.usage         = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eStorage;
             ci.initialLayout = vk::ImageLayout::eUndefined;
 
-            resultImage = device.create<vk2s::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
+            resultImage        = device.create<vk2s::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
+            computeResultImage = device.create<vk2s::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
+
+            // change format to pooling
+            ci.format = vk::Format::eR32G32B32A32Sfloat;
+            poolImage = device.create<vk2s::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
 
             UniqueHandle<vk2s::Command> cmd = device.create<vk2s::Command>();
             cmd->begin(true);
             cmd->transitionImageLayout(resultImage.get(), vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral);
+            cmd->transitionImageLayout(poolImage.get(), vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral);
+            cmd->transitionImageLayout(computeResultImage.get(), vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral);
             cmd->end();
             cmd->execute();
         }
@@ -150,9 +177,10 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
         auto tlas = device.create<vk2s::AccelerationStructure>(asInstances);
 
         // load shaders
-        const auto raygenShader = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/raygen.rgen", "main");
-        const auto missShader   = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/miss.rmiss", "main");
-        const auto chitShader   = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/closesthit.rchit", "main");
+        const auto raygenShader  = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/raygen.rgen", "main");
+        const auto missShader    = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/miss.rmiss", "main");
+        const auto chitShader    = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/closesthit.rchit", "main");
+        const auto computeShader = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/compute.comp", "main");
 
         // create bind layout
         std::array bindings = {
@@ -170,9 +198,22 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
             vk::DescriptorSetLayoutBinding(5, vk::DescriptorType::eCombinedImageSampler, std::max(1ull, materialTextures.size()), vk::ShaderStageFlagBits::eAll),
             // 6 : envmap texture
             vk::DescriptorSetLayoutBinding(6, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eAll),
+            // 7: sampling pool image
+            vk::DescriptorSetLayoutBinding(7, vk::DescriptorType::eStorageImage, 1, vk::ShaderStageFlagBits::eAll),
         };
 
         auto bindLayout = device.create<vk2s::BindLayout>(bindings);
+
+        std::array compBindings = {
+            // 0 : input image
+            vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eStorageImage, 1, vk::ShaderStageFlagBits::eCompute),
+            // 1 : film dynamic uniform buffer
+            vk::DescriptorSetLayoutBinding(1, vk::DescriptorType::eUniformBufferDynamic, 1, vk::ShaderStageFlagBits::eCompute),
+            // 2 : result image
+            vk::DescriptorSetLayoutBinding(2, vk::DescriptorType::eStorageImage, 1, vk::ShaderStageFlagBits::eCompute),
+        };
+
+        auto computeBindLayout = device.create<vk2s::BindLayout>(compBindings);
 
         // shader groups
         constexpr int kIndexRaygen     = 0;
@@ -195,6 +236,13 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
         // create shader binding table
         auto shaderBindingTable = device.create<vk2s::ShaderBindingTable>(raytracePipeline.get(), 1, 1, 1, 0, rpi.shaderGroups);
 
+        vk2s::Pipeline::ComputePipelineInfo cpi{
+            .cs         = computeShader,
+            .bindLayout = computeBindLayout,
+        };
+
+        auto computePipeline = device.create<vk2s::Pipeline>(cpi);
+
         // create bindgroup
         auto bindGroup = device.create<vk2s::BindGroup>(bindLayout.get());
         bindGroup->bind(0, 0, tlas.get());
@@ -211,6 +259,12 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
             bindGroup->bind(0, 5, vk::DescriptorType::eCombinedImageSampler, materialTextures, sampler);
         }
         bindGroup->bind(0, 6, vk::DescriptorType::eCombinedImageSampler, envmap, envmapSampler);
+        bindGroup->bind(0, 7, vk::DescriptorType::eStorageImage, poolImage);
+
+        auto computeBindGroup = device.create<vk2s::BindGroup>(computeBindLayout.get());
+        computeBindGroup->bind(0, 0, vk::DescriptorType::eStorageImage, resultImage);
+        computeBindGroup->bind(0, 1, vk::DescriptorType::eUniformBufferDynamic, filterBuffer.get());
+        computeBindGroup->bind(0, 2, vk::DescriptorType::eStorageImage, computeResultImage);
 
         // create commands and sync objects
         std::vector<Handle<vk2s::Command>> commands(frameCount);
@@ -231,8 +285,15 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
         vk2s::Camera camera(60., 1. * windowWidth / windowHeight);
         camera.setPos(glm::vec3(0.0, 0.8, 3.0));
         camera.setLookAt(glm::vec3(0.0, 0.8, -2.0));
-        bool timeSeed = true;
-        int inputSpp  = 1;
+        bool timeSeed      = true;
+        int inputSpp       = 1;
+        int accumulatedSpp = 0;
+        bool addSample     = false;
+        bool showGUI       = true;
+        float inputSigma   = 0.2;
+        int inputKernel    = 4;
+        int inputWindow    = 2;
+        bool applyFilter   = false;
 
         for (uint32_t now = 0; window->update() && !window->getKey(GLFW_KEY_ESCAPE); now = (now + 1) % frameCount)
         {
@@ -246,6 +307,35 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
             const double mouseSpeed = 0.7f * deltaTime;
             camera.update(window->getpGLFWWindow(), speed, mouseSpeed);
 
+            if (!camera.moved())
+            {
+                if (window->getKey(GLFW_KEY_ENTER))
+                {
+                    accumulatedSpp += addSample && !window->getKey(GLFW_KEY_RIGHT_CONTROL) ? 0 : inputSpp;
+                    addSample = true;
+                }
+                else
+                {
+                    addSample = false;
+                }
+            }
+            else
+            {
+                accumulatedSpp = 0;
+            }
+
+            if (window->getKey(GLFW_KEY_SPACE))
+            {
+                if (window->getKey(GLFW_KEY_LEFT_CONTROL))
+                {
+                    showGUI = false;
+                }
+                else
+                {
+                    showGUI = true;
+                }
+            }
+
             // ImGui
             ImGui_ImplVulkan_NewFrame();
             ImGui_ImplGlfw_NewFrame();
@@ -257,20 +347,52 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
             const auto& lookAt = camera.getLookAt();
             ImGui::Text("pos = (%lf, %lf, %lf)", pos.x, pos.y, pos.z);
             ImGui::Text("lookat = (%lf, %lf, %lf)", lookAt.x, lookAt.y, lookAt.z);
-            ImGui::InputInt("spp", &inputSpp, inputSpp, 10);
-            if (ImGui::Button(timeSeed ? "exclude time from the seed" : "include time in the seed"))
+            ImGui::SetNextItemOpen(true);
+            if (ImGui::TreeNode("path tracing"))
             {
-                timeSeed = !timeSeed;
-            }
-            if (timeSeed)
-            {
-                ImGui::Text("now : seed with time");
-            }
-            else
-            {
-                ImGui::Text("now : seed without time");
+                ImGui::InputInt("spp per frame", &inputSpp, inputSpp, 10);
+                ImGui::Text("total spp : %d", accumulatedSpp);
+                if (ImGui::Button(timeSeed ? "exclude time from the seed" : "include time in the seed"))
+                {
+                    timeSeed = !timeSeed;
+                }
+                if (timeSeed)
+                {
+                    ImGui::Text("now : seed with time");
+                }
+                else
+                {
+                    ImGui::Text("now : seed without time");
+                }
+
+                ImGui::TreePop();
+                ImGui::Spacing();
             }
 
+            ImGui::SetNextItemOpen(true);
+            if (ImGui::TreeNode("post process(compute)"))
+            {
+                ImGui::InputFloat("sigma", &inputSigma, 0.05f);
+                ImGui::InputInt("kernel size", &inputKernel);
+                ImGui::InputInt("window size", &inputWindow);
+                //ImGui::InputFloat("threshold", &inputThreshold, 0.05f);
+
+                if (ImGui::Button(applyFilter ? "remove filter" : "apply filter"))
+                {
+                    applyFilter = !applyFilter;
+                }
+                if (applyFilter)
+                {
+                    ImGui::Text("now : NLM filter applied");
+                }
+                else
+                {
+                    ImGui::Text("now : no filter(raw)");
+                }
+
+                ImGui::TreePop();
+                ImGui::Spacing();
+            }
             ImGui::End();
 
             ImGui::Render();
@@ -290,11 +412,22 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
                     .projInv     = glm::inverse(sceneUBO.proj),
                     .elapsedTime = static_cast<float>(currentTime),
                     .spp         = static_cast<uint32_t>(inputSpp),
-                    .seedMode    = static_cast<uint32_t>(timeSeed),
-                    .padding     = 0.f,
+                    .seedMode    = (timeSeed ? static_cast<uint32_t>(currentTime * 1000) : 1),
+                    .prevSpp     = static_cast<uint32_t>(accumulatedSpp),
+                };
+
+                FilterUB filterUBO{
+                    .sigma = inputSigma,
+                    .h     = inputSigma,
+                    // 0 : do nothing, 1 : filter only, 2 : event camera only, 3 : both
+                    .filterMode = static_cast<uint32_t>(applyFilter),
+                    .kernelSize = inputKernel,
+                    .windowSize = inputWindow,
+                    .padding    = { 0.f },
                 };
 
                 sceneBuffer->write(&sceneUBO, sizeof(SceneUB), now * sceneBuffer->getBlockSize());
+                filterBuffer->write(&filterUBO, sizeof(FilterUB), now * filterBuffer->getBlockSize());
             }
 
             // acquire next image from swapchain(window)
@@ -310,6 +443,13 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
                 command->traceRays(shaderBindingTable.get(), windowWidth, windowHeight, 1);
             }
 
+            if (applyFilter)
+            {  // compute
+                command->setPipeline(computePipeline);
+                command->setBindGroup(computeBindGroup.get(), { static_cast<uint32_t>(now * filterBuffer->getBlockSize()) });
+                command->dispatch(windowWidth / 16 + 1, windowHeight / 16 + 1, 1);
+            }
+
             {  // present
                 const auto region = vk::ImageCopy()
                                         .setExtent({ windowWidth, windowHeight, 1 })
@@ -319,14 +459,26 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
                                         .setDstOffset({ 0, 0, 0 });
 
                 // copy path tracing result image to swapchain(window)
-                command->transitionImageLayout(resultImage.get(), vk::ImageLayout::eGeneral, vk::ImageLayout::eTransferSrcOptimal);
-                command->copyImageToSwapchain(resultImage.get(), window.get(), region, imageIndex);
-                command->transitionImageLayout(resultImage.get(), vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eGeneral);
+                if (applyFilter)
+                {
+                    command->transitionImageLayout(computeResultImage.get(), vk::ImageLayout::eGeneral, vk::ImageLayout::eTransferSrcOptimal);
+                    command->copyImageToSwapchain(computeResultImage.get(), window.get(), region, imageIndex);
+                    command->transitionImageLayout(computeResultImage.get(), vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eGeneral);
+                }
+                else
+                {
+                    command->transitionImageLayout(resultImage.get(), vk::ImageLayout::eGeneral, vk::ImageLayout::eTransferSrcOptimal);
+                    command->copyImageToSwapchain(resultImage.get(), window.get(), region, imageIndex);
+                    command->transitionImageLayout(resultImage.get(), vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eGeneral);
+                }
 
                 // render GUI (ImGui)
-                command->beginRenderPass(renderpass.get(), imageIndex, vk::Rect2D({ 0, 0 }, { windowWidth, windowHeight }), clearValue);
-                command->drawImGui();
-                command->endRenderPass();
+                if (showGUI)
+                {
+                    command->beginRenderPass(renderpass.get(), imageIndex, vk::Rect2D({ 0, 0 }, { windowWidth, windowHeight }), clearValue);
+                    command->drawImGui();
+                    command->endRenderPass();
+                }
             }
             // end writing commands
             command->end();

@@ -51,21 +51,18 @@ void main()
   const Material material = materials[nonuniformEXT(mapping.materialIndex)];
   const Vertex vtx = FetchVertexInterleaved(barys, mapping.vertexBuffer, mapping.indexBuffer);
 
-  const vec3 red = vec3(0.7, 0.2, 0.2);
-  const vec3 green = vec3(0.2, 0.7, 0.2);
-  const vec3 blue = vec3(0.2, 0.2, 0.7);
-
-  vec3 worldNormal = mat3(gl_ObjectToWorldEXT) * vtx.normal;
-  vec3 vtxColor = material.albedo.xyz;
+  vec3 vtxAlbedo = material.albedo.xyz;
   if (material.texIndex != -1)
   {
-    vtxColor = texture(texSamplers[nonuniformEXT(material.texIndex)], vtx.texCoord).xyz;
+    vtxAlbedo = texture(texSamplers[nonuniformEXT(material.texIndex)], vtx.texCoord).xyz;
   }
+  vec3 vtxEmissive = material.emissive.xyz;
 
-  hitInfo.color = vtxColor;
+  hitInfo.albedo = vtxAlbedo;
+  hitInfo.emitted = vtxEmissive;
   hitInfo.worldPosition = mat3(gl_ObjectToWorldEXT) * vtx.position;
   hitInfo.worldNormal = mat3(gl_ObjectToWorldEXT) * vtx.normal;
-  hitInfo.endTrace = material.matType == 3; // if emitter, end trace
+  hitInfo.endTrace = false;
   hitInfo.alpha = material.alpha;
   hitInfo.IOR = material.IOR;
   hitInfo.matType = material.matType;
