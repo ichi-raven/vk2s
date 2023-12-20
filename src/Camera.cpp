@@ -126,6 +126,10 @@ namespace vk2s
             mTheta = glm::degrees(sgn(diff.y) * acos(diff.x / sqrt(diff.x * diff.x + diff.y * diff.y)));
         }
 
+        glm::vec3 direction(cos(glm::radians(mTheta)) * sin(glm::radians(mPhi)), sin(glm::radians(mTheta)), cos(glm::radians(mTheta)) * cos(glm::radians(mPhi)));
+        glm::vec3 right = glm::normalize(glm::cross(glm::vec3(0.f, 1.f, 0.f), direction));  //(sin(mPhi - kPI / 2.), 0, cos(mPhi - kPI / 2.));
+        mUp             = glm::normalize(glm::cross(right, direction));
+
         updateViewMat();
     }
 
