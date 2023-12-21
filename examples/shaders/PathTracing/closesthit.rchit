@@ -7,9 +7,13 @@
 
 hitAttributeEXT vec3 attribs;
 
-#include "common.glsl"
+#include "types.glsl"
+#include "constants.glsl"
+#include "bindings.glsl"
+#include "randoms.glsl"
+#include "BSDFs.glsl"
 
-layout(location = 0) rayPayloadInEXT HitInfo hitInfo;
+layout(location = 0) rayPayloadInEXT Payload payload;
 
 layout(buffer_reference, buffer_reference_align = 4, scalar) readonly buffer VertexBuffer 
 {
@@ -48,25 +52,41 @@ void main()
 {
   const vec3 barys = vec3(1.0 - attribs.x - attribs.y, attribs.x, attribs.y);
   const InstanceMapping mapping = instanceMappings[gl_InstanceID];
-  const Material material = materials[nonuniformEXT(mapping.materialIndex)];
   const Vertex vtx = FetchVertexInterleaved(barys, mapping.vertexBuffer, mapping.indexBuffer);
-  uint randState = tea16(tea8(gl_InstanceID, gl_PrimitiveID), tea8(uint(gl_LaunchIDEXT.x * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.y), sceneParams.frame));
 
-  vec3 vtxAlbedo = material.albedo.xyz;
+  Material material = materials[nonuniformEXT(mapping.materialIndex)];
   if (material.texIndex != -1)
   {
-    vtxAlbedo = texture(texSamplers[nonuniformEXT(material.texIndex)], vtx.texCoord).xyz;
+    material.albedo = texture(texSamplers[nonuniformEXT(material.texIndex)], vtx.texCoord);
   }
-  vec3 vtxEmissive = material.emissive.xyz;
 
-  hitInfo.albedo = vtxAlbedo;
-  hitInfo.emitted = vtxEmissive;
-  hitInfo.worldPosition = mat3(gl_ObjectToWorldEXT) * vtx.position;
-  hitInfo.worldNormal = mat3(gl_ObjectToWorldEXT) * vtx.normal;
-  hitInfo.endTrace = false;
-  hitInfo.alpha = material.alpha;
-  hitInfo.IOR = material.IOR;
-  hitInfo.matType = material.matType;
+  const vec3 worldPosition = (gl_ObjectToWorldEXT * vec4(vtx.position, 1.0)).xyz;
+  const vec3 worldNormal = mat3(gl_ObjectToWorldEXT) * vtx.normal;
+
+  // init prng state
+  const vec3 seedRayDir = gl_WorldRayDirectionEXT;
+
+  uint prngState = tea16(gl_InstanceID, gl_PrimitiveID);//, tea8(uint(gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x), sceneParams.frame));  
+  prngState = tea8(prngState, uint(abs(seedRayDir.x) * prngState));
+  prngState = tea8(prngState, uint(abs(seedRayDir.y) * prngState));
+  prngState = tea8(prngState, uint(abs(seedRayDir.z) * prngState));
+
+  // maybe need russian roulette
+  payload.end = false;
+
+  payload.radiance = material.emissive.xyz;
+  payload.bsdf = sampleBSDF(material, -gl_WorldRayDirectionEXT, mat3(gl_ObjectToWorldEXT) * vtx.normal, prngState);
+  payload.ray.origin = worldPosition;
+  payload.ray.direction = payload.bsdf.wi;
+
+  // hitInfo.albedo = vtxAlbedo;
+  // hitInfo.emitted = vtxEmissive;
+  // hitInfo.worldPosition = mat3(gl_ObjectToWorldEXT) * vtx.position;
+  // hitInfo.worldNormal = mat3(gl_ObjectToWorldEXT) * vtx.normal;
+  // hitInfo.endTrace = false;
+  // hitInfo.alpha = material.alpha;
+  // hitInfo.IOR = material.IOR;
+  // hitInfo.matType = material.matType;
 
   return;
 }
