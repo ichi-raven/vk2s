@@ -8,17 +8,7 @@ precision highp int;
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_EXT_shader_explicit_arithmetic_types : enable
 #extension GL_EXT_control_flow_attributes : enable
-
-vec3 correctNaN(vec3 v)
-{
-  if (v.x != v.x || v.y != v.y || v.z != v.z)
-  {
-    return vec3(1.0);
-  }
-
-  return v;
-}
-
+#extension GL_ARB_shader_clock : enable
 
 float stepAndOutputRNGFloat(inout uint rngState)
 {
@@ -32,7 +22,7 @@ float stepAndOutputRNGFloat(inout uint rngState)
 // Generate a random unsigned int from two unsigned int values, using 16 pairs
 // of rounds of the Tiny Encryption Algorithm. See Zafar, Olano, and Curtis,
 // "GPU Random Numbers via the Tiny Encryption Algorithm"
-uint tea16(const uint val0, const uint val1)
+uint tea(const uint val0, const uint val1)
 {
   uint v0 = val0;
   uint v1 = val1;
@@ -64,6 +54,12 @@ uint tea8(uint val0, uint val1)
   }
 
   return v0;
+}
+
+uint getRandomState()
+{
+  const uvec2 clock = clock2x32ARB();
+  return tea(tea(clock.x, clock.y), uint(gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x));
 }
 
 vec3 randomUnitVector(inout uint randState) 

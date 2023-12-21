@@ -22,7 +22,7 @@ void main()
   const float phi = sgn(y) * acos(x / sqrt(x * x + y * y));
   const float theta = acos(z / length(worldRayDirection));
 
-  payload.radiance = vec3(0.1);
-  //payload.radiance = texture(envmap, vec2(phi / M_PI2, theta / M_PI)).xyz;
+  //payload.radiance = vec3(0.1);
+  payload.radiance = texture(envmap, vec2(phi / M_PI2, theta / M_PI)).xyz;
   payload.end = true;
 }

@@ -59,18 +59,22 @@ vec3 Li(const Ray primaryRay)
 
       // sample direct illumination
       // TODO:
-
-      // sample outgoing direction to continue path (uniform sample)
-      //vec3 wo = -(ray.direction);
       
-      // HACK: BSDFSample have to be returned by (closest) hit shader
-      //BSDFSample sampled = sampleBSDF(hitInfo.albedo, wo, hitInfo.worldNormal, hitInfo.matType, hitInfo.alpha, hitInfo.IOR, randState);
-
       // update
       beta *= payload.bsdf.f / payload.bsdf.pdf;
     }
 
     return L;
+}
+
+vec3 correctNaN(vec3 v)
+{
+  if (v.x != v.x || v.y != v.y || v.z != v.z)
+  {
+    return vec3(0.0);
+  }
+
+  return v;
 }
 
 void main() 
@@ -83,7 +87,7 @@ void main()
   const uint spp = sceneParams.spp;
   
   // init PRNG state
-  uint prngState = tea16(uint(gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x), sceneParams.frame % 1000 + 1);
+  uint prngState = getRandomState();
 
   vec3 sum = vec3(0.);
   for (int i = 0; i < spp; ++i)
@@ -99,7 +103,7 @@ void main()
   float rate = float(spp) / float(spp + sceneParams.untilSPP);
   if (sceneParams.untilSPP == 0)
   {
-    imageStore(poolImage, imageUV, vec4(0.0));
+    prev = vec4(0.0);
     rate = 1.0;
   }
 

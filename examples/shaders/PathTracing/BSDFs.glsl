@@ -140,6 +140,9 @@ BSDFSample sampleBSDF(const Material mat, const vec3 wo, const vec3 normal, inou
     // ERROR
   }
 
+  // prevent zero-division
+  ret.pdf = max(ret.pdf, EPS);
+
   return ret;
 }
 

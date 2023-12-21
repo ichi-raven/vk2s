@@ -64,29 +64,15 @@ void main()
   const vec3 worldNormal = mat3(gl_ObjectToWorldEXT) * vtx.normal;
 
   // init prng state
-  const vec3 seedRayDir = gl_WorldRayDirectionEXT;
-
-  uint prngState = tea16(gl_InstanceID, gl_PrimitiveID);//, tea8(uint(gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x), sceneParams.frame));  
-  prngState = tea8(prngState, uint(abs(seedRayDir.x) * prngState));
-  prngState = tea8(prngState, uint(abs(seedRayDir.y) * prngState));
-  prngState = tea8(prngState, uint(abs(seedRayDir.z) * prngState));
+  uint prngState = getRandomState();
 
   // maybe need russian roulette
   payload.end = false;
 
   payload.radiance = material.emissive.xyz;
-  payload.bsdf = sampleBSDF(material, -gl_WorldRayDirectionEXT, mat3(gl_ObjectToWorldEXT) * vtx.normal, prngState);
+  payload.bsdf = sampleBSDF(material, -gl_WorldRayDirectionEXT, worldNormal, prngState);
   payload.ray.origin = worldPosition;
   payload.ray.direction = payload.bsdf.wi;
-
-  // hitInfo.albedo = vtxAlbedo;
-  // hitInfo.emitted = vtxEmissive;
-  // hitInfo.worldPosition = mat3(gl_ObjectToWorldEXT) * vtx.position;
-  // hitInfo.worldNormal = mat3(gl_ObjectToWorldEXT) * vtx.normal;
-  // hitInfo.endTrace = false;
-  // hitInfo.alpha = material.alpha;
-  // hitInfo.IOR = material.IOR;
-  // hitInfo.matType = material.matType;
 
   return;
 }
