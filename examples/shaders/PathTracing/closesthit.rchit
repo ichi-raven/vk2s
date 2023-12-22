@@ -4,6 +4,8 @@
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_EXT_shader_explicit_arithmetic_types : enable
 #extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_control_flow_attributes : enable
+#extension GL_ARB_shader_clock : enable
 
 hitAttributeEXT vec3 attribs;
 

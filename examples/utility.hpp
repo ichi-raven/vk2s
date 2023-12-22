@@ -82,7 +82,7 @@ inline void load(std::string_view path, vk2s::Device& device, vk2s::AssetLoader&
     }
 
     // materials
-    constexpr double threshold = 1.;
+    constexpr double threshold = 1.5;
     std::vector<MaterialUB> materialData;
     materialData.reserve(hostMaterials.size());
     for (const auto& hostMat : hostMaterials)
