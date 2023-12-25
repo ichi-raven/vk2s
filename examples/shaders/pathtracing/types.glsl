@@ -56,8 +56,9 @@ struct Payload
 {
     Ray ray;
     bool end;
-    BSDFSample bsdf;
-    vec3 radiance;
+    vec3 L;
+    vec3 beta;
+    vec3 normal;
 };
 
 // struct HitInfo

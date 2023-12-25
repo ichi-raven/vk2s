@@ -29,50 +29,36 @@ Ray getCameraRay(inout uint prngState)
   return ray;
 }
 
-vec3 Li(const Ray primaryRay)
+vec3 sampleLi(const Ray primaryRay)
 {
     const uint flags = gl_RayFlagsOpaqueEXT;
 
-    Ray ray = primaryRay;
-    vec3 L = vec3(0.);
+    payload.ray = primaryRay;
+    payload.end = false;
+    vec3 L = vec3(0.0);
     vec3 beta = vec3(1.0);
-    bool specularBounce = true;
 
     [[unroll]]
-    for(int depth = 0; depth < MAX_DEPTH; ++depth)
+    for(int depth = 0; depth < MAX_DEPTH && !payload.end; ++depth)
     {
       // intersect ray with scene
       payload.end = true;
-      payload.ray = primaryRay;
+      payload.L = vec3(0.0);
+      payload.beta = vec3(1.0);
 
-      traceRayEXT(topLevelAS, flags, 0xFF, 0, 0, 0, ray.origin, tmin + offset, ray.direction, tmax, 0);
+      traceRayEXT(topLevelAS, flags, 0xFF, 0, 0, 0, payload.ray.origin, tmin + min(float(depth), offset), payload.ray.direction, tmax, 0);
 
-      ray = payload.ray;
-
-      // account for infinite lights if ray has no intersection (missed)
-      if (payload.end)
-      {
-        L += beta * payload.radiance;
-        break;
-      }
-
-      // account for emissive surface if light was not sampled
-      L += beta * payload.radiance;
-
-      // skip participating media (TODO:?)
-      // do nothing
-
-      // sample direct illumination
-      // TODO:
+      // account L
+      L += payload.L * beta;
       
-      // update
-      beta *= payload.bsdf.f / payload.bsdf.pdf;
+      // update beta
+      beta *= payload.beta;
     }
 
     return L;
 }
 
-vec3 correctNaN(vec3 v)
+vec3 correctNaN(const vec3 v)
 {
   if (v.x != v.x || v.y != v.y || v.z != v.z)
   {
@@ -84,25 +70,19 @@ vec3 correctNaN(vec3 v)
 
 void main() 
 {
-  const vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
-  const vec2 screenPos = pixelCenter / vec2(gl_LaunchSizeEXT.xy);
   const ivec2 imageUV = ivec2(gl_LaunchIDEXT.xy);
-  vec2 d = screenPos * 2.0 - 1.0;
-
   const uint spp = sceneParams.spp;
   
   // init PRNG state
   uint prngState = getRandomState();
 
-  vec3 sum = vec3(0.);
+  vec3 L = vec3(0.);
   for (int i = 0; i < spp; ++i)
   {
-    const vec3 L = Li(getCameraRay(prngState));
-
-    sum += correctNaN(L);
+    L += correctNaN(sampleLi(getCameraRay(prngState)));
   }
 
-  sum /= float(spp);
+  L /= float(spp);
 
   vec4 prev = imageLoad(poolImage, imageUV);
   float rate = float(spp) / float(spp + sceneParams.untilSPP);
@@ -112,7 +92,7 @@ void main()
     rate = 1.0;
   }
 
-  vec4 final = mix(prev, vec4(sum, 1.0), rate);
+  vec4 final = mix(prev, vec4(L, 1.0), rate);
   imageStore(poolImage, imageUV, final);
 
   imageStore(image, imageUV, sqrt(final));

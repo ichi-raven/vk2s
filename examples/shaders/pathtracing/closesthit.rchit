@@ -62,19 +62,56 @@ void main()
     material.albedo = texture(texSamplers[nonuniformEXT(material.texIndex)], vtx.texCoord);
   }
 
-  const vec3 worldPosition = (gl_ObjectToWorldEXT * vec4(vtx.position, 1.0)).xyz;
+  const vec3 worldPos    = (gl_ObjectToWorldEXT * vec4(vtx.position, 1.0)).xyz;
   const vec3 worldNormal = mat3(gl_ObjectToWorldEXT) * vtx.normal;
+
+  payload.ray.origin = worldPos;
+  payload.normal = worldNormal;
 
   // init prng state
   uint prngState = getRandomState();
 
+  // sample BSDF
+  const BSDFSample bsdf = sampleBSDF(material, -gl_WorldRayDirectionEXT, worldNormal, prngState);
+  // account for emissive surface if light was not sampled
+  payload.L = material.emissive.xyz;
+  payload.ray.direction = bsdf.wi;
+  payload.beta = bsdf.f / bsdf.pdf;
+
+  
+  if (stepAndOutputRNGFloat(prngState) >= 0.8 && material.matType == 0) // light sample
+  {
+    const vec3 faceNormal = setFaceNormal(-gl_WorldRayDirectionEXT, worldNormal);
+
+    // Debug: for direct light sampling
+    vec3 debugLight[4] = {vec3(0.2300, 1.5800, -0.2200), vec3(0.2300, 1.5800, 0.1600), vec3(-0.2400, 1.5800, 0.1600), vec3(-0.2400, 1.5800, -0.2200)};    
+    const vec2 xRange = vec2(debugLight[2].x, debugLight[0].x);
+    const vec2 zRange = vec2(debugLight[0].z, debugLight[1].z);
+    const float lightArea = (xRange.y - xRange.x) * (zRange.y - zRange.x);
+
+    // sample direct illumination
+    const float randLightX = stepAndOutputRNGFloatInRange(xRange.x, xRange.y, prngState);
+    const float randLightZ = stepAndOutputRNGFloatInRange(zRange.x, zRange.y, prngState);
+    const vec3 onLight = vec3(randLightX, debugLight[0].y, randLightZ);
+    vec3 toLight = onLight - worldPos;
+    const float distSq = dot(toLight, toLight);
+    
+    toLight = normalize(toLight);
+    const float lightCos = abs(toLight.y);
+
+    if (dot(toLight, worldNormal) > 0. && lightCos > EPS)
+    {
+      payload.ray.direction = toLight;
+      payload.L = vec3(0.0);
+      payload.beta = bsdf.f / max(0.1, distSq / (lightCos * lightArea));
+    }
+  }
+
   // maybe need russian roulette
   payload.end = false;
 
-  payload.radiance = material.emissive.xyz;
-  payload.bsdf = sampleBSDF(material, -gl_WorldRayDirectionEXT, worldNormal, prngState);
-  payload.ray.origin = worldPosition;
-  payload.ray.direction = payload.bsdf.wi;
-
+  // skip participating media (TODO:?)
+  // do nothing
+  
   return;
 }

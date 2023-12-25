@@ -13,6 +13,36 @@ precision highp int;
 #include "constants.glsl"
 #include "randoms.glsl"
 
+bool isReflection(const uint flags)
+{
+  return bool(flags & BSDF_FLAGS_REFLECTION);
+}
+
+bool isTransMission(const uint flags)
+{
+  return bool(flags & BSDF_FLAGS_TRANSMISSION);
+}
+
+bool isDiffuse(const uint flags)
+{
+  return bool(flags & BSDF_FLAGS_DIFFUSE);
+}
+
+bool isGlossy(const uint flags)
+{
+  return bool(flags & BSDF_FLAGS_GLOSSY);
+}
+
+bool isSpecular(const uint flags)
+{
+  return bool(flags & BSDF_FLAGS_SPECULAR);
+}
+
+bool IsNonSpecular(const uint flags) 
+{
+    return bool(flags & (BSDF_FLAGS_DIFFUSE | BSDF_FLAGS_GLOSSY)); 
+}
+
 float schlick(float cosine, float ref_idx) 
 {
   float r0 = (1 - ref_idx) / (1 + ref_idx);
@@ -39,31 +69,6 @@ ONB buildFromW(vec3 w)
   ret.u = cross(ret.w, ret.v);
 
   return ret;
-}
-
-bool isReflection(const uint flags)
-{
-  return bool(flags & BSDF_FLAGS_REFLECTION);
-}
-
-bool isTransMission(const uint flags)
-{
-  return bool(flags & BSDF_FLAGS_TRANSMISSION);
-}
-
-bool isDiffuse(const uint flags)
-{
-  return bool(flags & BSDF_FLAGS_DIFFUSE);
-}
-
-bool isGlossy(const uint flags)
-{
-  return bool(flags & BSDF_FLAGS_GLOSSY);
-}
-
-bool isSpecular(const uint flags)
-{
-  return bool(flags & BSDF_FLAGS_SPECULAR);
 }
 
 vec3 lambertScatter(vec3 normal, inout uint prngState, out float pdf)
@@ -118,6 +123,7 @@ BSDFSample sampleBSDF(const Material mat, const vec3 wo, const vec3 normal, inou
   if (mat.matType == MAT_LAMBERT)
   {
     ret.flags = BSDF_FLAGS_DIFFUSE | BSDF_FLAGS_REFLECTION;
+    
     ret.wi = lambertScatter(faceNormal, prngState, ret.pdf);
     ret.f *= M_INVPI * abs(dot(ret.wi, normal));
   }
