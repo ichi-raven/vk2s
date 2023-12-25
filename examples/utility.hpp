@@ -128,7 +128,7 @@ inline void load(std::string_view path, vk2s::Device& device, vk2s::AssetLoader&
             mat.alpha        = 1. - *hostMat.shininess / 1000.;
         }
 
-        if (hostMat.IOR && *hostMat.IOR > 1.0)
+        if (hostMat.IOR && *hostMat.IOR > 1.5)
         {
             mat.materialType = static_cast<uint32_t>(MaterialType::eDielectric);
             mat.albedo       = glm::vec4(1.0);

@@ -23,7 +23,7 @@ void main()
   const float theta = acos(z / length(worldRayDirection));
 
   // account for infinite lights if ray has no intersection (missed)
-  payload.L = vec3(0.1);
-  //payload.L = texture(envmap, vec2(phi / M_PI2, theta / M_PI)).xyz;
+  payload.Le = vec3(0.1);
+  //payload.Le = texture(envmap, vec2(phi / M_PI2, theta / M_PI)).xyz;
   payload.end = true;
 }

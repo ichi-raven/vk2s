@@ -34,7 +34,7 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
     {
         vk2s::Device device;
 
-        auto window = device.create<vk2s::Window>(windowWidth, windowHeight, frameCount, "pathtracing window");
+        auto window = device.create<vk2s::Window>(windowWidth, windowHeight, frameCount, "path tracer");
 
         auto renderpass = device.create<vk2s::RenderPass>(window.get(), vk::AttachmentLoadOp::eLoad);
 

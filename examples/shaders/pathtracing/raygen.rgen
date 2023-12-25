@@ -29,30 +29,67 @@ Ray getCameraRay(inout uint prngState)
   return ray;
 }
 
+bool zero(const vec3 v)
+{
+  return v.x <= EPS && v.y <= EPS && v.z <= EPS;
+}
+
 vec3 sampleLi(const Ray primaryRay)
 {
     const uint flags = gl_RayFlagsOpaqueEXT;
 
     payload.ray = primaryRay;
     payload.end = false;
+    uint depth = 0;
     vec3 L = vec3(0.0);
     vec3 beta = vec3(1.0);
+    bool specularBounce = false;
 
-    [[unroll]]
-    for(int depth = 0; depth < MAX_DEPTH && !payload.end; ++depth)
+    //[[unroll]]
+    //for(int depth = 0; ; ++depth)
+    while (!zero(beta))
     {
       // intersect ray with scene
       payload.end = true;
-      payload.L = vec3(0.0);
+      payload.Le = vec3(0.0);
       payload.beta = vec3(1.0);
+      payload.specularBounce = specularBounce;
+      payload.sampledLight = false;
 
       traceRayEXT(topLevelAS, flags, 0xFF, 0, 0, 0, payload.ray.origin, tmin + min(float(depth), offset), payload.ray.direction, tmax, 0);
 
-      // account L
-      L += payload.L * beta;
+      // account for infinite lights
+      if (payload.end)
+      {
+        L += beta * payload.Le;
+        break;
+      }
+
+      // account for emissive surface if light was not sampled
+      if (!payload.sampledLight || specularBounce)
+      {
+        L += beta * payload.Le;
+      }
       
-      // update beta
+      // end path if maximum depth reached
+      if (depth++ >= MAX_DEPTH)
+      {
+        break;
+      }
+
+      // TODO: medium intersection
+
+      // sample direct illumination
+      if (payload.sampledLight)
+      {
+        L += beta * payload.ls.f * payload.ls.L / payload.ls.pdf;
+      }
+
+      // sample BSDF
       beta *= payload.beta;
+
+      // update
+      specularBounce = payload.specularBounce;
     }
 
     return L;

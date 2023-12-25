@@ -50,14 +50,33 @@ struct BSDFSample
   uint flags;
   float eta;
   bool pdfIsProportional;
+  bool specularBounce;
+};
+
+struct LightSample
+{
+  float pdf;
+  vec3 f;
+  vec3 L;
 };
 
 struct Payload
 {
     Ray ray;
     bool end;
-    vec3 L;
+
+    // for infinite light or emissive surface(missed)
+    vec3 Le;
+
+    // for direct light sampling
+    LightSample ls;
+    bool sampledLight;
+
+    // for BSDF sampling
+    bool specularBounce;
     vec3 beta;
+    
+    // for denoise?
     vec3 normal;
 };
 

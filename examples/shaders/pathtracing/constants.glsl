@@ -10,7 +10,7 @@ precision highp int;
 #extension GL_EXT_control_flow_attributes : enable
 
 // constants
-#define EPS (0.00001)
+#define EPS (0.0001)
 
 #define M_PI  (3.1415926535897932384626433832795)
 #define M_PI2 (6.28318530718)
@@ -19,6 +19,15 @@ precision highp int;
 #define MAT_LAMBERT (0)
 #define MAT_CONDUCTOR (1)
 #define MAT_DIELECTRIC (2)
+
+#define RED (vec3(0.8, 0.2, 0.2))
+#define GREEN (vec3(0.2, 0.8, 0.2))
+#define BLUE (vec3(0.2, 0.2, 0.8))
+#define MAGENTA (vec3(0.8, 0.2, 0.8))
+#define CYAN (vec3(0.2, 0.8, 0.8))
+#define YELLOW (vec3(0.8, 0.8, 0.2))
+#define BLACK (vec3(0.0))
+#define WHITE (vec3(1.0))
 
 #define MAX_DEPTH (8)
 

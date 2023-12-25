@@ -16,6 +16,7 @@ hitAttributeEXT vec3 attribs;
 #include "BSDFs.glsl"
 
 layout(location = 0) rayPayloadInEXT Payload payload;
+//layout(location = 1) rayPayloadEXT bool shadowed;
 
 layout(buffer_reference, buffer_reference_align = 4, scalar) readonly buffer VertexBuffer 
 {
@@ -74,25 +75,29 @@ void main()
   // sample BSDF
   const BSDFSample bsdf = sampleBSDF(material, -gl_WorldRayDirectionEXT, worldNormal, prngState);
   // account for emissive surface if light was not sampled
-  payload.L = material.emissive.xyz;
+  payload.Le = material.emissive.xyz;
   payload.ray.direction = bsdf.wi;
   payload.beta = bsdf.f / bsdf.pdf;
+  payload.specularBounce = isSpecular(bsdf.flags);
 
-  
-  if (stepAndOutputRNGFloat(prngState) >= 0.8 && material.matType == 0) // light sample
+  // light sampling
+  if (stepAndOutputRNGFloat(prngState) > 0.5 && material.matType == 0) // light sample
   {
     const vec3 faceNormal = setFaceNormal(-gl_WorldRayDirectionEXT, worldNormal);
 
     // Debug: for direct light sampling
     vec3 debugLight[4] = {vec3(0.2300, 1.5800, -0.2200), vec3(0.2300, 1.5800, 0.1600), vec3(-0.2400, 1.5800, 0.1600), vec3(-0.2400, 1.5800, -0.2200)};    
-    const vec2 xRange = vec2(debugLight[2].x, debugLight[0].x);
-    const vec2 zRange = vec2(debugLight[0].z, debugLight[1].z);
-    const float lightArea = (xRange.y - xRange.x) * (zRange.y - zRange.x);
+    const float xRange[2] = {debugLight[2].x, debugLight[0].x};
+    const float zRange[2] = {debugLight[0].z, debugLight[1].z};
+    const float lightArea = EPS;//(xRange[1] - xRange[0]) * (zRange[1] - zRange[0]);
 
     // sample direct illumination
-    const float randLightX = stepAndOutputRNGFloatInRange(xRange.x, xRange.y, prngState);
-    const float randLightZ = stepAndOutputRNGFloatInRange(zRange.x, zRange.y, prngState);
-    const vec3 onLight = vec3(randLightX, debugLight[0].y, randLightZ);
+    const float r1 = stepAndOutputRNGFloat(prngState);
+    const float r2 = stepAndOutputRNGFloat(prngState);
+    const float randLightX = r1 * (xRange[1] - xRange[0]) + xRange[0];
+    const float randLightZ = r2 * (zRange[1] - zRange[0]) + zRange[0];
+    //const vec3 onLight = vec3(randLightX, debugLight[0].y, randLightZ);
+    const vec3 onLight = vec3((xRange[1] + xRange[0]) * 0.5, debugLight[0].y, (zRange[1] + zRange[0]) * 0.5);
     vec3 toLight = onLight - worldPos;
     const float distSq = dot(toLight, toLight);
     
@@ -101,17 +106,21 @@ void main()
 
     if (dot(toLight, worldNormal) > 0. && lightCos > EPS)
     {
-      payload.ray.direction = toLight;
-      payload.L = vec3(0.0);
-      payload.beta = bsdf.f / max(0.1, distSq / (lightCos * lightArea));
+      payload.sampledLight = true; 
+      payload.ls.f = bsdf.f;
+      payload.ls.pdf = max(distSq / (lightCos * lightArea), EPS);
+      
+      // check visibility
+      //const uint flags = gl_RayFlagsOpaqueEXT;
+      //shadowed = true;
+      //traceRayEXT(topLevelAS, flags, 0xFF, 0, 0, 0, worldPos, tmin + offset, toLight, tmax, 1);
+
+      payload.ls.L = vec3(10.0);//shadowed ? vec3(0.0) : vec3(10.0);
     }
   }
 
   // maybe need russian roulette
   payload.end = false;
-
-  // skip participating media (TODO:?)
-  // do nothing
   
   return;
 }
