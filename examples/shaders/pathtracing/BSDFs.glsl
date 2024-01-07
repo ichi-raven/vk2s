@@ -120,30 +120,28 @@ BSDFSample sampleBSDF(const Material mat, const vec3 wo, const vec3 normal, inou
   const vec3 faceNormal = setFaceNormal(-wo, normal);
   const bool front = faceNormal == normal;
 
-  if (mat.matType == MAT_LAMBERT)
+  switch(mat.matType)
   {
-    ret.flags = BSDF_FLAGS_DIFFUSE | BSDF_FLAGS_REFLECTION;
-    
-    ret.wi = lambertScatter(faceNormal, prngState, ret.pdf);
-    ret.f *= M_INVPI * abs(dot(ret.wi, normal));
-  }
-  else if (mat.matType == MAT_CONDUCTOR)
-  {
-    // HACK:
-    ret.flags = mat.alpha < 0.1 ? BSDF_FLAGS_SPECULAR : BSDF_FLAGS_GLOSSY;
-    ret.flags |= BSDF_FLAGS_REFLECTION;
-    ret.wi = conductorScatter(wo, faceNormal, mat.alpha, prngState, ret.pdf);
-  }
-  else if (mat.matType == MAT_DIELECTRIC)
-  {
-    ret.flags = BSDF_FLAGS_TRANSMISSION;
-    // HACK:
-    ret.flags |= mat.IOR == 1.0 ? BSDF_FLAGS_REFLECTION : 0;
-    ret.wi = dielectricScatter(wo, faceNormal, front, mat.IOR, prngState, ret.pdf);
-  }
-  else
-  {
+    case MAT_LAMBERT:
+      ret.flags = BSDF_FLAGS_DIFFUSE | BSDF_FLAGS_REFLECTION;
+      ret.wi = lambertScatter(faceNormal, prngState, ret.pdf);
+      ret.f *= M_INVPI * abs(dot(ret.wi, normal));
+    break;
+    case MAT_CONDUCTOR:
+      // HACK:
+      ret.flags = mat.alpha < 0.1 ? BSDF_FLAGS_SPECULAR : BSDF_FLAGS_GLOSSY;
+      ret.flags |= BSDF_FLAGS_REFLECTION;
+      ret.wi = conductorScatter(wo, faceNormal, mat.alpha, prngState, ret.pdf);
+    break;
+    case MAT_DIELECTRIC:
+      ret.flags = BSDF_FLAGS_TRANSMISSION;
+      // HACK:
+      ret.flags |= mat.IOR == 1.0 ? BSDF_FLAGS_REFLECTION : 0;
+      ret.wi = dielectricScatter(wo, faceNormal, front, mat.IOR, prngState, ret.pdf);
+    break;
+    default:
     // ERROR
+    break;
   }
 
   // prevent zero-division

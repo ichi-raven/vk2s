@@ -305,11 +305,9 @@ namespace vk2s
         enabledDescriptorIndexingFeatures.descriptorBindingVariableDescriptorCount   = VK_TRUE;
         enabledDescriptorIndexingFeatures.runtimeDescriptorArray                     = VK_TRUE;
 
-        vk::PhysicalDeviceShaderClockFeaturesKHR enabledShaderClockFeatures(VK_TRUE, VK_TRUE, &enabledDescriptorIndexingFeatures);
-
         vk::PhysicalDeviceFeatures features = mPhysicalDevice.getFeatures();
 
-        vk::PhysicalDeviceFeatures2 physicalDeviceFeatures2(features, &enabledShaderClockFeatures);
+        vk::PhysicalDeviceFeatures2 physicalDeviceFeatures2(features, &enabledDescriptorIndexingFeatures);
 
         createInfo.pNext            = &physicalDeviceFeatures2;
         createInfo.pEnabledFeatures = nullptr;

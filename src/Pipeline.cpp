@@ -83,27 +83,26 @@ namespace vk2s
         std::vector<vk::PipelineShaderStageCreateInfo> stages;
         stages.reserve(4);
 
-        if (info.raygenShader)
+        for (const auto& raygenShader : info.raygenShaders)
         {
-            vk::PipelineShaderStageCreateInfo rgsStage({}, vk::ShaderStageFlagBits::eRaygenKHR, info.raygenShader->getVkShaderModule().get(), info.raygenShader->getEntryPoint().c_str());
-            stages.emplace_back(rgsStage);
+            stages.emplace_back(vk::PipelineShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eRaygenKHR, raygenShader->getVkShaderModule().get(), raygenShader->getEntryPoint().c_str()));
         }
 
-        if (info.missShader)
+        for (const auto& missShader : info.missShaders)
         {
-            vk::PipelineShaderStageCreateInfo missStage({}, vk::ShaderStageFlagBits::eMissKHR, info.missShader->getVkShaderModule().get(),info.missShader->getEntryPoint().c_str());
+            vk::PipelineShaderStageCreateInfo missStage({}, vk::ShaderStageFlagBits::eMissKHR, missShader->getVkShaderModule().get(), missShader->getEntryPoint().c_str());
             stages.emplace_back(missStage);
         }
 
-        if (info.chitShader)
+        for (const auto& chitShader : info.chitShaders)
         {
-            vk::PipelineShaderStageCreateInfo chitStage({}, vk::ShaderStageFlagBits::eClosestHitKHR, info.chitShader->getVkShaderModule().get(), info.chitShader->getEntryPoint().c_str());
+            vk::PipelineShaderStageCreateInfo chitStage({}, vk::ShaderStageFlagBits::eClosestHitKHR, chitShader->getVkShaderModule().get(), chitShader->getEntryPoint().c_str());
             stages.emplace_back(chitStage);
         }
 
-        if (info.callableShader)
+        for (const auto& callableShader : info.callableShaders)
         {
-            vk::PipelineShaderStageCreateInfo callableStage({}, vk::ShaderStageFlagBits::eCallableKHR, info.callableShader->getVkShaderModule().get(), info.callableShader->getEntryPoint().c_str());
+            vk::PipelineShaderStageCreateInfo callableStage({}, vk::ShaderStageFlagBits::eCallableKHR, callableShader->getVkShaderModule().get(), callableShader->getEntryPoint().c_str());
             stages.emplace_back(callableStage);
         }
 
@@ -112,7 +111,7 @@ namespace vk2s
         rtPipelineCI.pStages                      = stages.data();
         rtPipelineCI.groupCount                   = uint32_t(info.shaderGroups.size());
         rtPipelineCI.pGroups                      = info.shaderGroups.data();
-        rtPipelineCI.maxPipelineRayRecursionDepth = 1;
+        rtPipelineCI.maxPipelineRayRecursionDepth = 2; // HACK:
         rtPipelineCI.layout                       = mLayout.get();
 
         vk::ResultValue<vk::UniquePipeline> result = vkDevice->createRayTracingPipelineKHRUnique({}, {}, rtPipelineCI);

@@ -78,6 +78,9 @@ struct Payload
     
     // for denoise?
     vec3 normal;
+
+    // ???
+    uint prngState;
 };
 
 // struct HitInfo

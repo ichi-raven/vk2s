@@ -4,7 +4,6 @@
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_EXT_shader_explicit_arithmetic_types : enable
 #extension GL_EXT_control_flow_attributes : enable
-#extension GL_ARB_shader_clock : enable
 
 #include "types.glsl"
 #include "constants.glsl"
@@ -12,6 +11,7 @@
 #include "randoms.glsl"
 
 layout(location = 0) rayPayloadEXT Payload payload;
+layout(location = 1) rayPayloadEXT bool shadowed;
 
 Ray getCameraRay(inout uint prngState)
 {
@@ -34,16 +34,23 @@ bool zero(const vec3 v)
   return v.x <= EPS && v.y <= EPS && v.z <= EPS;
 }
 
-vec3 sampleLi(const Ray primaryRay)
+vec3 sampleLi(const uint sampleIndex)
 {
     const uint flags = gl_RayFlagsOpaqueEXT;
 
-    payload.ray = primaryRay;
-    payload.end = false;
     uint depth = 0;
     vec3 L = vec3(0.0);
     vec3 beta = vec3(1.0);
     bool specularBounce = false;
+
+    // init random seed
+    uint prngState = tea(tea(sceneParams.frame, sampleIndex), uint(gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x));
+    
+    payload.beta = vec3(1.0);
+    payload.Le = vec3(0.0);
+    payload.end = false;
+    payload.ray = getCameraRay(prngState);
+    payload.prngState = prngState;
 
     //[[unroll]]
     //for(int depth = 0; ; ++depth)
@@ -51,12 +58,10 @@ vec3 sampleLi(const Ray primaryRay)
     {
       // intersect ray with scene
       payload.end = true;
-      payload.Le = vec3(0.0);
-      payload.beta = vec3(1.0);
       payload.specularBounce = specularBounce;
       payload.sampledLight = false;
 
-      traceRayEXT(topLevelAS, flags, 0xFF, 0, 0, 0, payload.ray.origin, tmin + min(float(depth), offset), payload.ray.direction, tmax, 0);
+      traceRayEXT(TLAS, flags, 0xFF, 0, 0, 0, payload.ray.origin, tmin + min(float(depth), offset), payload.ray.direction, tmax, 0);
 
       // account for infinite lights
       if (payload.end)
@@ -72,7 +77,7 @@ vec3 sampleLi(const Ray primaryRay)
       }
       
       // end path if maximum depth reached
-      if (depth++ >= MAX_DEPTH)
+      if (++depth > MAX_DEPTH)
       {
         break;
       }
@@ -108,28 +113,23 @@ vec3 correctNaN(const vec3 v)
 void main() 
 {
   const ivec2 imageUV = ivec2(gl_LaunchIDEXT.xy);
-  const uint spp = sceneParams.spp;
-  
-  // init PRNG state
-  uint prngState = getRandomState();
 
   vec3 L = vec3(0.);
-  for (int i = 0; i < spp; ++i)
+  for (int i = 0; i < sceneParams.spp; ++i)
   {
-    L += correctNaN(sampleLi(getCameraRay(prngState)));
+    L += correctNaN(sampleLi(i + sceneParams.untilSPP));
   }
 
-  L /= float(spp);
+  L /= float(sceneParams.spp);
 
-  vec4 prev = imageLoad(poolImage, imageUV);
-  float rate = float(spp) / float(spp + sceneParams.untilSPP);
+  const vec4 prev = imageLoad(poolImage, imageUV);
+  float rate = float(sceneParams.spp) / float(sceneParams.spp + sceneParams.untilSPP);
   if (sceneParams.untilSPP == 0)
   {
-    prev = vec4(0.0);
     rate = 1.0;
   }
 
-  vec4 final = mix(prev, vec4(L, 1.0), rate);
+  const vec4 final = mix(prev, vec4(L, 1.0), rate);
   imageStore(poolImage, imageUV, final);
 
   imageStore(image, imageUV, sqrt(final));

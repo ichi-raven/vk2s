@@ -24,9 +24,6 @@ namespace vk2s
         const auto missShaderEntrySize     = mDevice.align(handleSize, handleAlignment);
         const auto hitShaderEntrySize      = mDevice.align(handleSize, handleAlignment);
         const auto callableShaderEntrySize = mDevice.align(handleSize, handleAlignment);
-        //hitShaderEntrySize += sizeof(uint64_t);  // IndexBuffer address
-        //hitShaderEntrySize += sizeof(uint64_t);  // VertexBuffer address
-        //hitShaderEntrySize = mDevice.align(hitShaderEntrySize, handleAlignment);
 
         // calculate needed sizes for each shaders
         const auto baseAlign = rtPipelineProps.shaderGroupBaseAlignment;
@@ -39,10 +36,11 @@ namespace vk2s
         mShaderBindingTable = mDevice.create<Buffer>(ci, memProps);
 
         // get the shader groups handle of the pipeline
-        auto handleSizeAligned = mDevice.align(handleSize, handleAlignment);
-        auto handleStorageSize = shaderGroups.size() * handleSizeAligned;
+        const auto handleSizeAligned        = mDevice.align(handleSize, handleAlignment);
+        const auto handleStorageSize        = shaderGroups.size() * handleSizeAligned;
+        const uint32_t allShaderCount = raygenShaderCount + missShaderCount + hitShaderCount + callableShaderCount;
         std::vector<uint8_t> shaderHandleStorage(handleStorageSize);
-        const auto res = mDevice.getVkDevice()->getRayTracingShaderGroupHandlesKHR(raytracePipeline.getVkPipeline().get(), 0, static_cast<uint32_t>(shaderGroups.size()), shaderHandleStorage.size(), shaderHandleStorage.data());
+        const auto res = mDevice.getVkDevice()->getRayTracingShaderGroupHandlesKHR(raytracePipeline.getVkPipeline().get(), 0, allShaderCount, shaderHandleStorage.size(), shaderHandleStorage.data());
 
         if (res != vk::Result::eSuccess)
         {
@@ -54,43 +52,40 @@ namespace vk2s
         vk::BufferDeviceAddressInfo deviceAddressInfo(mShaderBindingTable->getVkBuffer().get());
         const auto deviceAddress = vkDevice->getBufferAddress(deviceAddressInfo);
 
-        void* p = vkDevice->mapMemory(mShaderBindingTable->getVkDeviceMemory().get(), 0, mShaderBindingTable->getSize());
-        {
-            auto dst = static_cast<uint8_t*>(p);
+        mSBTInfo.rgen.deviceAddress = deviceAddress;
+        // ray generation shader need size == stride
+        mSBTInfo.rgen.stride = raygenShaderEntrySize;
+        mSBTInfo.rgen.size   = mSBTInfo.rgen.stride;
 
+        mSBTInfo.miss.deviceAddress = deviceAddress + regionRaygen;
+        mSBTInfo.miss.size          = regionMiss;
+        mSBTInfo.miss.stride        = missShaderEntrySize;
+
+        mSBTInfo.hit.deviceAddress = deviceAddress + regionRaygen + regionMiss;
+        mSBTInfo.hit.size          = regionHit;
+        mSBTInfo.hit.stride        = hitShaderEntrySize;
+
+        uint8_t* dst = static_cast<uint8_t*>(vkDevice->mapMemory(mShaderBindingTable->getVkDeviceMemory().get(), 0, mShaderBindingTable->getSize()));
+        {
             // write the entry of ray generation shader
-            auto raygen = shaderHandleStorage.data();  // + handleSizeAligned* static_cast<uint32_t>(ShaderGroups::eGroupRayGenShader);
-            memcpy(dst, raygen, handleSize);
+            memcpy(dst, shaderHandleStorage.data(), handleSize);
             dst += regionRaygen;
-            mSBTInfo.rgen.deviceAddress = deviceAddress;
-            // ray generation shader need size == stride
-            mSBTInfo.rgen.stride = raygenShaderEntrySize;
-            mSBTInfo.rgen.size   = mSBTInfo.rgen.stride;
 
             // write the entry of miss shader
-            auto miss = shaderHandleStorage.data() + handleSizeAligned * raygenShaderCount;  // * static_cast<uint32_t>(ShaderGroups::eGroupMissShader);
-            memcpy(dst, miss, handleSize);
-            dst += regionMiss;
-            mSBTInfo.miss.deviceAddress = deviceAddress + regionRaygen;
-            mSBTInfo.miss.size          = regionMiss;
-            mSBTInfo.miss.stride        = missShaderEntrySize;
+            for (int i = 0; i < missShaderCount; ++i)
+            {
+                memcpy(dst, shaderHandleStorage.data() + handleSizeAligned * (raygenShaderCount + i), handleSize);
+
+                dst += missShaderEntrySize;
+            }
 
             // write the entry of hit shader
-            auto hit = shaderHandleStorage.data() + handleSizeAligned * (raygenShaderCount + missShaderCount);  //static_cast<uint32_t>(ShaderGroups::eGroupHitShader);
-
-            auto entryStart = dst;
             for (int i = 0; i < hitShaderCount; ++i)
             {
-                memcpy(entryStart, hit, handleSize);
-                //writeSBTDataForHitShader(entryStart + handleSize, meshInstance);
+                memcpy(dst, shaderHandleStorage.data() + handleSizeAligned * (raygenShaderCount + missShaderCount + i), handleSize);
 
-                entryStart += hitShaderEntrySize;
+                dst += hitShaderEntrySize;
             }
-            entryStart -= hitShaderEntrySize;
-
-            mSBTInfo.hit.deviceAddress = deviceAddress + regionRaygen + regionMiss;
-            mSBTInfo.hit.size          = regionHit;
-            mSBTInfo.hit.stride        = hitShaderEntrySize;
 
             // write the entry of callable shader
             //auto callable = shaderHandleStorage.data() + handleSizeAligned * (raygenShaderCount + missShaderCount + hitShaderCount);  //static_cast<uint32_t>(ShaderGroups::eGroupHitShader);

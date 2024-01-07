@@ -55,10 +55,10 @@ namespace vk2s
 
         struct VkRayTracingPipelineInfo
         {
-            Handle<Shader> raygenShader;
-            Handle<Shader> missShader;
-            Handle<Shader> chitShader;
-            Handle<Shader> callableShader;
+            std::vector<Handle<Shader>> raygenShaders;
+            std::vector<Handle<Shader>> missShaders;
+            std::vector<Handle<Shader>> chitShaders;
+            std::vector<Handle<Shader>> callableShaders;
             Handle<BindLayout> bindLayout;
 
             std::vector<vk::RayTracingShaderGroupCreateInfoKHR> shaderGroups;

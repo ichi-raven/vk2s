@@ -8,7 +8,6 @@ precision highp int;
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_EXT_shader_explicit_arithmetic_types : enable
 #extension GL_EXT_control_flow_attributes : enable
-#extension GL_ARB_shader_clock : enable
 
 float stepAndOutputRNGFloat(inout uint rngState)
 {
@@ -46,12 +45,6 @@ uint tea(const uint val0, const uint val1)
   }
 
   return v0;
-}
-
-uint getRandomState()
-{
-  const uvec2 clock = clock2x32ARB();
-  return tea(tea(clock.x, clock.y), uint(gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x));
 }
 
 vec3 randomUnitVector(inout uint randState) 

@@ -14,7 +14,6 @@ struct SceneUB  // std430
     float padding;
 };
 
-
 struct FilterUB  // std430
 {
     float sigma;
@@ -181,6 +180,7 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
         // load shaders
         const auto raygenShader  = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/raygen.rgen", "main");
         const auto missShader    = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/miss.rmiss", "main");
+        const auto shadowShader  = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/shadow.rmiss", "main");
         const auto chitShader    = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/closesthit.rchit", "main");
         const auto computeShader = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/compute.comp", "main");
 
@@ -220,23 +220,25 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
         // shader groups
         constexpr int kIndexRaygen     = 0;
         constexpr int kIndexMiss       = 1;
-        constexpr int kIndexClosestHit = 2;
+        constexpr int kIndexShadow     = 2;
+        constexpr int kIndexClosestHit = 3;
 
         // create ray tracing pipeline
         vk2s::Pipeline::VkRayTracingPipelineInfo rpi{
-            .raygenShader = raygenShader,
-            .missShader   = missShader,
-            .chitShader   = chitShader,
-            .bindLayout   = bindLayout,
-            .shaderGroups = { vk::RayTracingShaderGroupCreateInfoKHR(vk::RayTracingShaderGroupTypeKHR::eGeneral, kIndexRaygen, VK_SHADER_UNUSED_KHR, VK_SHADER_UNUSED_KHR, VK_SHADER_UNUSED_KHR),
-                              vk::RayTracingShaderGroupCreateInfoKHR(vk::RayTracingShaderGroupTypeKHR::eGeneral, kIndexMiss, VK_SHADER_UNUSED_KHR, VK_SHADER_UNUSED_KHR, VK_SHADER_UNUSED_KHR),
-                              vk::RayTracingShaderGroupCreateInfoKHR(vk::RayTracingShaderGroupTypeKHR::eTrianglesHitGroup, VK_SHADER_UNUSED_KHR, kIndexClosestHit, VK_SHADER_UNUSED_KHR, VK_SHADER_UNUSED_KHR) },
+            .raygenShaders = { raygenShader },
+            .missShaders   = { missShader, shadowShader },
+            .chitShaders   = { chitShader },
+            .bindLayout    = bindLayout,
+            .shaderGroups  = { vk::RayTracingShaderGroupCreateInfoKHR(vk::RayTracingShaderGroupTypeKHR::eGeneral, kIndexRaygen, VK_SHADER_UNUSED_KHR, VK_SHADER_UNUSED_KHR, VK_SHADER_UNUSED_KHR),
+                               vk::RayTracingShaderGroupCreateInfoKHR(vk::RayTracingShaderGroupTypeKHR::eGeneral, kIndexMiss, VK_SHADER_UNUSED_KHR, VK_SHADER_UNUSED_KHR, VK_SHADER_UNUSED_KHR),
+                               vk::RayTracingShaderGroupCreateInfoKHR(vk::RayTracingShaderGroupTypeKHR::eGeneral, kIndexShadow, VK_SHADER_UNUSED_KHR, VK_SHADER_UNUSED_KHR, VK_SHADER_UNUSED_KHR),
+                               vk::RayTracingShaderGroupCreateInfoKHR(vk::RayTracingShaderGroupTypeKHR::eTrianglesHitGroup, VK_SHADER_UNUSED_KHR, kIndexClosestHit, VK_SHADER_UNUSED_KHR, VK_SHADER_UNUSED_KHR) },
         };
 
         auto raytracePipeline = device.create<vk2s::Pipeline>(rpi);
 
         // create shader binding table
-        auto shaderBindingTable = device.create<vk2s::ShaderBindingTable>(raytracePipeline.get(), 1, 1, 1, 0, rpi.shaderGroups);
+        auto shaderBindingTable = device.create<vk2s::ShaderBindingTable>(raytracePipeline.get(), 1, 2, 1, 0, rpi.shaderGroups);
 
         vk2s::Pipeline::ComputePipelineInfo cpi{
             .cs         = computeShader,
@@ -407,16 +409,14 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
                 //clamp spp
                 inputSpp = std::min(kMaxSpp, std::max(1, inputSpp));
 
-                SceneUB sceneUBO{
-                    .view        = camera.getViewMatrix(),
-                    .proj        = camera.getProjectionMatrix(),
-                    .viewInv     = glm::inverse(sceneUBO.view),
-                    .projInv     = glm::inverse(sceneUBO.proj),
-                    .elapsedFrame = timeSeed ? accumulatedFrame : 1,
-                    .spp         = static_cast<uint32_t>(inputSpp),
-                    .prevSpp     = static_cast<uint32_t>(accumulatedSpp),
-                    .padding = 0.f
-                };
+                SceneUB sceneUBO{ .view         = camera.getViewMatrix(),
+                                  .proj         = camera.getProjectionMatrix(),
+                                  .viewInv      = glm::inverse(sceneUBO.view),
+                                  .projInv      = glm::inverse(sceneUBO.proj),
+                                  .elapsedFrame = timeSeed ? accumulatedFrame : 1,
+                                  .spp          = static_cast<uint32_t>(inputSpp),
+                                  .prevSpp      = static_cast<uint32_t>(accumulatedSpp),
+                                  .padding      = 0.f };
 
                 FilterUB filterUBO{
                     .sigma = inputSigma,
