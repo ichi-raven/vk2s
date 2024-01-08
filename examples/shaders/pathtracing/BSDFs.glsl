@@ -38,7 +38,7 @@ bool isSpecular(const uint flags)
   return bool(flags & BSDF_FLAGS_SPECULAR);
 }
 
-bool IsNonSpecular(const uint flags) 
+bool isNonSpecular(const uint flags) 
 {
     return bool(flags & (BSDF_FLAGS_DIFFUSE | BSDF_FLAGS_GLOSSY)); 
 }
@@ -115,7 +115,6 @@ BSDFSample sampleBSDF(const Material mat, const vec3 wo, const vec3 normal, inou
   ret.pdf = 1.0;
   ret.flags = 0;
   ret.eta = 1.0;
-  ret.pdfIsProportional = false;
 
   const vec3 faceNormal = setFaceNormal(-wo, normal);
   const bool front = faceNormal == normal;
@@ -125,7 +124,7 @@ BSDFSample sampleBSDF(const Material mat, const vec3 wo, const vec3 normal, inou
     case MAT_LAMBERT:
       ret.flags = BSDF_FLAGS_DIFFUSE | BSDF_FLAGS_REFLECTION;
       ret.wi = lambertScatter(faceNormal, prngState, ret.pdf);
-      ret.f *= M_INVPI * abs(dot(ret.wi, normal));
+      //ret.f *= M_INVPI * abs(dot(ret.wi, normal));
     break;
     case MAT_CONDUCTOR:
       // HACK:
@@ -145,7 +144,7 @@ BSDFSample sampleBSDF(const Material mat, const vec3 wo, const vec3 normal, inou
   }
 
   // prevent zero-division
-  ret.pdf = max(ret.pdf, EPS);
+  //ret.pdf = max(ret.pdf, EPS);
 
   return ret;
 }

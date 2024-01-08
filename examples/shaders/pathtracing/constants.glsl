@@ -46,8 +46,7 @@ precision highp int;
 
 #define BSDF_FLAGS_ALL                      (BSDF_FLAGS_REFLECTION | BSDF_FLAGS_GLOSSY | BSDF_FLAGS_SPECULAR | BSDF_FLAGS_REFLECTION | BSDF_FLAGS_TRANSMISSION)
 
-const float tmin = 0.00;
+const float tmin = EPS;
 const float tmax = 10000.0;
-const float offset = EPS;
 
 #endif

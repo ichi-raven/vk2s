@@ -16,7 +16,6 @@ hitAttributeEXT vec3 attribs;
 #include "lights.glsl"
 
 layout(location = 0) rayPayloadInEXT Payload payload;
-layout(location = 1) rayPayloadEXT bool shadowed;
 
 layout(buffer_reference, buffer_reference_align = 4, scalar) readonly buffer VertexBuffer 
 {
@@ -65,67 +64,38 @@ void main()
   }
 
   const vec3 worldPos    = (gl_ObjectToWorldEXT * vec4(vtx.position, 1.0)).xyz;
-  const vec3 worldNormal = mat3(gl_ObjectToWorldEXT) * vtx.normal;
+  const vec3 worldNormal = normalize(mat3(gl_ObjectToWorldEXT) * vtx.normal);
 
-  payload.ray.origin = worldPos;
+  payload.x = worldPos;
   payload.normal = worldNormal;
-
-  // sample BSDF
-  const BSDFSample bsdf = sampleBSDF(material, -gl_WorldRayDirectionEXT, worldNormal, payload.prngState);
-  // account for emissive surface if light was not sampled
+  payload.bsdf = sampleBSDF(material, -gl_WorldRayDirectionEXT, worldNormal, payload.prngState);
   payload.Le = material.emissive.xyz;
-  payload.ray.direction = bsdf.wi;
-  payload.beta = bsdf.f / bsdf.pdf;
-  payload.specularBounce = isSpecular(bsdf.flags);
-  payload.sampledLight = false;
-
-  // light sampling
-  //stepAndOutputRNGFloat(payload.prngState) > 0.0 && 
-  if (material.matType == 0) // light sample
-  {
-    //payload.sampledLight = intersectsLight(payload.ls, payload.prngState);
-
-    const vec3 faceNormal = setFaceNormal(-gl_WorldRayDirectionEXT, worldNormal);
-
-    // Debug: for direct light sampling
-    vec3 debugLight[4] = {vec3(0.2300, 1.5800, -0.2200), vec3(0.2300, 1.5800, 0.1600), vec3(-0.2400, 1.5800, 0.1600), vec3(-0.2400, 1.5800, -0.2200)};    
-    const float xRange[2] = {debugLight[2].x, debugLight[0].x};
-    const float zRange[2] = {debugLight[0].z, debugLight[1].z};
-    const float lightArea = (xRange[1] - xRange[0]) * (zRange[1] - zRange[0]);
-
-    // sample direct illumination
-    const float r1 = stepAndOutputRNGFloat(payload.prngState);
-    const float r2 = stepAndOutputRNGFloat(payload.prngState);
-    const float randLightX = r1 * (xRange[1] - xRange[0]) + xRange[0];
-    const float randLightZ = r2 * (zRange[1] - zRange[0]) + zRange[0];
-    const vec3 onLight = vec3(randLightX, debugLight[0].y, randLightZ);
-    //const vec3 onLight = vec3((xRange[1] + xRange[0]) * 0.5, debugLight[0].y, (zRange[1] + zRange[0]) * 0.5);
-    vec3 toLight = onLight - worldPos;
-    const float distSq = dot(toLight, toLight);
-    
-    toLight = normalize(toLight);
-    const float lightCos = max(EPS, abs(toLight.y));
-
-    // cast shadow ray
-    const uint flags = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT;
-    shadowed = true;
-    traceRayEXT(TLAS, flags, 0xFF, 0, 0, 1, worldPos, tmin, toLight, sqrt(distSq), 1);
-    // // DEBUG
-    // payload.end = true;
-    // payload.Le = shadowed ? BLACK : WHITE;
-    // return;
-
-    if (dot(toLight, worldNormal) > 0.0 && lightCos > EPS && shadowed)
-    {
-      payload.sampledLight = true;
-      payload.ls.f = bsdf.f;
-      payload.ls.pdf = max(distSq / (lightCos * lightArea), EPS);
-      payload.ls.L = vec3(10.0);//shadowed ? vec3(0.0) : vec3(10.0);
-    }
-  }
-
-  // maybe need russian roulette
-  payload.end = false;
-  
+  payload.intersected = true;
   return;
+
+
+  // payload.ray.origin = worldPos;
+  // payload.normal = worldNormal;
+
+  // // sample BSDF
+  // const BSDFSample bsdf = sampleBSDF(material, -gl_WorldRayDirectionEXT, worldNormal, payload.prngState);
+  // // account for emissive surface if light was not sampled
+  // payload.Le = material.emissive.xyz;
+  // payload.ray.direction = bsdf.wi;
+  // payload.beta = bsdf.f / bsdf.pdf;
+  // payload.f = bsdf.f;
+  // payload.specularBounce = isSpecular(bsdf.flags);
+  // payload.sampledLight = false;
+
+  // // light sampling
+  // if (material.matType == 0 && length(payload.Le) <= EPS) // light sample
+  // {
+  //   //payload.sampledLight = intersectsLight(payload.ls, payload.prngState);
+  //   payload.sampledLight = true;
+  // }
+
+  // // maybe need russian roulette
+  // payload.end = false;
+  
+  // return;
 }

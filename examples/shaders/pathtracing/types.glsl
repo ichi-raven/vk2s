@@ -49,38 +49,24 @@ struct BSDFSample
   float pdf;
   uint flags;
   float eta;
-  bool pdfIsProportional;
-  bool specularBounce;
 };
 
 struct LightSample
 {
-  float pdf;
-  vec3 f;
+  vec3 on;
+  vec3 to;
   vec3 L;
+  float pdf;
 };
 
 struct Payload
 {
-    Ray ray;
-    bool end;
-
-    // for infinite light or emissive surface(missed)
-    vec3 Le;
-
-    // for direct light sampling
-    LightSample ls;
-    bool sampledLight;
-
-    // for BSDF sampling
-    bool specularBounce;
-    vec3 beta;
-    
-    // for denoise?
-    vec3 normal;
-
-    // ???
-    uint prngState;
+  vec3 x;
+  vec3 normal;
+  BSDFSample bsdf;
+  vec3 Le;
+  uint prngState;
+  bool intersected;
 };
 
 // struct HitInfo

@@ -51,6 +51,11 @@ inline void load(std::string_view path, vk2s::Device& device, vk2s::AssetLoader&
     std::vector<vk2s::AssetLoader::Material> hostMaterials;
     loader.load(path.data(), hostMeshes, hostMaterials);
 
+    //hostMeshes.erase(hostMeshes.begin());
+    //hostMeshes.erase(hostMeshes.begin());
+    //hostMaterials.erase(hostMaterials.begin());
+    //hostMaterials.erase(hostMaterials.begin());
+
     meshInstances.resize(hostMeshes.size());
     for (size_t i = 0; i < meshInstances.size(); ++i)
     {
