@@ -42,6 +42,9 @@ vec3 sampleLi(const uint sampleIndex)
   const uint flags       = gl_RayFlagsOpaqueEXT;
   const uint shadowFlags = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT;
 
+  // for debug (if true, do NEE)
+  const bool NEE = true;
+
   vec3 L = vec3(0.0);
   vec3 beta = vec3(1.0);
   uint depth = 0;
@@ -63,13 +66,13 @@ vec3 sampleLi(const uint sampleIndex)
   while (payload.intersected)
   {
     // account emissive surface if prev surface was specular
-    if (specularBounce || (length(payload.Le) > EPS && depth == 0))
+    if (!NEE || specularBounce || (length(payload.Le) > EPS && depth == 0))
     {
       L += beta * payload.Le;
       payload.Le = vec3(0.0);
     }
-    // if bsdf has nonspecular 
-    if (isNonSpecular(payload.bsdf.flags))
+    // NEE if bsdf has nonspecular 
+    if (NEE && isNonSpecular(payload.bsdf.flags))
     {
       LightSample ls = sampleLight(payload.x, payload.prngState);
       // cast shadow ray
