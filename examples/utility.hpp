@@ -128,24 +128,22 @@ inline void load(std::string_view path, vk2s::Device& device, vk2s::AssetLoader&
 
         if (hostMat.specular && hostMat.shininess && glm::length(*hostMat.specular) > threshold)
         {
-            mat.materialType = static_cast<uint32_t>(MaterialType::eLambert);  // default
-            mat.emissive     = glm::vec4(0.);
-            mat.albedo       = glm::vec4(0.3f, 0.3f, 0.3f, 1.f);  // DEBUG COLOR
+            //mat.materialType = static_cast<uint32_t>(MaterialType::eLambert);  // default
+            //mat.albedo       = glm::vec4(0.3f, 0.3f, 0.3f, 1.f);  // DEBUG COLOR
 
-            //mat.materialType = static_cast<uint32_t>(MaterialType::eConductor);
-            //mat.albedo       = *hostMat.specular;
-            //mat.alpha        = 1. - *hostMat.shininess / 1000.;
+            mat.materialType = static_cast<uint32_t>(MaterialType::eConductor);
+            mat.albedo       = *hostMat.specular;
+            mat.alpha        = 1. - *hostMat.shininess / 1000.;
         }
 
         if (hostMat.IOR && *hostMat.IOR > 1.5)
         {
-            mat.materialType = static_cast<uint32_t>(MaterialType::eLambert);  // default
-            mat.emissive     = glm::vec4(0.);
-            mat.albedo       = glm::vec4(0.3f, 0.3f, 0.3f, 1.f);  // DEBUG COLOR
+            //mat.materialType = static_cast<uint32_t>(MaterialType::eLambert);  // default
+            //mat.albedo       = glm::vec4(0.3f, 0.3f, 0.3f, 1.f);  // DEBUG COLOR
 
-            //mat.materialType = static_cast<uint32_t>(MaterialType::eDielectric);
-            //mat.albedo       = glm::vec4(1.0);
-            //mat.IOR          = *hostMat.IOR;
+            mat.materialType = static_cast<uint32_t>(MaterialType::eDielectric);
+            mat.albedo       = glm::vec4(1.0);
+            mat.IOR          = *hostMat.IOR;
         }
 
         if (hostMat.emissive && glm::length(*hostMat.emissive) > threshold)
