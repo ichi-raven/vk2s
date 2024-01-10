@@ -27,6 +27,25 @@ struct Material
   float IOR;
 };
 
+struct DisneyMaterial
+{
+  vec3 albedo;
+  float metallic;
+  float roughness;
+  vec3 emissive;
+    
+  float specTrans;
+  float ior;
+  float absorption;
+};
+
+struct DisneyBSDFState
+{
+  bool isRefracted;
+  bool hasBeenRefracted;
+  float lastIOR;
+};
+
 struct Vertex 
 {
   vec3 position;
@@ -67,19 +86,10 @@ struct Payload
   vec3 Le;
   uint prngState;
   bool intersected;
-};
 
-// struct HitInfo
-// {
-//   vec3 albedo;
-//   vec3 emitted;
-//   vec3 worldPosition;
-//   vec3 worldNormal;
-//   bool endTrace;
-//   int matType;
-//   float alpha;
-//   float IOR;
-// };
+  // for Disney BSDF
+  DisneyBSDFState state;
+};
 
 struct ONB
 {

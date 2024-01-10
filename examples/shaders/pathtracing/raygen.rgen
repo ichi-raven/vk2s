@@ -43,7 +43,7 @@ vec3 sampleLi(const uint sampleIndex)
   const uint shadowFlags = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT;
 
   // for debug (if true, do NEE)
-  const bool NEE = true;
+  const bool NEE = false;
 
   vec3 L = vec3(0.0);
   vec3 beta = vec3(1.0);
@@ -56,6 +56,11 @@ vec3 sampleLi(const uint sampleIndex)
   payload.Le = vec3(0.0);
   payload.prngState = tea(tea(sceneParams.frame, sampleIndex), uint(gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x));
   payload.intersected = true;
+
+  // for Disney BSDF
+  payload.state.isRefracted = false;
+  payload.state.hasBeenRefracted = false;
+  payload.state.lastIOR = 1.0;
 
   // set primary ray
   const Ray primaryRay = getCameraRay(payload.prngState);
@@ -96,15 +101,18 @@ vec3 sampleLi(const uint sampleIndex)
 
     if (depth > MAX_DEPTH)
     {
-      break;//return vec3(0.0); // black
+      break;//or return BLACK
     }
 
     // update weights
     ++depth;
     specularBounce = isSpecular(payload.bsdf.flags);
     const float invPrr = 1. / prr;
-    beta *= invPrr * payload.bsdf.f * abs(dot(payload.bsdf.wi, payload.normal)) / payload.bsdf.pdf;
-
+    beta *= invPrr * payload.bsdf.f / payload.bsdf.pdf;
+    if (payload.state.hasBeenRefracted && !payload.state.isRefracted) 
+    {
+      payload.state.lastIOR = 1.;
+    }
     // trace next ray
     traceRayEXT(TLAS, flags, 0xFF, 0, 0, 0, payload.x, tmin, payload.bsdf.wi, tmax, 0);
   }
