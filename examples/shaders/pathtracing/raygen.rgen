@@ -48,7 +48,7 @@ vec3 sampleLi(const uint sampleIndex)
   vec3 L = vec3(0.0);
   vec3 beta = vec3(1.0);
   uint depth = 0;
-  bool specularBounce = false;
+  bool specularBounce = true;
 
   // initialize payload
   payload.x = vec3(0.0);
@@ -64,9 +64,9 @@ vec3 sampleLi(const uint sampleIndex)
   traceRayEXT(TLAS, flags, 0xFF, 0, 0, 0, primaryRay.origin, tmin, primaryRay.direction, tmax, 0);
 
   while (payload.intersected)
-  {
+  {    
     // account emissive surface if prev surface was specular
-    if (!NEE || specularBounce || (length(payload.Le) > EPS && depth == 0))
+    if (!NEE || specularBounce)
     {
       L += beta * payload.Le;
       payload.Le = vec3(0.0);
@@ -83,138 +83,36 @@ vec3 sampleLi(const uint sampleIndex)
       if (!shadowed)
       {
         const vec3 f = payload.bsdf.f * abs(dot(ls.to, payload.normal));
-        L += beta * f * ls.L / (ls.pdf + EPS);
+        L += beta * f * ls.L / ls.pdf;
       }
     }
 
-    // update weights
-    beta *= payload.bsdf.f * abs(dot(payload.bsdf.wi, payload.normal)) / (payload.bsdf.pdf + EPS);
-    ++depth;
-    specularBounce = isSpecular(payload.bsdf.flags);
-
     // russian roulette
-    const float prr = 1.0 / max(max(beta.x, beta.y), beta.z);
-    if (stepAndOutputRNGFloat(payload.prngState) >= prr || depth > MAX_DEPTH)
+    const float prr = max(max(beta.x, beta.y), beta.z);
+    if (stepAndOutputRNGFloat(payload.prngState) >= prr)
     {
       break;
     }
+
+    if (depth > MAX_DEPTH)
+    {
+      break;//return vec3(0.0); // black
+    }
+
+    // update weights
+    ++depth;
+    specularBounce = isSpecular(payload.bsdf.flags);
+    const float invPrr = 1. / prr;
+    beta *= invPrr * payload.bsdf.f * abs(dot(payload.bsdf.wi, payload.normal)) / payload.bsdf.pdf;
 
     // trace next ray
     traceRayEXT(TLAS, flags, 0xFF, 0, 0, 0, payload.x, tmin, payload.bsdf.wi, tmax, 0);
   }
 
+  L += beta * payload.Le;
+
   return L;
 }
-
-/*
-vec3 sampleLi(const uint sampleIndex)
-{
-    const uint flags = gl_RayFlagsOpaqueEXT;
-
-    uint depth = 0;
-    vec3 L = vec3(0.0);
-    vec3 beta = vec3(1.0);
-    bool specularBounce = false;
-
-    // init random seed
-    uint prngState = tea(tea(sceneParams.frame, sampleIndex), uint(gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x));
-    
-    payload.beta = vec3(1.0);
-    payload.Le = vec3(0.0);
-    payload.end = false;
-    payload.ray = getCameraRay(prngState);
-    payload.prngState = prngState;
-
-    //[[unroll]]
-    //for(int depth = 0; ; ++depth)
-    while (!zero(beta))
-    {
-      // intersect ray with scene
-      payload.end = true;
-      payload.specularBounce = specularBounce;
-      payload.sampledLight = false;
-      payload.beta = vec3(1.0);
-      payload.Le = vec3(0.0);
-      payload.prngState = prngState;
-
-      traceRayEXT(TLAS, flags, 0xFF, 0, 0, 0, payload.ray.origin, tmin, payload.ray.direction, tmax, 0);
-
-      prngState = payload.prngState;
-      specularBounce = payload.specularBounce;
-
-      // account for infinite lights
-      if (payload.end)
-      {
-        L += beta * payload.Le;
-        break;
-      }
-
-      // account for emissive surface if light was not sampled
-      if (!payload.sampledLight || specularBounce)
-      {
-        L += beta * payload.Le;
-      }
-      
-      // end path if maximum depth reached
-      if (++depth > MAX_DEPTH)
-      {
-        break;
-      }
-
-      // TODO: medium intersection
-
-      // sample direct illumination
-      if (payload.sampledLight)
-      {
-        //const vec3 faceNormal = setFaceNormal(-gl_WorldRayDirectionEXT, worldNormal);
-
-        // Debug: for direct light sampling
-        vec3 debugLight[4] = {vec3(0.2300, 1.5800, -0.2200), vec3(0.2300, 1.5800, 0.1600), vec3(-0.2400, 1.5800, 0.1600), vec3(-0.2400, 1.5800, -0.2200)};    
-        const float xRange[2] = {debugLight[2].x, debugLight[0].x};
-        const float zRange[2] = {debugLight[0].z, debugLight[1].z};
-        const float lightArea = (xRange[1] - xRange[0]) * (zRange[1] - zRange[0]);
-
-        // sample direct illumination
-        const float r1 = stepAndOutputRNGFloat(payload.prngState);
-        const float r2 = stepAndOutputRNGFloat(payload.prngState);
-        const float randLightX = clamp(r1 * (xRange[1] - xRange[0]) + xRange[0], xRange[0], xRange[1]);
-        const float randLightZ = clamp(r2 * (zRange[1] - zRange[0]) + zRange[0], zRange[0], zRange[1]);
-        const vec3 onLight = vec4(randLightX, debugLight[0].y, randLightZ;
-        //const vec3 onLight = vec3((xRange[1] + xRange[0]) * 0.5, debugLight[0].y, (zRange[1] + zRange[0]) * 0.5);
-        vec3 toLight = onLight - payload.ray.origin;
-
-        const float dist = length(toLight);
-        const float distSq = dot(toLight, toLight);
-    
-        toLight = normalize(toLight);
-        const float lightCos = abs(dot(toLight, vec3(0.0, -1.0, 0.0)));
-
-        // cast shadow ray
-        const uint shadowFlags = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT;
-        shadowed = true;
-        traceRayEXT(TLAS, shadowFlags, 0xFF, 0, 0, 1, payload.ray.origin, tmin, toLight, dist, 1);
-        // DEBUG
-        return vec3(distSq / (lightCos * lightArea) + EPS);
-    
-        if (dot(toLight, payload.normal) >= 0.0 && lightCos >= 0.0 && !shadowed)
-        {
-          payload.ls.f = payload.f * dot(toLight, payload.normal);
-          payload.ls.pdf = distSq / (lightCos * lightArea) + EPS;
-          payload.ls.L = vec3(10.0);
-          L += beta * payload.ls.f * payload.ls.L / (payload.ls.pdf);
-        }
-
-      }
-
-      // sample BSDF
-      beta *= payload.beta;
-
-      // update
-      specularBounce = payload.specularBounce;
-    }
-
-    return L;
-}*/
 
 vec3 correct(const vec3 v)
 {
@@ -257,10 +155,6 @@ void main()
   if (sceneParams.untilSPP == 0)
   {
     rate = 1.0;
-  }
-  if (sceneParams.frame == 1)
-  {
-    rate = 0.0;
   }
 
   const vec4 final = mix(prev, vec4(L, 1.0), rate);

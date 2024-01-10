@@ -129,17 +129,17 @@ inline void load(std::string_view path, vk2s::Device& device, vk2s::AssetLoader&
         if (hostMat.specular && hostMat.shininess && glm::length(*hostMat.specular) > threshold)
         {
             //mat.materialType = static_cast<uint32_t>(MaterialType::eLambert);  // default
-            //mat.albedo       = glm::vec4(0.3f, 0.3f, 0.3f, 1.f);  // DEBUG COLOR
+            //mat.albedo       = glm::vec4(1.f);  // DEBUG COLOR
 
             mat.materialType = static_cast<uint32_t>(MaterialType::eConductor);
             mat.albedo       = *hostMat.specular;
-            mat.alpha        = 1. - *hostMat.shininess / 1000.;
+            mat.alpha        = 1. - *hostMat.shininess / 1024.;
         }
 
-        if (hostMat.IOR && *hostMat.IOR > 1.5)
+        if (hostMat.IOR && *hostMat.IOR >= 1.2)
         {
             //mat.materialType = static_cast<uint32_t>(MaterialType::eLambert);  // default
-            //mat.albedo       = glm::vec4(0.3f, 0.3f, 0.3f, 1.f);  // DEBUG COLOR
+            //mat.albedo       = glm::vec4(1.f);  // DEBUG COLOR
 
             mat.materialType = static_cast<uint32_t>(MaterialType::eDielectric);
             mat.albedo       = glm::vec4(1.0);

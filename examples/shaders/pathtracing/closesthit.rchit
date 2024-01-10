@@ -68,34 +68,10 @@ void main()
 
   payload.x = worldPos;
   payload.normal = worldNormal;
+  payload.normal = setFaceNormal(-gl_WorldRayDirectionEXT, worldNormal);
   payload.bsdf = sampleBSDF(material, -gl_WorldRayDirectionEXT, worldNormal, payload.prngState);
   payload.Le = material.emissive.xyz;
   payload.intersected = true;
   return;
 
-
-  // payload.ray.origin = worldPos;
-  // payload.normal = worldNormal;
-
-  // // sample BSDF
-  // const BSDFSample bsdf = sampleBSDF(material, -gl_WorldRayDirectionEXT, worldNormal, payload.prngState);
-  // // account for emissive surface if light was not sampled
-  // payload.Le = material.emissive.xyz;
-  // payload.ray.direction = bsdf.wi;
-  // payload.beta = bsdf.f / bsdf.pdf;
-  // payload.f = bsdf.f;
-  // payload.specularBounce = isSpecular(bsdf.flags);
-  // payload.sampledLight = false;
-
-  // // light sampling
-  // if (material.matType == 0 && length(payload.Le) <= EPS) // light sample
-  // {
-  //   //payload.sampledLight = intersectsLight(payload.ls, payload.prngState);
-  //   payload.sampledLight = true;
-  // }
-
-  // // maybe need russian roulette
-  // payload.end = false;
-  
-  // return;
 }

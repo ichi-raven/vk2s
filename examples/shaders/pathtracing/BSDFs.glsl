@@ -124,27 +124,34 @@ BSDFSample sampleBSDF(const Material mat, const vec3 wo, const vec3 normal, inou
     case MAT_LAMBERT:
       ret.flags = BSDF_FLAGS_DIFFUSE | BSDF_FLAGS_REFLECTION;
       ret.wi = lambertScatter(faceNormal, prngState, ret.pdf);
-      //ret.f *= M_INVPI * abs(dot(ret.wi, normal));
+      ret.f *= M_INVPI;
     break;
     case MAT_CONDUCTOR:
       // HACK:
       ret.flags = BSDF_FLAGS_SPECULAR;
       ret.flags |= BSDF_FLAGS_REFLECTION;
+      const float alpha = mat.alpha;
       ret.wi = conductorScatter(wo, faceNormal, mat.alpha, prngState, ret.pdf);
+      ret.f /= max(EPS, abs(dot(ret.wi, faceNormal)));
+      if (dot(ret.wi, faceNormal) <= 0.0)
+      {
+       ret.f = vec3(0.0);
+      }
     break;
     case MAT_DIELECTRIC:
       ret.flags = BSDF_FLAGS_SPECULAR;// | BSDF_FLAGS_TRANSMISSION;
       // HACK:
       //ret.flags |= mat.IOR == 1.0 ? BSDF_FLAGS_REFLECTION : 0;
       ret.wi = dielectricScatter(wo, faceNormal, front, mat.IOR, prngState, ret.pdf);
+      ret.f /= max(EPS, abs(dot(ret.wi, faceNormal)));
     break;
     default:
     // ERROR
     break;
   }
-
+  
   // prevent zero-division
-  //ret.pdf = max(ret.pdf, EPS);
+  ret.pdf = max(ret.pdf, EPS);
 
   return ret;
 }

@@ -18,7 +18,7 @@ LightSample sampleLight(const vec3 pos, inout uint prngState)
 {
     LightSample ls;
     ls.pdf = 1.0;
-    ls.L = vec3(10.0);
+    ls.L = vec3(15.0);
 
     // Debug: for direct light sampling
     vec3 debugLight[4] = {vec3(0.2300, 1.5800, -0.2200), vec3(0.2300, 1.5800, 0.1600), vec3(-0.2400, 1.5800, 0.1600), vec3(-0.2400, 1.5800, -0.2200)};    
@@ -40,7 +40,7 @@ LightSample sampleLight(const vec3 pos, inout uint prngState)
 
     const float lightCos = abs(dot(normalize(ls.to), lightNormal));
     
-    ls.pdf = distSq / (lightCos * lightArea);
+    ls.pdf = max(EPS, distSq / (lightCos * lightArea));
 
     return ls;
 }
