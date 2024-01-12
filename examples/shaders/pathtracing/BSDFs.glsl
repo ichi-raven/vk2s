@@ -155,6 +155,7 @@ BSDFSample sampleBSDF(const Material mat, const vec3 wo, const vec3 normal, inou
 }
 
 //test Disney BSDF-------------------------------------
+/*
 // ---------------------------------------------
 // Color
 // ---------------------------------------------
@@ -426,5 +427,6 @@ BSDFSample sampleDisneyBSDF(const DisneyMaterial mat, const vec3 v, const vec3 n
   ret.eta = 1.0;
   return ret;
 }
+*/
 
 #endif

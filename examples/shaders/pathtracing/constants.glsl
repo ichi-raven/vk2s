@@ -10,7 +10,8 @@ precision highp int;
 #extension GL_EXT_control_flow_attributes : enable
 
 // constants
-#define EPS (0.001)
+#define EPS (1e-3)
+#define INFTY (1e8)
 
 #define M_PI  (3.1415926535897932384626433832795)
 #define M_PI2 (6.28318530718)
@@ -47,6 +48,6 @@ precision highp int;
 #define BSDF_FLAGS_ALL                      (BSDF_FLAGS_REFLECTION | BSDF_FLAGS_GLOSSY | BSDF_FLAGS_SPECULAR | BSDF_FLAGS_REFLECTION | BSDF_FLAGS_TRANSMISSION)
 
 const float tmin = EPS;
-const float tmax = 100000.0;
+const float tmax = INFTY;
 
 #endif
