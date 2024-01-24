@@ -155,7 +155,7 @@ BSDFSample sampleBSDF(const Material mat, const vec3 wo, const vec3 normal, inou
 }
 
 //test Disney BSDF-------------------------------------
-/*
+
 // ---------------------------------------------
 // Color
 // ---------------------------------------------
@@ -286,7 +286,7 @@ vec3 evalDisneyDiffuse(DisneyMaterial mat, float NoL, float NoV, float LoH, floa
     float a = F_Schlick(1.,FD90, NoL);
     float b = F_Schlick(1.,FD90, NoV);
     
-    return mat.albedo.xyz * (a * b * M_INVPI);
+    return mat.baseColor.xyz * (a * b * M_INVPI);
 }
 
 vec3 evalDisneySpecularReflection(DisneyMaterial mat, vec3 F, float NoH, float NoV, float NoL) {
@@ -309,7 +309,8 @@ vec3 evalDisneySpecularRefraction(DisneyMaterial mat, float F, float NoH, float 
     float jacobian = abs(LoH) / denom;
     pdf = SmithG(abs(NoL), roughness*roughness) * max(0.0, VoH) * D * jacobian / max(EPS, NoV);
     
-    vec3 spec = pow(1.-mat.albedo, vec3(0.5))  * D * (1.-F) * G * abs(VoH) * jacobian * pow(eta, 2.) / max(EPS, abs(NoL * NoV));
+    vec3 spec = pow(1. - mat.baseColor, vec3(0.5))  * D * (1.-F) * G * abs(VoH) * jacobian * pow(eta, 2.) / max(EPS, abs(NoL * NoV));
+    
     return spec;
 }
 
@@ -318,7 +319,7 @@ BSDFSample sampleDisneyBSDF(const DisneyMaterial mat, const vec3 v, const vec3 n
 {
   // init
   BSDFSample ret;
-  ret.f = mat.albedo;
+  ret.f = mat.baseColor;
   ret.pdf = 1.0;
   ret.flags = 0;
   ret.eta = 1.0;
@@ -340,7 +341,7 @@ BSDFSample sampleDisneyBSDF(const DisneyMaterial mat, const vec3 v, const vec3 n
 
     // fresnel
     float VoH = dot(v,h);
-    vec3 f0 = mix(vec3(0.04), mat.albedo, mat.metallic);
+    vec3 f0 = mix(vec3(0.04), mat.baseColor, mat.metallic);
     vec3 F = F_Schlick(f0, VoH);
     float dielF = Fresnel(state.lastIOR, mat.ior, abs(VoH), 0., 1.);
     
@@ -401,13 +402,13 @@ BSDFSample sampleDisneyBSDF(const DisneyMaterial mat, const vec3 v, const vec3 n
     {
         state.isRefracted = !state.isRefracted;
         float eta = state.lastIOR/max(EPS, mat.ior);
-        l = refract(-v,h, eta);
+        l = refract(-v, h, eta);
         state.lastIOR = mat.ior;
         
         float NoL = dot(n,l);
         if ( NoL <= 0. ) { return ret; }
         float NoV = dot(n,v);
-        float NoH = min(0.99,dot(n,h));
+        float NoH = min(1.0 - EPS ,dot(n,h));
         float LoH = dot(l,h);
         
         float pdf = 1.0;
@@ -427,6 +428,6 @@ BSDFSample sampleDisneyBSDF(const DisneyMaterial mat, const vec3 v, const vec3 n
   ret.eta = 1.0;
   return ret;
 }
-*/
+
 
 #endif

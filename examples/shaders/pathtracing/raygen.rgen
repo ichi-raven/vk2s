@@ -113,6 +113,7 @@ vec3 sampleLi(const uint sampleIndex)
     {
       payload.state.lastIOR = 1.;
     }
+
     // trace next ray
     traceRayEXT(TLAS, flags, 0xFF, 0, 0, 0, payload.x, tmin, payload.bsdf.wi, tmax, 0);
   }
@@ -131,6 +132,8 @@ vec3 correct(const vec3 v)
   }
 
   // inf
+  clamp(v, vec3(-INFTY), vec3(INFTY));
+
   // const float pos_infinity = uintBitsToFloat(0x7F800000);
   // const float neg_infinity = uintBitsToFloat(0xFF800000);
   // if (v.x >= pos_infinity || v.y >= pos_infinity || v.z >= pos_infinity)

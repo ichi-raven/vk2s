@@ -15,7 +15,7 @@ hitAttributeEXT vec3 attribs;
 #include "BSDFs.glsl"
 #include "lights.glsl"
 
-#include "DisneyBSDF.glsl"
+//#include "DisneyBSDF.glsl"
 
 layout(location = 0) rayPayloadInEXT Payload payload;
 
@@ -75,37 +75,37 @@ void main()
   payload.bsdf = sampleBSDF(material, -gl_WorldRayDirectionEXT, worldNormal, payload.prngState);
   
   // for simple BSDF
-  return;
+  //return;
 
   // test Disney BSDF
-  // DisneyMaterial disneyMat;
-  // disneyMat.albedo = material.albedo.xyz;
-  // disneyMat.metallic = 1.0;
-  // disneyMat.emissive = material.emissive.xyz;
-  // disneyMat.absorption = 1.0;
-  // disneyMat.specTrans = 0.5;
-  // disneyMat.ior = 1.0;
-  // disneyMat.roughness = 0.5;
+  DisneyMaterial disneyMat;
+  disneyMat.baseColor = material.albedo.xyz;
+  disneyMat.metallic = 0.2;
+  disneyMat.emissive = material.emissive.xyz;
+  disneyMat.absorption = 1.0;
+  disneyMat.specTrans = 0.0;
+  disneyMat.ior = 1.0;
+  disneyMat.roughness = 0.1;
 
-  // switch(material.matType)
-  // {
-  //   // case MAT_LAMBERT:
-  //   //   disneyMat.roughness = 1.0;
-  //   // break;
-  //   // case MAT_CONDUCTOR:
-  //   //   disneyMat.roughness = material.alpha;
-  //   // break;
-  //   case MAT_DIELECTRIC:
-  //     disneyMat.metallic = 0.9;
-  //     disneyMat.specTrans = 1.0;
-  //     disneyMat.ior = material.IOR;
-  //   break;
-  //   default:
-  //   // ERROR
-  //   break;
-  // }
+  switch(material.matType)
+  {
+    // case MAT_LAMBERT:
+    //   disneyMat.roughness = 1.0;
+    // break;
+    // case MAT_CONDUCTOR:
+    //   disneyMat.roughness = material.alpha;
+    // break;
+    case MAT_DIELECTRIC:
+      disneyMat.metallic = 0.5;
+      disneyMat.specTrans = 1.0;
+      disneyMat.ior = material.IOR;
+    break;
+    default:
+    // ERROR
+    break;
+  }
 
-  // payload.bsdf = sampleDisneyBSDF(disneyMat, -gl_WorldRayDirectionEXT, worldNormal, payload.state, payload.prngState);
-  // return;
+  payload.bsdf = sampleDisneyBSDF(disneyMat, -gl_WorldRayDirectionEXT, worldNormal, payload.state, payload.prngState);
+  return;
 
 }

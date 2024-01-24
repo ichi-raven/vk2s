@@ -434,7 +434,7 @@ void CalculateLobePdfs(const DisneyMaterial mat,
     pClearcoat = clearcoatWeight    * norm;
 }
 
-vec3 EvaluateDisney(inout DisneyMaterial mat, vec3 v, vec3 l, bool thin,
+vec3 EvaluateDisney(const DisneyMaterial mat, vec3 v, vec3 l, bool thin,
                       out float forwardPdf, out float reversePdf)
 {
 
@@ -805,7 +805,52 @@ BSDFSample sampleDisneyBSDF(const DisneyMaterial mat, const vec3 x, const vec3 n
     ret.flags = 0;
     ret.eta = 1.0;
 
+    float pSpecular;
+    float pDiffuse;
+    float pClearcoat;
+    float pTransmission;
+    CalculateLobePdfs(surface, pSpecular, pDiffuse, pClearcoat, pTransmission);
 
+    bool success = false;
+
+    float pLobe = 0.0;
+    float p = stepAndOutputRNGFloat(prngState);
+    if(p <= pSpecular) 
+    {
+        success = SampleDisneyBRDF(sampler, surface, v, sample);
+        pLobe = pSpecular;
+    }
+    else if(p > pSpecular && p <= (pSpecular + pClearcoat)) 
+    {
+        success = SampleDisneyClearcoat(sampler, surface, v, sample);
+        pLobe = pClearcoat;
+    }
+    else if(p > pSpecular + pClearcoat && p <= (pSpecular + pClearcoat + pDiffuse)) 
+    {
+        success = SampleDisneyDiffuse(sampler, surface, v, thin, sample);
+        pLobe = pDiffuse;
+    }
+    else if(pTransmission >= 0.0) 
+    {
+        success = SampleDisneySpecTransmission(sampler, surface, v, thin, sample);
+        pLobe = pTransmission;
+    }
+    else 
+    {
+        // -- Make sure we notice if this is occurring.
+        sample.reflectance = vec3(1000000.0, 0.0, 0.0);
+        sample.forwardPdfW = EPS;
+        sample.reversePdfW = EPS;
+    }
+
+    if(pLobe > 0.0)
+    {
+        sample.reflectance = sample.reflectance * (1.0 / pLobe);
+        sample.forwardPdfW *= pLobe;
+        sample.reversePdfW *= pLobe;
+    }
+
+    ret.f = EvaluateDisney()
 
     return ret;
 }
