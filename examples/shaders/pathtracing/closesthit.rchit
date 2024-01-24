@@ -15,7 +15,7 @@ hitAttributeEXT vec3 attribs;
 #include "BSDFs.glsl"
 #include "lights.glsl"
 
-//#include "DisneyBSDF.glsl"
+#include "DisneyBSDF.glsl"
 
 layout(location = 0) rayPayloadInEXT Payload payload;
 
@@ -78,14 +78,27 @@ void main()
   //return;
 
   // test Disney BSDF
+  
   DisneyMaterial disneyMat;
   disneyMat.baseColor = material.albedo.xyz;
-  disneyMat.metallic = 0.2;
+  disneyMat.metallic = 0.01;
+  disneyMat.roughness = 0.3;
+  disneyMat.flatness = 0.0;
   disneyMat.emissive = material.emissive.xyz;
-  disneyMat.absorption = 1.0;
-  disneyMat.specTrans = 0.0;
-  disneyMat.ior = 1.0;
-  disneyMat.roughness = 0.1;
+  
+  disneyMat.specularTint = 1.0;
+  disneyMat.specTrans = 0.2;
+  disneyMat.diffTrans = 0.2;
+  disneyMat.ior = material.IOR;
+  disneyMat.relativeIOR = payload.state.lastIOR / material.IOR;
+  disneyMat.absorption = 0.0;
+
+  disneyMat.sheen = 1.0;
+  disneyMat.sheenTint = vec3(0.0);
+  disneyMat.anisotropic = 0.0;
+
+  disneyMat.clearcoat = 1.0;
+  disneyMat.clearcoatGloss = 0.7;
 
   switch(material.matType)
   {
@@ -96,16 +109,23 @@ void main()
     //   disneyMat.roughness = material.alpha;
     // break;
     case MAT_DIELECTRIC:
-      disneyMat.metallic = 0.5;
+      disneyMat.roughness = 0.001;
+      disneyMat.metallic = 0.1;
       disneyMat.specTrans = 1.0;
-      disneyMat.ior = material.IOR;
     break;
     default:
     // ERROR
     break;
   }
 
-  payload.bsdf = sampleDisneyBSDF(disneyMat, -gl_WorldRayDirectionEXT, worldNormal, payload.state, payload.prngState);
-  return;
+  //BSDFSample sampleDisneyBSDF(const DisneyMaterial mat, const vec3 x, const vec3 normal, bool thin, inout DisneyBSDFState state, inout uint prngState)
 
+  payload.bsdf = sampleDisneyBSDF(disneyMat, -gl_WorldRayDirectionEXT, worldNormal, false, payload.state, payload.prngState);
+  payload.state.lastIOR = material.IOR;
+
+  // DEBUG
+  //payload.Le = payload.bsdf.f;
+  //payload.intersected = false;
+  return;
+  
 }

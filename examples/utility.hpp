@@ -95,6 +95,7 @@ inline void load(std::string_view path, vk2s::Device& device, vk2s::AssetLoader&
         auto& mat        = materialData.emplace_back();
         mat.materialType = static_cast<uint32_t>(MaterialType::eLambert);  // default
         mat.emissive     = glm::vec4(0.);
+        mat.IOR          = 1.0;
 
         if (std::holds_alternative<glm::vec4>(hostMat.diffuse))
         {

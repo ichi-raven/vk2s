@@ -112,9 +112,9 @@ BSDFSample sampleBSDF(const Material mat, const vec3 wo, const vec3 normal, inou
 {
   BSDFSample ret;
   ret.f = mat.albedo.xyz;
-  ret.pdf = 1.0;
+  ret.forwardPdfW = 1.0;
+  ret.reversePdfW = 1.0;
   ret.flags = 0;
-  ret.eta = 1.0;
 
   const vec3 faceNormal = setFaceNormal(-wo, normal);
   const bool front = faceNormal == normal;
@@ -123,7 +123,7 @@ BSDFSample sampleBSDF(const Material mat, const vec3 wo, const vec3 normal, inou
   {
     case MAT_LAMBERT:
       ret.flags = BSDF_FLAGS_DIFFUSE | BSDF_FLAGS_REFLECTION;
-      ret.wi = lambertScatter(faceNormal, prngState, ret.pdf);
+      ret.wi = lambertScatter(faceNormal, prngState, ret.forwardPdfW);
       ret.f *= M_INVPI * abs(dot(ret.wi, faceNormal));
     break;
     case MAT_CONDUCTOR:
@@ -131,7 +131,7 @@ BSDFSample sampleBSDF(const Material mat, const vec3 wo, const vec3 normal, inou
       ret.flags = BSDF_FLAGS_SPECULAR;
       ret.flags |= BSDF_FLAGS_REFLECTION;
       const float alpha = mat.alpha;
-      ret.wi = conductorScatter(wo, faceNormal, mat.alpha, prngState, ret.pdf);
+      ret.wi = conductorScatter(wo, faceNormal, mat.alpha, prngState, ret.forwardPdfW);
       if (dot(ret.wi, faceNormal) <= 0.0)
       {
        ret.f = vec3(0.0);
@@ -141,7 +141,7 @@ BSDFSample sampleBSDF(const Material mat, const vec3 wo, const vec3 normal, inou
       ret.flags = BSDF_FLAGS_SPECULAR;// | BSDF_FLAGS_TRANSMISSION;
       // HACK:
       //ret.flags |= mat.IOR == 1.0 ? BSDF_FLAGS_REFLECTION : 0;
-      ret.wi = dielectricScatter(wo, faceNormal, front, mat.IOR, prngState, ret.pdf);
+      ret.wi = dielectricScatter(wo, faceNormal, front, mat.IOR, prngState, ret.forwardPdfW);
     break;
     default:
     // ERROR
@@ -149,12 +149,14 @@ BSDFSample sampleBSDF(const Material mat, const vec3 wo, const vec3 normal, inou
   }
   
   // prevent zero-division
-  ret.pdf = max(ret.pdf, EPS);
+  ret.forwardPdfW = max(ret.forwardPdfW, EPS);
 
   return ret;
 }
 
 //test Disney BSDF-------------------------------------
+
+/*
 
 // ---------------------------------------------
 // Color
@@ -428,6 +430,6 @@ BSDFSample sampleDisneyBSDF(const DisneyMaterial mat, const vec3 v, const vec3 n
   ret.eta = 1.0;
   return ret;
 }
-
+*/
 
 #endif

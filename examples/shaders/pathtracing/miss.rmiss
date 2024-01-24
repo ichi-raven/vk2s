@@ -22,7 +22,7 @@ void main()
   const float phi = sgn(y) * acos(x / sqrt(x * x + y * y));
   const float theta = acos(z / length(worldRayDirection));
 
-  payload.Le = vec3(0.3);
+  payload.Le = vec3(0.01);
   payload.intersected = false;
 
   // account for infinite lights if ray has no intersection (missed)

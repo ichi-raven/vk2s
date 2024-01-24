@@ -12,6 +12,8 @@
 #include "BSDFs.glsl"
 #include "lights.glsl"
 
+#include "DisneyBSDF.glsl"
+
 layout(location = 0) rayPayloadEXT Payload payload;
 layout(location = 1) rayPayloadEXT bool shadowed;
 
@@ -88,6 +90,7 @@ vec3 sampleLi(const uint sampleIndex)
       if (!shadowed)
       {
         const vec3 f = payload.bsdf.f * abs(dot(ls.to, payload.normal));
+        //const vec3 f = EvaluateDisneyBSDF();
         L += beta * f * ls.L / ls.pdf;
       }
     }
@@ -99,7 +102,7 @@ vec3 sampleLi(const uint sampleIndex)
       break;
     }
 
-    if (depth > MAX_DEPTH)
+    if (depth > MAX_DEPTH || payload.bsdf.flags == BSDF_FLAGS_FAILED)
     {
       break;//or return BLACK
     }
@@ -108,7 +111,7 @@ vec3 sampleLi(const uint sampleIndex)
     ++depth;
     specularBounce = isSpecular(payload.bsdf.flags);
     const float invPrr = 1. / prr;
-    beta *= invPrr * payload.bsdf.f / payload.bsdf.pdf;
+    beta *= invPrr * payload.bsdf.f;// / payload.bsdf.forwardPdfW;
     if (payload.state.hasBeenRefracted && !payload.state.isRefracted) 
     {
       payload.state.lastIOR = 1.;
@@ -132,7 +135,7 @@ vec3 correct(const vec3 v)
   }
 
   // inf
-  clamp(v, vec3(-INFTY), vec3(INFTY));
+  //clamp(v, vec3(-INFTY), vec3(INFTY));
 
   // const float pos_infinity = uintBitsToFloat(0x7F800000);
   // const float neg_infinity = uintBitsToFloat(0xFF800000);

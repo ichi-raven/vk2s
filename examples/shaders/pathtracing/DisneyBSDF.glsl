@@ -14,14 +14,57 @@ precision highp int;
 #include "randoms.glsl"
 
 // Maths-------------------------------------
+void basis(in vec3 n, out vec3 b1, out vec3 b2) 
+{
+    if(n.z<0.){
+        float a = 1.0 / (1.0 - n.z);
+        float b = n.x * n.y * a;
+        b1 = vec3(1.0 - n.x * n.x * a, -b, n.x);
+        b2 = vec3(b, n.y * n.y*a - 1.0, -n.y);
+    }
+    else{
+        float a = 1.0 / (1.0 + n.z);
+        float b = -n.x * n.y * a;
+        b1 = vec3(1.0 - n.x * n.x * a, b, -n.x);
+        b2 = vec3(b, 1.0 - n.y * n.y * a, -n.y);
+    }
+}
+
+vec3 toWorld(vec3 x, vec3 y, vec3 z, vec3 v)
+{
+    return v.x*x + v.y*y + v.z*z;
+}
+
+vec3 toLocal(vec3 x, vec3 y, vec3 z, vec3 v)
+{
+    return vec3(dot(v, x), dot(v, y), dot(v, z));
+}
+
 float sgn(const float v)
 {
+    if (v == 0.0)
+    {
+        return 0.0;
+    }
+
     return v >= 0. ? 1.0 : -1.0;
 }
 
 float cosTheta(const vec3 v)
 {
-    return dot(normalize(v), vec3(0., 1., 0.));
+    return v.y;
+    //return dot(normalize(v), vec3(0., 1., 0.));
+}
+
+float cos2Theta(const vec3 v)
+{
+    const float c = cosTheta(v);
+    return c * c;
+}
+
+float sinTheta(const vec3 v)
+{
+    return sqrt(1.0 - cos2Theta(v));
 }
 
 float tanTheta(const vec3 v)
@@ -32,7 +75,9 @@ float tanTheta(const vec3 v)
 
 float cosPhi(const vec3 v)
 {
-    return dot(normalize(v), vec3(1., 0., 0.));
+    float s = sinTheta(v);
+    return (s == 0) ? 1.0 : clamp(v.x / s, -1.0, 1.0);
+    //return dot(normalize(v), vec3(1., 0., 0.));
 }
 
 float cos2Phi(const vec3 v)
@@ -62,8 +107,8 @@ vec3 schlickVec3(vec3 r0, float radians)
 
 float schlickWeight(const float u)
 {
-    float m = clamp(1.0 - u, 0.0, 1.0);
-    float m2 = m * m;
+    const float m = clamp(1.0 - u, 0.0, 1.0);
+    const float m2 = m * m;
     return m * m2 * m2;
 }
 
@@ -134,8 +179,8 @@ vec3 calculateTint(const vec3 baseColor)
 {
     // -- The color tint is never mentioned in the SIGGRAPH presentations as far as I recall but it was done in
     // --  the BRDF Explorer so I'll replicate that here.
-    float luminance = dot(vec3(0.3f, 0.6f, 1.0f), baseColor);
-    return (luminance > 0.0f) ? baseColor * (1.0f / luminance) : vec3(1.0);
+    float luminance = dot(vec3(0.3, 0.6, 1.0), baseColor);
+    return (luminance > 0.0) ? baseColor * (1.0 / luminance) : vec3(1.0);
 }
 
 vec3 EvaluateSheen(const vec3 baseColor, const float sheen, const vec3 sheenTint, const vec3 wo, const vec3 wm, const vec3 wi)
@@ -147,7 +192,7 @@ vec3 EvaluateSheen(const vec3 baseColor, const float sheen, const vec3 sheenTint
 
     const float dotHL = dot(wm, wi);
     const vec3 tint = calculateTint(baseColor);
-    return sheen * mix(vec3(1.0), tint, sheenTint) * pow((1.0 - dotHL), 5);
+    return sheen * mix(vec3(1.0), tint, sheenTint) * schlickWeight(dotHL);
 }
 
 // Clearcoat-------------------------------------
@@ -278,8 +323,7 @@ vec3 DisneyFresnel(const vec3 baseColor, const float specularTint, const float m
 
     // -- See section 3.1 and 3.2 of the 2015 PBR presentation + the Disney BRDF explorer (which does their
     // -- 2012 remapping rather than the SchlickR0FromRelativeIOR seen here but they mentioned the switch in 3.2).
-    vec3 R0 = FresnelSchlickR0FromRelativeIOR(relativeIOR) * mix(vec3(1.0), tint,
-                                                                              specularTint);
+    vec3 R0 = FresnelSchlickR0FromRelativeIOR(relativeIOR) * mix(vec3(1.0), tint, specularTint);
     R0 = mix(R0, baseColor, metallic);
 
     float dielectricFresnel = FresnelDielectric(dotHV, 1.0, IOR);
@@ -426,7 +470,7 @@ void CalculateLobePdfs(const DisneyMaterial mat,
     float diffuseWeight      = dielectricBRDF;
     float clearcoatWeight    = 1.0 * clamp(mat.clearcoat, 0.0, 1.0); 
 
-    float norm = 1.0 / (specularWeight + transmissionWeight + diffuseWeight + clearcoatWeight);
+    float norm = clamp(1.0 / (specularWeight + transmissionWeight + diffuseWeight + clearcoatWeight), EPS, INFTY);
 
     pSpecular  = specularWeight     * norm;
     pSpecTrans = transmissionWeight * norm;
@@ -434,12 +478,16 @@ void CalculateLobePdfs(const DisneyMaterial mat,
     pClearcoat = clearcoatWeight    * norm;
 }
 
-vec3 EvaluateDisney(const DisneyMaterial mat, vec3 v, vec3 l, bool thin,
+vec3 EvaluateDisneyBSDF(const DisneyMaterial mat, vec3 v, vec3 l, vec3 normal, bool thin,
                       out float forwardPdf, out float reversePdf)
 {
+    // calc tangent space
+    vec3 T;
+    vec3 B;
+    basis(normal, T, B);
 
-    vec3 wo = normalize(MatrixMultiply(v, surface.worldToTangent));
-    vec3 wi = normalize(MatrixMultiply(l, surface.worldToTangent));
+    vec3 wo = toLocal(T, normal, B, v);//normalize(MatrixMultiply(v, surface.worldToTangent));
+    vec3 wi = toLocal(T, normal, B, l);//normalize(MatrixMultiply(l, surface.worldToTangent));
     vec3 wm = normalize(wo + wi);
 
     float dotNV = cosTheta(wo);
@@ -546,7 +594,7 @@ vec3 SampleGgxVndfAnisotropic(const vec3 wo, float ax, float ay, float u1, float
     // -- Choose a point on a disk with each half of the disk weighted proportionally to its projection onto direction v
     float a = 1.0 / (1.0 + v.y);
     float r = sqrt(u1);
-    float phi = (u2 < a) ? (u2 / a) * M_PI : M_PI + (u2 - a) / (1.0f - a) * M_PI;
+    float phi = (u2 < a) ? (u2 / a) * M_PI : M_PI + (u2 - a) / (1.0 - a) * M_PI;
     float p1 = r * cos(phi);
     float p2 = r * sin(phi) * ((u2 < a) ? 1.0 : v.y);
     // -- Calculate the normal in this stretched tangent space
@@ -555,22 +603,22 @@ vec3 SampleGgxVndfAnisotropic(const vec3 wo, float ax, float ay, float u1, float
     return normalize(vec3(ax * n.x, n.y, ay * n.z));
 }
 
-void SampleDisneySpecTransmission(const DisneyMaterial mat, vec3 v, bool thin, out BSDFSample sample_out, inout uint prngState)
+bool SampleDisneySpecTransmission(const DisneyMaterial mat, vec3 wo, bool thin, out BSDFSample sample_out, inout uint prngState)
 {
-    // FUCK tangent space
-    vec3 wo = MatrixMultiply(v, surface.worldToTangent);
+    // tangent space
+    //vec3 wo = MatrixMultiply(v, surface.worldToTangent);
 
     if(cosTheta(wo) == 0.0) 
     {
         sample_out.forwardPdfW = 0.0;
         sample_out.reversePdfW = 0.0;
-        sample_out.reflectance = vec3(0.0);
+        sample_out.f = vec3(0.0);
         sample_out.wi = vec3(0.0);
-        return;
+        return false;
     }
 
     // -- Scale roughness based on IOR
-    float rscaled = thin ? ThinTransmissionRoughness(mat.ior, surface.roughness) : surface.roughness;
+    float rscaled = thin ? ThinTransmissionRoughness(mat.ior, mat.roughness) : mat.roughness;
     
     float tax, tay;
     calcAnisotropic(rscaled, mat.anisotropic, tax, tay);
@@ -586,8 +634,8 @@ void SampleDisneySpecTransmission(const DisneyMaterial mat, vec3 v, bool thin, o
         dotVH = -dotVH;
     }
 
-    float ni = wo.y > 0.0 ? 1.0 : surface.ior;
-    float nt = wo.y > 0.0 ? surface.ior : 1.0;
+    float ni = wo.y > 0.0 ? 1.0 : mat.ior;
+    float nt = wo.y > 0.0 ? mat.ior : 1.0;
     float relativeIOR = ni / nt;
 
     // -- Disney uses the full dielectric Fresnel equation for transmission. We also importance sample F
@@ -604,10 +652,10 @@ void SampleDisneySpecTransmission(const DisneyMaterial mat, vec3 v, bool thin, o
     vec3 wi;
     if(stepAndOutputRNGFloat(prngState) <= F) 
     {
-        wi = normalize(reflect(wm, wo));
+        wi = normalize(reflect(-wo, wm));
 
-        sample_out.flags = SurfaceEventFlags::eScatterEvent;
-        sample_out.reflectance = G1v * mat.baseColor;
+        sample_out.flags = BSDF_FLAGS_DIFFUSE_TRANSMISSION;
+        sample_out.f = G1v * mat.baseColor;
 
         float jacobian = (4. * abs(dot(wo, wm)));
         pdf = F / jacobian;
@@ -618,34 +666,35 @@ void SampleDisneySpecTransmission(const DisneyMaterial mat, vec3 v, bool thin, o
         {
             // -- When the surface is thin so it refracts into and then out of the surface during this shading event.
             // -- So the ray is just reflected then flipped and we use the sqrt of the surface color.
-            wi = reflect(wm, wo);
+            wi = reflect(-wo, wm);
             wi.y = -wi.y;
-            sample_out.reflectance = G1v * sqrt(surface.baseColor);
+            sample_out.f = G1v * sqrt(mat.baseColor);
 
             // -- Since this is a thin surface we are not ending up inside of a volume so we treat this as a scatter event.
-            sample_out.flags = SurfaceEventFlags::eScatterEvent;
+            sample_out.flags = BSDF_FLAGS_DIFFUSE_REFLECTION;
         }
         else 
         {
             if(Transmit(wm, wo, relativeIOR, wi)) 
             {
-                sample_out.flags = SurfaceEventFlags::eTransmissionEvent;
-                sample_out.medium.phaseFunction = dotVH > 0.0 ? MediumPhaseFunction::eIsotropic : MediumPhaseFunction::eVacuum;
-                sample_out.medium.extinction = CalculateExtinction(surface.transmittanceColor, surface.scatterDistance);
+                sample_out.flags = BSDF_FLAGS_SPECULAR_TRANSMISSION;
+                // TODO: currently ignore medium
+                //sample_out.medium.phaseFunction = dotVH > 0.0 ? MediumPhaseFunction::eIsotropic : MediumPhaseFunction::eVacuum;
+                //sample_out.medium.extinction = CalculateExtinction(surface.transmittanceColor, surface.scatterDistance);
             }
             else 
             {
-                sample_out.flags = SurfaceEventFlags::eScatterEvent;
-                wi = reflect(wm, wo);
+                sample_out.flags = BSDF_FLAGS_DIFFUSE_REFLECTION;
+                wi = reflect(-wo, wm);
             }
 
-            sample_out.reflectance = G1v * surface.baseColor;
+            sample_out.f = G1v * mat.baseColor;
         }
 
         wi = normalize(wi);
         
         float dotLH = abs(dot(wi, wm));
-        float tmp = dotLH + surface.relativeIOR * dotVH;
+        float tmp = dotLH + mat.relativeIOR * dotVH;
         float jacobian = dotLH / (tmp * tmp);
         pdf = (1.0 - F) / jacobian;
     }
@@ -654,39 +703,49 @@ void SampleDisneySpecTransmission(const DisneyMaterial mat, vec3 v, bool thin, o
     {
         sample_out.forwardPdfW = 0.0;
         sample_out.reversePdfW = 0.0;
-        sample_out.reflectance = vec3(0.0);
+        sample_out.f = vec3(0.0);
         sample_out.wi = vec3(0.0);
-        return;
+        return false;
     }
 
-    if(surface.roughness < 0.01) 
+    if(mat.roughness < 0.01) 
     {
         // -- This is a hack to allow us to sample the correct IBL texture when a path bounced off a smooth surface.
-        sample_out.flags |= SurfaceEventFlags::eDiracEvent;
+        sample_out.flags |= BSDF_FLAGS_SPECULAR_REFLECTION;
     }
 
     // -- calculate VNDF pdf terms and apply Jacobian and Fresnel sampling adjustments
-    GgxVndfAnisotropicPdf(wi, wm, wo, tax, tay, sample_out.forwardPdfW, sample_out.reversePdfW);
+    GgxVndfAnisotropicPdfOut2(wi, wm, wo, tax, tay, sample_out.forwardPdfW, sample_out.reversePdfW);
     sample_out.forwardPdfW *= pdf;
     sample_out.reversePdfW *= pdf;
 
     // -- convert wi back to world space
-    // FUCK tangent space
-    sample_out.wi = normalize(MatrixMultiply(wi, MatrixTranspose(surface.worldToTangent)));
+    // tangent space
+    sample_out.wi = wi;//normalize(MatrixMultiply(wi, MatrixTranspose(surface.worldToTangent)));
 
-    return;
+    return true;
 }
 
-void SampleDisneyDiffuse(const DisneyMaterial mat, vec3 v, bool thin,
+vec3 SampleCosineWeightedHemisphere(const float r0, const float r1)
+{
+    float r = sqrt(r0);
+    float theta = M_PI2 * r1;
+
+    return vec3(r * cos(theta), sqrt(max(0.0, 1 - r0)), r * sin(theta));
+}
+
+bool SampleDisneyDiffuse(const DisneyMaterial mat, vec3 wo, bool thin,
                                 out BSDFSample sample_out, inout uint prngState)
 {
-    vec3 wo = MatrixMultiply(v, surface.worldToTangent);
+    // tangent space
+    //vec3 wo = MatrixMultiply(v, surface.worldToTangent);
 
     float sign = sgn(cosTheta(wo));
 
     // -- Sample cosine lobe
     float r0 = stepAndOutputRNGFloat(prngState);
     float r1 = stepAndOutputRNGFloat(prngState);
+    //vec3 wi = sign * randomCosDirection(prngState);
     vec3 wi = sign * SampleCosineWeightedHemisphere(r0, r1);
     vec3 wm = normalize(wi + wo);
 
@@ -695,25 +754,23 @@ void SampleDisneyDiffuse(const DisneyMaterial mat, vec3 v, bool thin,
     {
         sample_out.forwardPdfW = 0.0;
         sample_out.reversePdfW = 0.0;
-        sample_out.reflectance = vec3(0.0);
+        sample_out.f = vec3(0.0);
         sample_out.wi = vec3(0.0);
-        return;
+        return false;
     }
 
-    float dotNV = CosTheta(wo);
+    float dotNV = cosTheta(wo);
 
     float pdf;
-
-    SurfaceEventFlags eventType = SurfaceEventFlags::eScatterEvent;
 
     vec3 color = mat.baseColor;
 
     float p = stepAndOutputRNGFloat(prngState);
 
-    if(p <= surface.diffTrans) 
+    if(p <= mat.diffTrans) 
     {
         wi = -wi;
-        pdf = surface.diffTrans;
+        pdf = mat.diffTrans;
 
         if(thin)
         {
@@ -721,136 +778,213 @@ void SampleDisneyDiffuse(const DisneyMaterial mat, vec3 v, bool thin,
         }
         else 
         {
-            eventType = SurfaceEventFlags::eTransmissionEvent;
-
-            sample_out.medium.phaseFunction = MediumPhaseFunction::eIsotropic;
-            sample_out.medium.extinction = CalculateExtinction(surface.transmittanceColor, surface.scatterDistance);
+            // TODO: currently skip medium
+            //sample_out.medium.phaseFunction = MediumPhaseFunction::eIsotropic;
+            //sample_out.medium.extinction = CalculateExtinction(surface.transmittanceColor, surface.scatterDistance);
         }
     }
     else 
     {
-        pdf = (1.0 - surface.diffTrans);
+        pdf = (1.0 - mat.diffTrans);
     }
 
-    vec3 sheen = EvaluateSheen(surface, wo, wm, wi);
+    vec3 sheen = EvaluateSheen(mat.baseColor, mat.sheen, mat.sheenTint, wo, wm, wi);
 
-    float diffuse = EvaluateDisneyDiffuse(surface, wo, wm, wi, thin);
+    float diffuse = EvaluateDisneyDiffuse(mat.baseColor, mat.flatness, mat.roughness, wo, wm, wi, thin);
 
     pdf = max(EPS, pdf);
 
-    sample_out.reflectance = sheen + color * (diffuse / pdf);
-    sample_out.wi = normalize(MatrixMultiply(wi, MatrixTranspose(surface.worldToTangent)));
+    sample_out.f = sheen + color * (diffuse / pdf);
+    // tangent space
+    sample_out.wi = wi;//normalize(MatrixMultiply(wi, MatrixTranspose(surface.worldToTangent)));
     sample_out.forwardPdfW = abs(dotNL) * pdf;
     sample_out.reversePdfW = abs(dotNV) * pdf;
-    sample_out.flags = eventType;
+    sample_out.flags = BSDF_FLAGS_DIFFUSE_REFLECTION;
 
-    return;
+    return true;
 }
 
-bool SampleDisneyClearcoat(const DisneyMaterial mat, const vec3 v,
+bool SampleDisneyClearcoat(const DisneyMaterial mat, const vec3 wo,
                                   out BSDFSample sample_out, inout uint prngState)
 {
-    // FUCK tangent space
-    vec3 wo = normalize(MatrixMultiply(v, surface.worldToTangent));
+    // tangent space
+    //vec3 wo = normalize(MatrixMultiply(v, surface.worldToTangent));
 
     float a = 0.25;
     float a2 = a * a;
 
     float r0 = stepAndOutputRNGFloat(prngState);
     float r1 = stepAndOutputRNGFloat(prngState);
-    float cosTheta = sqrt(max(0, (1.0 - pow(a2, 1.0 - r0)) / (1.0 - a2)));
-    float sinTheta = sqrt(max(0, 1.0 - cosTheta * cosTheta));
+    float c = sqrt(max(0.0, (1.0 - pow(a2, 1.0 - r0)) / (1.0 - a2)));
+    float s = sqrt(max(0.0, 1.0 - c * c));
     float phi = M_PI2 * r1;
 
-    vec3 wm = vec3(sinTheta * cos(phi), cosTheta, sinTheta * sin(phi));
+    vec3 wm = vec3(s * cos(phi), c, s * sin(phi));
     if(dot(wm, wo) < 0.0) 
     {
         wm = -wm;
     }
 
-    vec3 wi = reflect(wm, wo);
+    vec3 wi = reflect(-wo, wm);
     if(dot(wi, wo) < 0.0)
     {
         return false;
     }
 
-    float clearcoatWeight = surface.clearcoat;
-    float clearcoatGloss = surface.clearcoatGloss;
+    float clearcoatWeight = mat.clearcoat;
+    float clearcoatGloss = mat.clearcoatGloss;
 
     float dotNH = cosTheta(wm);
     float dotLH = dot(wm, wi);
     float absDotNL = abs(cosTheta(wi));
     float absDotNV = abs(cosTheta(wo));
 
-    float d = GTR1(abs(dotNH), mix(0.1, 0.001, clearcoatGloss));
+    float d = D_GTR1(abs(dotNH), mix(0.1, 0.001, clearcoatGloss));
     float f = schlick(0.04, dotLH);
     float g = separableSmithGGXG1(wi, 0.25) * separableSmithGGXG1(wo, 0.25);
 
-    float fPdf = d / (4.0 * Dot(wo, wm));
+    float fPdf = d / (4.0 * dot(wo, wm));
 
-    sample_out.reflectance = float3(0.25f * clearcoatWeight * g * f * d) / fPdf;
-    sample_out.wi = Normalize(MatrixMultiply(wi, MatrixTranspose(surface.worldToTangent)));
+    sample_out.f = vec3(0.25 * clearcoatWeight * g * f * d) / fPdf;
+    // tangent space
+    sample_out.wi = wi;//Normalize(MatrixMultiply(wi, MatrixTranspose(surface.worldToTangent)));
     sample_out.forwardPdfW = fPdf;
     sample_out.reversePdfW = d / (4.0 * dot(wi, wm));
 
     return true;
 }
 
-BSDFSample sampleDisneyBSDF(const DisneyMaterial mat, const vec3 x, const vec3 normal, inout DisneyBSDFState state, inout uint prngState)
+bool SampleDisneyBRDF(const DisneyMaterial mat, const vec3 wo,
+                                  out BSDFSample sample_out, inout uint prngState)
+{
+    // tangent space
+    //vec3 wo = Normalize(MatrixMultiply(v, surface.worldToTangent));
+
+    // -- Calculate Anisotropic params
+    float ax, ay;
+    calcAnisotropic(mat.roughness, mat.anisotropic, ax, ay);
+
+    // -- Sample visible distribution of normals
+    float r0 = stepAndOutputRNGFloat(prngState);
+    float r1 = stepAndOutputRNGFloat(prngState);
+    vec3 wm = SampleGgxVndfAnisotropic(wo, ax, ay, r0, r1);
+
+    // -- Reflect over wm
+    vec3 wi = normalize(reflect(-wo, wm));
+    if(cosTheta(wi) < EPS)
+    {
+        sample_out.forwardPdfW = 0.0;
+        sample_out.reversePdfW = 0.0;
+        sample_out.f = vec3(INFTY, 0.0, 0.0);
+        sample_out.wi = DisneyFresnel(mat.baseColor, mat.specularTint, mat.metallic, mat.ior, mat.relativeIOR, wo, wm, wi);
+        return false;
+    }
+
+    // -- Fresnel term for this lobe is complicated since we're blending with both the metallic and the specularTint
+    // -- parameters plus we must take the IOR into account for dielectrics
+    vec3 F = DisneyFresnel(mat.baseColor, mat.specularTint, mat.metallic, mat.ior, mat.relativeIOR, wo, wm, wi);
+
+    // -- Since we're sampling the distribution of visible normals the pdf cancels out with a number of other terms.
+    // -- We are left with the weight G2(wi, wo, wm) / G1(wi, wm) and since Disney uses a separable masking function
+    // -- we get G1(wi, wm) * G1(wo, wm) / G1(wi, wm) = G1(wo, wm) as our weight.
+    float G1v = separableSmithGGXG1(wo, wm, ax, ay);
+    vec3 specular = G1v * F;
+
+    sample_out.flags = BSDF_FLAGS_DIFFUSE_REFLECTION;
+    sample_out.f = specular;
+    // tangent space
+    sample_out.wi = wi;//Normalize(MatrixMultiply(wi, MatrixTranspose(surface.worldToTangent)));
+    GgxVndfAnisotropicPdfOut2(wi, wm, wo, ax, ay, sample_out.forwardPdfW, sample_out.reversePdfW);
+
+    sample_out.forwardPdfW *= (1.0 / (4. * abs(dot(wo, wm))));
+    sample_out.reversePdfW *= (1.0 / (4. * abs(dot(wi, wm))));
+
+    return true;
+}
+
+BSDFSample sampleDisneyBSDF(const DisneyMaterial mat, const vec3 x, const vec3 normal, bool thin, inout DisneyBSDFState state, inout uint prngState)
 {
     // init
     BSDFSample ret;
-    ret.f = mat.albedo;
-    ret.pdf = 1.0;
+    ret.f = mat.baseColor;
+    ret.forwardPdfW = 1.0;
+    ret.reversePdfW = 1.0;
     ret.flags = 0;
-    ret.eta = 1.0;
 
     float pSpecular;
     float pDiffuse;
     float pClearcoat;
     float pTransmission;
-    CalculateLobePdfs(surface, pSpecular, pDiffuse, pClearcoat, pTransmission);
+    CalculateLobePdfs(mat, pSpecular, pDiffuse, pClearcoat, pTransmission);
 
     bool success = false;
 
+    // calc tangent space
+    vec3 T, B;
+    basis(normal, T, B);
+
+    vec3 wo = normalize(toLocal(T, normal, B, x));
+
     float pLobe = 0.0;
     float p = stepAndOutputRNGFloat(prngState);
+
+    
     if(p <= pSpecular) 
     {
-        success = SampleDisneyBRDF(sampler, surface, v, sample);
+        success = SampleDisneyBRDF(mat, wo, ret, prngState);
         pLobe = pSpecular;
     }
     else if(p > pSpecular && p <= (pSpecular + pClearcoat)) 
     {
-        success = SampleDisneyClearcoat(sampler, surface, v, sample);
+        success = SampleDisneyClearcoat(mat, wo, ret, prngState);
         pLobe = pClearcoat;
     }
     else if(p > pSpecular + pClearcoat && p <= (pSpecular + pClearcoat + pDiffuse)) 
     {
-        success = SampleDisneyDiffuse(sampler, surface, v, thin, sample);
+        success = SampleDisneyDiffuse(mat, wo, thin, ret, prngState);
         pLobe = pDiffuse;
     }
     else if(pTransmission >= 0.0) 
     {
-        success = SampleDisneySpecTransmission(sampler, surface, v, thin, sample);
+        success = SampleDisneySpecTransmission(mat, wo, thin, ret, prngState);
         pLobe = pTransmission;
     }
     else 
     {
         // -- Make sure we notice if this is occurring.
-        sample.reflectance = vec3(1000000.0, 0.0, 0.0);
-        sample.forwardPdfW = EPS;
-        sample.reversePdfW = EPS;
+        ret.f = vec3(INFTY);
+        ret.forwardPdfW = EPS;
+        ret.reversePdfW = EPS;
     }
+
+    // DEBUG
+    //success = SampleDisneyBRDF(mat, wo, ret, prngState);
+    //pLobe = pSpecular;
+
+    //success = SampleDisneyClearcoat(mat, wo, ret, prngState);
+    //pLobe = pClearcoat;
+
+    //success = SampleDisneyDiffuse(mat, wo, thin, ret, prngState);
+    //pLobe = pDiffuse;
+
+    //success = SampleDisneySpecTransmission(mat, wo, thin, ret, prngState);
+    //pLobe = pTransmission;
 
     if(pLobe > 0.0)
     {
-        sample.reflectance = sample.reflectance * (1.0 / pLobe);
-        sample.forwardPdfW *= pLobe;
-        sample.reversePdfW *= pLobe;
+        ret.f *= (1.0 / pLobe);
+        ret.forwardPdfW *= pLobe;
+        ret.reversePdfW *= pLobe;
     }
 
-    ret.f = EvaluateDisney()
+    if (!success)
+    {
+        ret.f = vec3(INFTY, 0.0, INFTY);
+        ret.flags = BSDF_FLAGS_FAILED;
+    }
+
+    // back to world space
+    ret.wi = normalize(toWorld(T, normal, B, ret.wi));
 
     return ret;
 }

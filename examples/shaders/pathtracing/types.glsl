@@ -37,6 +37,7 @@ struct DisneyMaterial
     
   float specularTint;
   float specTrans;
+  float diffTrans;
   float ior;
   float relativeIOR;
   float absorption;
@@ -75,9 +76,9 @@ struct BSDFSample
 {
   vec3 f;
   vec3 wi;
-  float pdf;
+  float forwardPdfW;
+  float reversePdfW;
   uint flags;
-  float eta;
 };
 
 struct LightSample
