@@ -81,37 +81,41 @@ void main()
   
   DisneyMaterial disneyMat;
   disneyMat.baseColor = material.albedo.xyz;
-  disneyMat.metallic = 0.01;
-  disneyMat.roughness = 0.3;
-  disneyMat.flatness = 0.0;
+  disneyMat.metallic = 0.15;
+  disneyMat.roughness = 0.1;
+  disneyMat.flatness = 0.1;
   disneyMat.emissive = material.emissive.xyz;
   
   disneyMat.specularTint = 1.0;
-  disneyMat.specTrans = 0.2;
-  disneyMat.diffTrans = 0.2;
+  disneyMat.specTrans = 0.0;
+  disneyMat.diffTrans = 0.0;
   disneyMat.ior = material.IOR;
   disneyMat.relativeIOR = payload.state.lastIOR / material.IOR;
   disneyMat.absorption = 0.0;
 
-  disneyMat.sheen = 1.0;
+  disneyMat.sheen = 0.01;
   disneyMat.sheenTint = vec3(0.0);
   disneyMat.anisotropic = 0.0;
 
-  disneyMat.clearcoat = 1.0;
-  disneyMat.clearcoatGloss = 0.7;
+  disneyMat.clearcoat = 0.4;
+  disneyMat.clearcoatGloss = 0.6;
 
   switch(material.matType)
   {
     // case MAT_LAMBERT:
     //   disneyMat.roughness = 1.0;
     // break;
-    // case MAT_CONDUCTOR:
-    //   disneyMat.roughness = material.alpha;
-    // break;
+    case MAT_CONDUCTOR:
+      disneyMat.roughness = 0.001;
+      disneyMat.metallic = 1.0;
+      disneyMat.clearcoat = 0.5;
+      disneyMat.clearcoatGloss = 0.8;
+    break;
     case MAT_DIELECTRIC:
       disneyMat.roughness = 0.001;
       disneyMat.metallic = 0.1;
       disneyMat.specTrans = 1.0;
+      disneyMat.diffTrans = 1.0;
     break;
     default:
     // ERROR

@@ -45,8 +45,8 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
         auto sampler = device.create<vk2s::Sampler>(vk::SamplerCreateInfo());
         vk2s::AssetLoader loader;
 
-        load("../../examples/resources/model/CornellBox/CornellBox-Sphere.obj", device, loader, meshInstances, materialBuffer, materialTextures);
-        //load("../../examples/resources/model/holodeck/holodeck.obj", device, loader, meshInstances, materialBuffer, materialTextures);
+        //load("../../examples/resources/model/CornellBox/CornellBox-Sphere.obj", device, loader, meshInstances, materialBuffer, materialTextures);
+        load("../../examples/resources/model/fireplace-room/fireplace_room.obj", device, loader, meshInstances, materialBuffer, materialTextures);
 
         // create scene UB
         Handle<vk2s::DynamicBuffer> sceneBuffer;
