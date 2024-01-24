@@ -29,14 +29,24 @@ struct Material
 
 struct DisneyMaterial
 {
-  vec3 albedo;
+  vec3 baseColor;
   float metallic;
   float roughness;
+  float flatness;
   vec3 emissive;
     
+  float specularTint;
   float specTrans;
   float ior;
+  float relativeIOR;
   float absorption;
+
+  float sheen;
+  vec3 sheenTint;
+  float anisotropic;
+
+  float clearcoat;
+  float clearcoatGloss;
 };
 
 struct DisneyBSDFState

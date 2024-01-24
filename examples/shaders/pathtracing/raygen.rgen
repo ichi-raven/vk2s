@@ -131,17 +131,17 @@ vec3 correct(const vec3 v)
   }
 
   // inf
-  const float pos_infinity = uintBitsToFloat(0x7F800000);
-  const float neg_infinity = uintBitsToFloat(0xFF800000);
-  if (v.x >= pos_infinity || v.y >= pos_infinity || v.z >= pos_infinity)
-  {
-    return vec3(0.0);
-  }
+  // const float pos_infinity = uintBitsToFloat(0x7F800000);
+  // const float neg_infinity = uintBitsToFloat(0xFF800000);
+  // if (v.x >= pos_infinity || v.y >= pos_infinity || v.z >= pos_infinity)
+  // {
+  //   return vec3(0.0);
+  // }
 
-  if (v.x <= neg_infinity || v.y <= neg_infinity || v.z <= neg_infinity)
-  {
-    return vec3(0.0);
-  }
+  // if (v.x <= neg_infinity || v.y <= neg_infinity || v.z <= neg_infinity)
+  // {
+  //   return vec3(0.0);
+  // }
 
   return v;
 }

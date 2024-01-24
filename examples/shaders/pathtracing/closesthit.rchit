@@ -15,6 +15,8 @@ hitAttributeEXT vec3 attribs;
 #include "BSDFs.glsl"
 #include "lights.glsl"
 
+#include "DisneyBSDF.glsl"
+
 layout(location = 0) rayPayloadInEXT Payload payload;
 
 layout(buffer_reference, buffer_reference_align = 4, scalar) readonly buffer VertexBuffer 
@@ -68,39 +70,42 @@ void main()
 
   payload.x = worldPos;
   payload.normal = setFaceNormal(-gl_WorldRayDirectionEXT, worldNormal);
-  payload.bsdf = sampleBSDF(material, -gl_WorldRayDirectionEXT, worldNormal, payload.prngState);
   payload.Le = material.emissive.xyz;
   payload.intersected = true;
+  payload.bsdf = sampleBSDF(material, -gl_WorldRayDirectionEXT, worldNormal, payload.prngState);
   
-  // test Disney BSDF
-  DisneyMaterial disneyMat;
-  disneyMat.albedo = material.albedo.xyz;
-  disneyMat.metallic = 1.0;
-  disneyMat.emissive = material.emissive.xyz;
-  disneyMat.absorption = 1.0;
-  disneyMat.specTrans = 0.5;
-  disneyMat.ior = 1.0;
-  disneyMat.roughness = 0.5;
-
-  switch(material.matType)
-  {
-    // case MAT_LAMBERT:
-    //   disneyMat.roughness = 1.0;
-    // break;
-    // case MAT_CONDUCTOR:
-    //   disneyMat.roughness = material.alpha;
-    // break;
-    case MAT_DIELECTRIC:
-      disneyMat.metallic = 0.9;
-      disneyMat.specTrans = 1.0;
-      disneyMat.ior = material.IOR;
-    break;
-    default:
-    // ERROR
-    break;
-  }
-
-  payload.bsdf = sampleDisneyBSDF(disneyMat, -gl_WorldRayDirectionEXT, worldNormal, payload.state, payload.prngState);
+  // for simple BSDF
   return;
+
+  // test Disney BSDF
+  // DisneyMaterial disneyMat;
+  // disneyMat.albedo = material.albedo.xyz;
+  // disneyMat.metallic = 1.0;
+  // disneyMat.emissive = material.emissive.xyz;
+  // disneyMat.absorption = 1.0;
+  // disneyMat.specTrans = 0.5;
+  // disneyMat.ior = 1.0;
+  // disneyMat.roughness = 0.5;
+
+  // switch(material.matType)
+  // {
+  //   // case MAT_LAMBERT:
+  //   //   disneyMat.roughness = 1.0;
+  //   // break;
+  //   // case MAT_CONDUCTOR:
+  //   //   disneyMat.roughness = material.alpha;
+  //   // break;
+  //   case MAT_DIELECTRIC:
+  //     disneyMat.metallic = 0.9;
+  //     disneyMat.specTrans = 1.0;
+  //     disneyMat.ior = material.IOR;
+  //   break;
+  //   default:
+  //   // ERROR
+  //   break;
+  // }
+
+  // payload.bsdf = sampleDisneyBSDF(disneyMat, -gl_WorldRayDirectionEXT, worldNormal, payload.state, payload.prngState);
+  // return;
 
 }
