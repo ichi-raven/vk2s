@@ -45,7 +45,7 @@ vec3 sampleLi(const uint sampleIndex)
   const uint shadowFlags = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT;
 
   // for debug (if true, do NEE)
-  const bool NEE = false;
+  const bool NEE = true;
 
   vec3 L = vec3(0.0);
   vec3 beta = vec3(1.0);
@@ -66,6 +66,7 @@ vec3 sampleLi(const uint sampleIndex)
 
   // set primary ray
   const Ray primaryRay = getCameraRay(payload.prngState);
+  vec3 wo = primaryRay.direction;
 
   // trace primary ray
   traceRayEXT(TLAS, flags, 0xFF, 0, 0, 0, primaryRay.origin, tmin, primaryRay.direction, tmax, 0);
@@ -89,8 +90,9 @@ vec3 sampleLi(const uint sampleIndex)
 
       if (!shadowed)
       {
-        const vec3 f = payload.bsdf.f * abs(dot(ls.to, payload.normal));
-        //const vec3 f = EvaluateDisneyBSDF();
+        //const vec3 f = payload.bsdf.f * abs(dot(ls.to, payload.normal));
+        float forwardPdf, reversePdf;
+        const vec3 f = EvaluateDisneyBSDF(payload.mat, -wo, ls.to, payload.normal, false, forwardPdf, reversePdf);
         L += beta * f * ls.L / ls.pdf;
       }
     }
@@ -107,8 +109,9 @@ vec3 sampleLi(const uint sampleIndex)
       break;//or return BLACK
     }
 
-    // update weights
+    // update
     ++depth;
+    wo = payload.bsdf.wi;
     specularBounce = isSpecular(payload.bsdf.flags);
     const float invPrr = 1. / prr;
     beta *= invPrr * payload.bsdf.f;// / payload.bsdf.forwardPdfW;

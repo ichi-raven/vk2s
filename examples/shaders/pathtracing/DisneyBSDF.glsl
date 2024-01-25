@@ -128,7 +128,7 @@ float FresnelDielectric(float cosThetaI, float etaI, float etaT)
 
     // Compute _cosThetaT_ using Snell's law
     const float sinThetaI = sqrt(max(0.0, 1.0 - cosThetaI * cosThetaI));
-    const float sinThetaT = etaI / etaT * sinThetaI;
+    const float sinThetaT = etaI / max(EPS, etaT) * sinThetaI;
 
     // Handle total internal reflection
     if (sinThetaT >= 1.0) 
@@ -138,9 +138,9 @@ float FresnelDielectric(float cosThetaI, float etaI, float etaT)
 
     const float cosThetaT = sqrt(max(0.0, 1.0 - sinThetaT * sinThetaT));
     const float Rparl = ((etaT * cosThetaI) - (etaI * cosThetaT)) /
-                  ((etaT * cosThetaI) + (etaI * cosThetaT));
+                  max(EPS, (etaT * cosThetaI) + (etaI * cosThetaT));
     const float Rperp = ((etaI * cosThetaI) - (etaT * cosThetaT)) /
-                  ((etaI * cosThetaI) + (etaT * cosThetaT));
+                  max(EPS, (etaI * cosThetaI) + (etaT * cosThetaT));
     return (Rparl * Rparl + Rperp * Rperp) / 2.0;
 }
 
@@ -261,9 +261,8 @@ float separableSmithGGXG1(const vec3 w, const vec3 wm, const float ax, const flo
         return 0.0;
     }
 
-    const float pos_infinity = uintBitsToFloat(0x7F800000);
     const float absTanTheta = abs(tanTheta(w));
-    if(absTanTheta >= pos_infinity) 
+    if(absTanTheta >= INFTY) 
     {
         return 0.0;
     }
@@ -273,7 +272,7 @@ float separableSmithGGXG1(const vec3 w, const vec3 wm, const float ax, const flo
     a2Tan2Theta *= a2Tan2Theta;
 
     float lambda = 0.5 * (-1.0 + sqrt(1.0 + a2Tan2Theta));
-    return 1.0 / (1.0 + lambda);
+    return 1.0 / max(EPS, 1.0 + lambda);
 }
 
 float GgxVndfAnisotropicPdf(const vec3 wi, const vec3 wm, const vec3 wo, const float ax, const float ay)
@@ -401,9 +400,9 @@ vec3 EvaluateDisneySpecTransmission(const vec3 baseColor, const float relativeIo
     // Note that we are intentionally leaving out the 1/n2 spreading factor since for VCM we will be evaluating
     // particles with this. That means we'll need to model the air-[other medium] transmission if we ever place
     // the camera inside a non-air medium.
-    const float c = (absDotHL * absDotHV) / (absDotNL * absDotNV);
+    const float c = (absDotHL * absDotHV) / max(EPS, absDotNL * absDotNV);
     const float tmp = dotHL + relativeIor * dotHV;
-    const float t = (n2 / (tmp * tmp));
+    const float t = (n2 / max(EPS, tmp * tmp));
     return color * c * t * (1.0 - f) * gl * gv * d;
 }
 
@@ -578,7 +577,7 @@ vec3 EvaluateDisneyBSDF(const DisneyMaterial mat, vec3 v, vec3 l, vec3 normal, b
         reversePdf += pBRDF * reverseMetallicPdfW / (4. * abs(dot(wi, wm)));
     }
 
-    reflectance = reflectance * abs(dotNL);
+    reflectance *= abs(dotNL);
 
     return reflectance;
 }

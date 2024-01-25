@@ -100,6 +100,7 @@ struct Payload
 
   // for Disney BSDF
   DisneyBSDFState state;
+  DisneyMaterial mat;
 };
 
 struct ONB

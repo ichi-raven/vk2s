@@ -81,24 +81,31 @@ void main()
   
   DisneyMaterial disneyMat;
   disneyMat.baseColor = material.albedo.xyz;
-  disneyMat.metallic = 0.15;
+  disneyMat.metallic = 0.0;
   disneyMat.roughness = 0.1;
-  disneyMat.flatness = 0.1;
-  disneyMat.emissive = material.emissive.xyz;
+  disneyMat.flatness = 1.0;
+  if (length(material.emissive) <= 0.1)
+  {
+    disneyMat.emissive = vec3(0.0, 1.0, 0.0);
+  }
+  else
+  {
+    disneyMat.emissive = material.emissive.xyz;
+  }
   
-  disneyMat.specularTint = 1.0;
+  disneyMat.specularTint = 0.5;
   disneyMat.specTrans = 0.0;
   disneyMat.diffTrans = 0.0;
   disneyMat.ior = material.IOR;
   disneyMat.relativeIOR = payload.state.lastIOR / material.IOR;
   disneyMat.absorption = 0.0;
 
-  disneyMat.sheen = 0.01;
+  disneyMat.sheen = 0.1;
   disneyMat.sheenTint = vec3(0.0);
   disneyMat.anisotropic = 0.0;
 
-  disneyMat.clearcoat = 0.4;
-  disneyMat.clearcoatGloss = 0.6;
+  disneyMat.clearcoat = 0.6;
+  disneyMat.clearcoatGloss = 0.8;
 
   switch(material.matType)
   {
@@ -106,16 +113,18 @@ void main()
     //   disneyMat.roughness = 1.0;
     // break;
     case MAT_CONDUCTOR:
-      disneyMat.roughness = 0.001;
+      disneyMat.roughness = 0.0;
+      disneyMat.anisotropic = 0.0;
       disneyMat.metallic = 1.0;
-      disneyMat.clearcoat = 0.5;
-      disneyMat.clearcoatGloss = 0.8;
+      disneyMat.clearcoat = 0.2;
+      disneyMat.clearcoatGloss = 0.1;
     break;
     case MAT_DIELECTRIC:
       disneyMat.roughness = 0.001;
-      disneyMat.metallic = 0.1;
+      disneyMat.metallic = 0.01;
       disneyMat.specTrans = 1.0;
       disneyMat.diffTrans = 1.0;
+      disneyMat.anisotropic = 0.0;
     break;
     default:
     // ERROR
@@ -126,6 +135,7 @@ void main()
 
   payload.bsdf = sampleDisneyBSDF(disneyMat, -gl_WorldRayDirectionEXT, worldNormal, false, payload.state, payload.prngState);
   payload.state.lastIOR = material.IOR;
+  payload.mat = disneyMat;
 
   // DEBUG
   //payload.Le = payload.bsdf.f;
