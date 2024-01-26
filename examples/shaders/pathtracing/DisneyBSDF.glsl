@@ -70,7 +70,7 @@ float sinTheta(const vec3 v)
 float tanTheta(const vec3 v)
 {
     float c = cosTheta(v);
-    return sqrt(1 - c * c) / c;
+    return sqrt(1.0 - c * c) / c;
 }
 
 float cosPhi(const vec3 v)
@@ -128,7 +128,7 @@ float FresnelDielectric(float cosThetaI, float etaI, float etaT)
 
     // Compute _cosThetaT_ using Snell's law
     const float sinThetaI = sqrt(max(0.0, 1.0 - cosThetaI * cosThetaI));
-    const float sinThetaT = etaI / max(EPS, etaT) * sinThetaI;
+    const float sinThetaT = etaI / etaT * sinThetaI;
 
     // Handle total internal reflection
     if (sinThetaT >= 1.0) 
@@ -138,9 +138,9 @@ float FresnelDielectric(float cosThetaI, float etaI, float etaT)
 
     const float cosThetaT = sqrt(max(0.0, 1.0 - sinThetaT * sinThetaT));
     const float Rparl = ((etaT * cosThetaI) - (etaI * cosThetaT)) /
-                  max(EPS, (etaT * cosThetaI) + (etaI * cosThetaT));
+                  ((etaT * cosThetaI) + (etaI * cosThetaT));
     const float Rperp = ((etaI * cosThetaI) - (etaT * cosThetaT)) /
-                  max(EPS, (etaI * cosThetaI) + (etaT * cosThetaT));
+                  ((etaI * cosThetaI) + (etaT * cosThetaT));
     return (Rparl * Rparl + Rperp * Rperp) / 2.0;
 }
 
@@ -204,7 +204,7 @@ float D_GTR1(const float absDotHL, const float a)
     }
 
     const float a2 = a * a;
-    return (a2 - 1.0f) / (M_PI * log2(a2) * (1.0 + (a2 - 1.0) * absDotHL * absDotHL));
+    return (a2 - 1.0) / (M_PI * log2(a2) * (1.0 + (a2 - 1.0) * absDotHL * absDotHL));
 }
 
 float separableSmithGGXG1(const vec3 w, const float a)

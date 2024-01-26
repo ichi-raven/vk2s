@@ -81,7 +81,7 @@ void main()
   
   DisneyMaterial disneyMat;
   disneyMat.baseColor = material.albedo.xyz;
-  disneyMat.metallic = 0.0;
+  disneyMat.metallic = 0.8;
   disneyMat.roughness = 0.1;
   disneyMat.flatness = 1.0;
   if (length(material.emissive) <= 0.1)
@@ -104,8 +104,8 @@ void main()
   disneyMat.sheenTint = vec3(0.0);
   disneyMat.anisotropic = 0.0;
 
-  disneyMat.clearcoat = 0.6;
-  disneyMat.clearcoatGloss = 0.8;
+  disneyMat.clearcoat = 0.01;
+  disneyMat.clearcoatGloss = 0.1;
 
   switch(material.matType)
   {
@@ -113,10 +113,12 @@ void main()
     //   disneyMat.roughness = 1.0;
     // break;
     case MAT_CONDUCTOR:
-      disneyMat.roughness = 0.0;
-      disneyMat.anisotropic = 0.0;
+      disneyMat.roughness = 0.15;
+      //const float rate = 0.6;//float((sceneParams.frame / 20) % 10) / 10.0;
+      //disneyMat.anisotropic = mix(-1.0, 1.0, rate);
+      disneyMat.anisotropic = 0.5;
       disneyMat.metallic = 1.0;
-      disneyMat.clearcoat = 0.2;
+      disneyMat.clearcoat = 0.1;
       disneyMat.clearcoatGloss = 0.1;
     break;
     case MAT_DIELECTRIC:

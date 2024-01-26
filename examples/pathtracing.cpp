@@ -377,7 +377,7 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
             ImGui::SetNextItemOpen(true);
             if (ImGui::TreeNode("post process(compute)"))
             {
-                ImGui::InputFloat("sigma", &inputSigma, 0.05f);
+                ImGui::SliderFloat("sigma", &inputSigma, 0.001f, 3.0f);
                 ImGui::InputInt("kernel size", &inputKernel);
                 ImGui::InputInt("window size", &inputWindow);
                 //ImGui::InputFloat("threshold", &inputThreshold, 0.05f);
