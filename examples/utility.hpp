@@ -137,7 +137,7 @@ inline void load(std::string_view path, vk2s::Device& device, vk2s::AssetLoader&
             mat.alpha        = 1. - *hostMat.shininess / 1024.;
         }
 
-        if (hostMat.IOR && *hostMat.IOR > 1.2)
+        if (hostMat.IOR && *hostMat.IOR > 1.1)
         {
             //mat.materialType = static_cast<uint32_t>(MaterialType::eLambert);  // default
             //mat.albedo       = glm::vec4(1.f);  // DEBUG COLOR

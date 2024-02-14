@@ -81,39 +81,33 @@ void main()
   
   DisneyMaterial disneyMat;
   disneyMat.baseColor = material.albedo.xyz;
-  disneyMat.metallic = 0.8;
-  disneyMat.roughness = 0.1;
+  disneyMat.metallic = 0.7;
+  disneyMat.roughness = 0.08;
   disneyMat.flatness = 1.0;
-  if (length(material.emissive) <= 0.1)
-  {
-    disneyMat.emissive = vec3(0.0, 1.0, 0.0);
-  }
-  else
-  {
-    disneyMat.emissive = material.emissive.xyz;
-  }
   
-  disneyMat.specularTint = 0.5;
+  disneyMat.emissive = material.emissive.xyz;
+  
+  disneyMat.specularTint = 0.1;
   disneyMat.specTrans = 0.0;
   disneyMat.diffTrans = 0.0;
   disneyMat.ior = material.IOR;
   disneyMat.relativeIOR = payload.state.lastIOR / material.IOR;
   disneyMat.absorption = 0.0;
 
-  disneyMat.sheen = 0.1;
+  disneyMat.sheen = 0.01;
   disneyMat.sheenTint = vec3(0.0);
   disneyMat.anisotropic = 0.0;
 
-  disneyMat.clearcoat = 0.01;
-  disneyMat.clearcoatGloss = 0.1;
+  disneyMat.clearcoat = 0.3;
+  disneyMat.clearcoatGloss = 0.4;
 
-  switch(material.matType)
+  /*switch(material.matType)
   {
     // case MAT_LAMBERT:
     //   disneyMat.roughness = 1.0;
     // break;
     case MAT_CONDUCTOR:
-      disneyMat.roughness = 0.15;
+      disneyMat.roughness = 0.01;
       //const float rate = 0.6;//float((sceneParams.frame / 20) % 10) / 10.0;
       //disneyMat.anisotropic = mix(-1.0, 1.0, rate);
       disneyMat.anisotropic = 0.5;
@@ -131,7 +125,7 @@ void main()
     default:
     // ERROR
     break;
-  }
+  }*/
 
   //BSDFSample sampleDisneyBSDF(const DisneyMaterial mat, const vec3 x, const vec3 normal, bool thin, inout DisneyBSDFState state, inout uint prngState)
 

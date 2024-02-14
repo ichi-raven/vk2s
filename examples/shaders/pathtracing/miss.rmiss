@@ -26,6 +26,6 @@ void main()
   payload.intersected = false;
 
   // account for infinite lights if ray has no intersection (missed)
-  //payload.Le = texture(envmap, vec2(phi / M_PI2, theta / M_PI)).xyz;
-  //payload.end = true;
+  payload.Le = texture(envmap, vec2(phi / M_PI2, theta / M_PI)).xyz;
+  payload.intersected = false;
 }

@@ -45,7 +45,7 @@ vec3 sampleLi(const uint sampleIndex)
   const uint shadowFlags = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT;
 
   // for debug (if true, do NEE)
-  const bool NEE = true;
+  const bool NEE = false;
 
   vec3 L = vec3(0.0);
   vec3 beta = vec3(1.0);
