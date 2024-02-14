@@ -72,26 +72,19 @@ void main()
   payload.normal = setFaceNormal(-gl_WorldRayDirectionEXT, worldNormal);
   payload.Le = material.emissive.xyz;
   payload.intersected = true;
-  payload.bsdf = sampleBSDF(material, -gl_WorldRayDirectionEXT, worldNormal, payload.prngState);
   
   // for simple BSDF
+  // payload.bsdf = sampleBSDF(material, -gl_WorldRayDirectionEXT, worldNormal, payload.prngState);
   //return;
 
   // test Disney BSDF
   
   DisneyMaterial disneyMat;
   disneyMat.baseColor = material.albedo.xyz;
-  disneyMat.metallic = 0.8;
-  disneyMat.roughness = 0.1;
+  disneyMat.metallic = 0.4;
+  disneyMat.roughness = 0.01;
   disneyMat.flatness = 1.0;
-  if (length(material.emissive) <= 0.1)
-  {
-    disneyMat.emissive = vec3(0.0, 1.0, 0.0);
-  }
-  else
-  {
-    disneyMat.emissive = material.emissive.xyz;
-  }
+  disneyMat.emissive = material.emissive.xyz;
   
   disneyMat.specularTint = 0.5;
   disneyMat.specTrans = 0.0;
@@ -101,10 +94,10 @@ void main()
   disneyMat.absorption = 0.0;
 
   disneyMat.sheen = 0.1;
-  disneyMat.sheenTint = vec3(0.0);
-  disneyMat.anisotropic = 0.0;
+  disneyMat.sheenTint = vec3(0.1);
+  disneyMat.anisotropic = 0.01;
 
-  disneyMat.clearcoat = 0.01;
+  disneyMat.clearcoat = 0.1;
   disneyMat.clearcoatGloss = 0.1;
 
   switch(material.matType)
@@ -120,6 +113,7 @@ void main()
       disneyMat.metallic = 1.0;
       disneyMat.clearcoat = 0.1;
       disneyMat.clearcoatGloss = 0.1;
+      disneyMat.flatness = 0.0;
     break;
     case MAT_DIELECTRIC:
       disneyMat.roughness = 0.001;
@@ -127,6 +121,9 @@ void main()
       disneyMat.specTrans = 1.0;
       disneyMat.diffTrans = 1.0;
       disneyMat.anisotropic = 0.0;
+      disneyMat.clearcoat = 0.1;
+      disneyMat.clearcoatGloss = 0.0;
+      disneyMat.flatness = 0.0;
     break;
     default:
     // ERROR

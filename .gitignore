@@ -36,3 +36,9 @@ build
 
 # Example resources
 examples/resources
+
+#vs
+.vs
+
+#vscode
+.vscode
