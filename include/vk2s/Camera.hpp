@@ -18,7 +18,7 @@ class Camera
 {
 public:
    
-    Camera(const double fov, const double aspect, const double near = 0.1, const double far = 1e4);
+    Camera(const double fov = 60., const double aspect = 16. / 9., const double near = 0.1, const double far = 1e4);
 
     void update(GLFWwindow* pWindow, const double moveSpeed, const double mouseSpeed);
 

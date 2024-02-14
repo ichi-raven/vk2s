@@ -11,7 +11,7 @@ inline const double sgn(double x)
 
 namespace vk2s
 {
-    Camera::Camera(const double fov = 60, const double aspect = 16. / 9., const double near, const double far)
+    Camera::Camera(const double fov, const double aspect, const double near, const double far)
         : mFOV(glm::radians(fov))
         , mAspect(aspect)
         , mNear(near)
