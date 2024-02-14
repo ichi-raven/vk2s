@@ -80,4 +80,6 @@ set(ASSIMP_LIB_NAME assimp-vc143-mt)
 add_subdirectory(src)
 
 # examples
-add_subdirectory(examples)
+if (BUILD_EXAMPLES)
+  add_subdirectory(examples)
+endif()
