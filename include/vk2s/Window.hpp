@@ -26,7 +26,7 @@ namespace vk2s
     class Window
     {
     public:
-        Window(Device& device, const uint32_t width, const uint32_t height, const uint32_t frameNum, std::string_view windowName);
+        Window(Device& device, const uint32_t width, const uint32_t height, const uint32_t frameNum, std::string_view windowName, bool fullScreen = false);
 
         ~Window();
 
@@ -41,7 +41,15 @@ namespace vk2s
 
         uint32_t acquireNextImage(Semaphore& signalSem);
 
+        std::pair<uint32_t, uint32_t> getWindowSize() const;
+
+        uint32_t getFrameCount() const;
+
         void present(const uint32_t frameBufferIndex, Semaphore& waitSem);
+
+        void setFullScreen();
+
+        void setWindowed();
 
         // internal-------------
 
@@ -56,7 +64,7 @@ namespace vk2s
         vk::Extent2D getVkSwapchainExtent() const;
 
     private:  // methods
-        void initWindow();
+        void initWindow(const bool fullScreen);
 
         void createSurface();
 
@@ -78,6 +86,7 @@ namespace vk2s
         const uint32_t mWindowWidth;
         const uint32_t mWindowHeight;
         const uint32_t mMaxFramesInFlight;
+
         std::string_view mWindowName;
 
         Device& mDevice;

@@ -5,14 +5,14 @@
 
 namespace vk2s
 {
-    Window::Window(Device& device, uint32_t width, uint32_t height, uint32_t frameNum, std::string_view windowName)
+    Window::Window(Device& device, uint32_t width, uint32_t height, uint32_t frameNum, std::string_view windowName, const bool fullScreen)
         : mWindowWidth(width)
         , mWindowHeight(height)
         , mMaxFramesInFlight(frameNum)
         , mWindowName(windowName)
         , mDevice(device)
     {
-        initWindow();
+        initWindow(fullScreen);
         createSurface();
         createSwapChain();
         createImageViews();
@@ -44,9 +44,29 @@ namespace vk2s
         return { x, y };
     }
 
+    std::pair<uint32_t, uint32_t> Window::getWindowSize() const
+    {
+        return {mWindowWidth, mWindowHeight};
+    }
+
+    uint32_t Window::getFrameCount() const
+    {
+        return mMaxFramesInFlight;
+    }
+
+    void Window::setFullScreen()
+    {
+        glfwSetWindowMonitor(mpWindow, glfwGetPrimaryMonitor(), 0, 0, mWindowWidth, mWindowHeight, GLFW_DONT_CARE);
+    }
+
+    void Window::setWindowed()
+    {
+        glfwSetWindowMonitor(mpWindow, NULL, 20, 20, mWindowWidth, mWindowHeight, GLFW_DONT_CARE);
+    }
+
     uint32_t Window::acquireNextImage(Semaphore& signalSem)
     {
-        std::uint32_t rtnIndex = 0;
+        uint32_t rtnIndex = 0;
 
         vkAcquireNextImageKHR(mDevice.getVkDevice().get(), mSwapChain.get(), std::numeric_limits<std::uint64_t>::max(), signalSem.getVkSemaphore().get(), VK_NULL_HANDLE, &rtnIndex);
 
@@ -91,12 +111,19 @@ namespace vk2s
         return mSwapChainExtent;
     }
 
-    void Window::initWindow()
+    void Window::initWindow(const bool fullScreen)
     {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-        mpWindow = glfwCreateWindow(mWindowWidth, mWindowHeight, mWindowName.data(), nullptr, nullptr);
+        if (fullScreen)
+        {
+            mpWindow = glfwCreateWindow(mWindowWidth, mWindowHeight, mWindowName.data(), glfwGetPrimaryMonitor(), nullptr);
+        }
+        else
+        {
+            mpWindow = glfwCreateWindow(mWindowWidth, mWindowHeight, mWindowName.data(), nullptr, nullptr);
+        }
 
         // hide cursor
         glfwSetInputMode(mpWindow, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
