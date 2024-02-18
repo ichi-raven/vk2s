@@ -35,6 +35,8 @@ namespace vk2s
         NONCOPYABLE(RenderPass);
         NONMOVABLE(RenderPass);
 
+        void recreateFrameBuffers(Window& window, const Handle<Image> depthTarget = Handle<Image>());
+
         const vk::UniqueRenderPass& getVkRenderPass();
 
         const std::vector<vk::UniqueFramebuffer>& getVkFrameBuffers();

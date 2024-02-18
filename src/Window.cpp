@@ -3,12 +3,15 @@
 
 #include "../include/vk2s/Device.hpp"
 
+#include <iostream>
+
 namespace vk2s
 {
     Window::Window(Device& device, uint32_t width, uint32_t height, uint32_t frameNum, std::string_view windowName, const bool fullScreen)
         : mWindowWidth(width)
         , mWindowHeight(height)
         , mMaxFramesInFlight(frameNum)
+        , mResized(false)
         , mWindowName(windowName)
         , mDevice(device)
     {
@@ -32,6 +35,35 @@ namespace vk2s
         return !glfwWindowShouldClose(mpWindow);
     }
 
+    void Window::resize()
+    {
+        {
+            int w, h;
+            glfwGetFramebufferSize(mpWindow, &w, &h);
+
+            while (w == 0 || h == 0)
+            {
+                glfwGetFramebufferSize(mpWindow, &w, &h);
+                glfwWaitEvents();
+            }
+
+            mWindowWidth  = static_cast<uint32_t>(w);
+            mWindowHeight = static_cast<uint32_t>(h);
+        }
+
+        mDevice.getVkDevice()->waitIdle();
+
+        // destroy swapchain explicitly
+        mSwapChain.reset();
+
+        createSurface();
+        createSwapChain();
+        createImageViews();
+        setImageLayouts();
+
+        mResized = false;
+    }
+
     int Window::getKey(const int key) const
     {
         return glfwGetKey(mpWindow, key);
@@ -46,7 +78,7 @@ namespace vk2s
 
     std::pair<uint32_t, uint32_t> Window::getWindowSize() const
     {
-        return {mWindowWidth, mWindowHeight};
+        return { mWindowWidth, mWindowHeight };
     }
 
     uint32_t Window::getFrameCount() const
@@ -64,26 +96,22 @@ namespace vk2s
         glfwSetWindowMonitor(mpWindow, NULL, 20, 20, mWindowWidth, mWindowHeight, GLFW_DONT_CARE);
     }
 
-    uint32_t Window::acquireNextImage(Semaphore& signalSem)
+    std::pair<uint32_t, Window::ResizeFlag> Window::acquireNextImage(Semaphore& signalSem)
     {
-        uint32_t rtnIndex = 0;
+        const auto res = mDevice.getVkDevice()->acquireNextImageKHR(mSwapChain.get(), std::numeric_limits<std::uint64_t>::max(), signalSem.getVkSemaphore().get(), {});
 
-        vkAcquireNextImageKHR(mDevice.getVkDevice().get(), mSwapChain.get(), std::numeric_limits<std::uint64_t>::max(), signalSem.getVkSemaphore().get(), VK_NULL_HANDLE, &rtnIndex);
-
-        return rtnIndex;
+        return { res.value, (res.result == vk::Result::eErrorOutOfDateKHR || mResized) };
     }
 
-    void Window::present(const uint32_t frameBufferIndex, Semaphore& waitSem)
+    Window::ResizeFlag Window::present(const uint32_t frameBufferIndex, Semaphore& waitSem)
     {
         assert(frameBufferIndex < mMaxFramesInFlight || !"invalid framebuffer index!");
 
         vk::PresentInfoKHR presentInfo(waitSem.getVkSemaphore().get(), mSwapChain.get(), frameBufferIndex);
 
         const auto res = mDevice.getVkGraphicsQueue().presentKHR(presentInfo);
-        if (res != vk::Result::eSuccess)
-        {
-            throw std::runtime_error("failed to present!");
-        }
+
+        return (res == vk::Result::eErrorOutOfDateKHR || res == vk::Result::eSuboptimalKHR || mResized);
     }
 
     GLFWwindow* Window::getpGLFWWindow()
@@ -111,10 +139,17 @@ namespace vk2s
         return mSwapChainExtent;
     }
 
+    void Window::framebufferResizeCallback(GLFWwindow* pWindow, int width, int height)
+    {
+        auto p = reinterpret_cast<Window*>(glfwGetWindowUserPointer(pWindow));
+
+        p->mResized = true;
+    }
+
     void Window::initWindow(const bool fullScreen)
     {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
         if (fullScreen)
         {
@@ -127,6 +162,10 @@ namespace vk2s
 
         // hide cursor
         glfwSetInputMode(mpWindow, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+
+        glfwSetFramebufferSizeCallback(mpWindow, framebufferResizeCallback);
+
+        glfwSetWindowUserPointer(mpWindow, this);
     }
 
     void Window::createSurface()

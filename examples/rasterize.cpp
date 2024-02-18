@@ -11,7 +11,7 @@ struct SceneUB  // std430
     glm::mat4 proj;
 };
 
-void rasterize(const uint32_t windowWidth, const uint32_t windowHeight, const uint32_t frameCount)
+void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frameCount)
 {
     try
     {
@@ -79,7 +79,8 @@ void rasterize(const uint32_t windowWidth, const uint32_t windowHeight, const ui
         auto sampler = device.create<vk2s::Sampler>(vk::SamplerCreateInfo());
         vk2s::AssetLoader loader;
 
-        load("../../examples/resources/model/CornellBox/CornellBox-Sphere.obj", device, loader, meshInstances, materialBuffer, materialTextures);
+        //load("../../examples/resources/model/CornellBox/CornellBox-Sphere.obj", device, loader, meshInstances, materialBuffer, materialTextures);
+        load("../../examples/resources/model/plototype1/prototype1.obj", device, loader, meshInstances, materialBuffer, materialTextures);
 
         // uniform buffer
         Handle<vk2s::DynamicBuffer> sceneBuffer;
@@ -115,6 +116,7 @@ void rasterize(const uint32_t windowWidth, const uint32_t windowHeight, const ui
         camera.setPos(glm::vec3(0.0, 0.8, 3.0));
         camera.setLookAt(glm::vec3(0.0, 0.8, -2.0));
         int inputSpp = 1;
+        bool resized = false;
 
         for (uint32_t now = 0; window->update() && !window->getKey(GLFW_KEY_ESCAPE); now = (now + 1) % frameCount)
         {
@@ -146,7 +148,6 @@ void rasterize(const uint32_t windowWidth, const uint32_t windowHeight, const ui
 
             // wait and reset fence
             fences[now]->wait();
-            fences[now]->reset();
 
             {  // write data
                 SceneUB sceneUBO{
@@ -159,7 +160,35 @@ void rasterize(const uint32_t windowWidth, const uint32_t windowHeight, const ui
             }
 
             // acquire next image from swapchain(window)
-            const uint32_t imageIndex = window->acquireNextImage(imageAvailableSems[now].get());
+            const auto [imageIndex, resize] = window->acquireNextImage(imageAvailableSems[now].get());
+
+            if (resize || resized)
+            {
+                const auto [width, height] = window->getWindowSize();
+                windowWidth                = width;
+                windowHeight               = height;
+                window->resize();
+                {
+                    const auto format   = vk::Format::eD32Sfloat;
+                    const uint32_t size        = width * height * vk2s::Compiler::getSizeOfFormat(format);
+
+                    vk::ImageCreateInfo ci;
+                    ci.arrayLayers   = 1;
+                    ci.extent        = vk::Extent3D(width, height, 1);
+                    ci.format        = format;
+                    ci.imageType     = vk::ImageType::e2D;
+                    ci.mipLevels     = 1;
+                    ci.usage         = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+                    ci.initialLayout = vk::ImageLayout::eUndefined;
+
+                    depthBuffer = device.create<vk2s::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eDepth);
+                }
+                renderpass->recreateFrameBuffers(window.get(), depthBuffer);
+                resized = false;
+                continue;
+            }
+
+            fences[now]->reset();
 
             auto& command = commands[now];
             // start writing command
@@ -186,7 +215,32 @@ void rasterize(const uint32_t windowWidth, const uint32_t windowHeight, const ui
             // execute
             command->execute(fences[now], imageAvailableSems[now], renderCompletedSems[now]);
             // present swapchain(window) image
-            window->present(imageIndex, renderCompletedSems[now].get());
+            resized = window->present(imageIndex, renderCompletedSems[now].get());
+            
+            //if ()
+            {
+                /*const auto [width, height] = window->getWindowSize();
+                windowWidth                = width;
+                windowHeight               = height;
+                window->resize();
+                {
+                    const auto format          = vk::Format::eD32Sfloat;
+                    const uint32_t size        = width * height * vk2s::Compiler::getSizeOfFormat(format);
+
+                    vk::ImageCreateInfo ci;
+                    ci.arrayLayers   = 1;
+                    ci.extent        = vk::Extent3D(width, height, 1);
+                    ci.format        = format;
+                    ci.imageType     = vk::ImageType::e2D;
+                    ci.mipLevels     = 1;
+                    ci.usage         = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+                    ci.initialLayout = vk::ImageLayout::eUndefined;
+
+                    depthBuffer = device.create<vk2s::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eDepth);
+                }
+                renderpass->recreateFrameBuffers(window.get());
+                continue;*/
+            }
         }
     }
     catch (std::exception& e)

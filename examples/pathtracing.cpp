@@ -45,10 +45,12 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
         auto sampler = device.create<vk2s::Sampler>(vk::SamplerCreateInfo());
         vk2s::AssetLoader loader;
 
-        load("../../examples/resources/model/CornellBox/CornellBox-Sphere.obj", device, loader, meshInstances, materialBuffer, materialTextures);
+        //load("../../examples/resources/model/CornellBox/CornellBox-Sphere.obj", device, loader, meshInstances, materialBuffer, materialTextures);
         //load("../../examples/resources/model/OBJ/20231025-VCC_MALE01-S002_300K.obj", device, loader, meshInstances, materialBuffer, materialTextures);
         //load("../../examples/resources/model/fireplace-room/fireplace_room.obj", device, loader, meshInstances, materialBuffer, materialTextures);
         //load("../../examples/resources/model/Sponza/sponza.obj", device, loader, meshInstances, materialBuffer, materialTextures);
+
+        load("../../examples/resources/model/plototype1/prototype1.obj", device, loader, meshInstances, materialBuffer, materialTextures);
 
         // create scene UB
         Handle<vk2s::DynamicBuffer> sceneBuffer;
@@ -415,7 +417,6 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
 
             // wait and reset fence
             fences[now]->wait();
-            fences[now]->reset();
 
             {  // write data
                 //clamp spp
@@ -445,7 +446,16 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
             }
 
             // acquire next image from swapchain(window)
-            const uint32_t imageIndex = window->acquireNextImage(imageAvailableSems[now].get());
+            const auto [imageIndex, resized] = window->acquireNextImage(imageAvailableSems[now].get());
+
+            if (resized)
+            {
+                window->resize();
+                renderpass->recreateFrameBuffers(window.get());
+                continue;
+            }
+
+            fences[now]->reset();
 
             auto& command = commands[now];
             // start writing command
@@ -500,7 +510,12 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
             // execute
             command->execute(fences[now], imageAvailableSems[now], renderCompletedSems[now]);
             // present swapchain(window) image
-            window->present(imageIndex, renderCompletedSems[now].get());
+            if (window->present(imageIndex, renderCompletedSems[now].get()))
+            {
+                window->resize();
+                renderpass->recreateFrameBuffers(window.get());
+                continue;
+            }
         }
     }
     catch (std::exception& e)

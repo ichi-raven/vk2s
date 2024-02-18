@@ -26,6 +26,10 @@ namespace vk2s
     class Window
     {
     public:
+        using ResizeFlag = bool;
+        using GLFWKeyCode = int;
+
+    public:
         Window(Device& device, const uint32_t width, const uint32_t height, const uint32_t frameNum, std::string_view windowName, bool fullScreen = false);
 
         ~Window();
@@ -35,21 +39,23 @@ namespace vk2s
 
         bool update();
 
-        int getKey(const int key) const;
+        int getKey(const GLFWKeyCode key) const;
 
         std::pair<double, double> getMousePos() const;
 
-        uint32_t acquireNextImage(Semaphore& signalSem);
+        std::pair<uint32_t, ResizeFlag> acquireNextImage(Semaphore& signalSem);
 
         std::pair<uint32_t, uint32_t> getWindowSize() const;
 
         uint32_t getFrameCount() const;
 
-        void present(const uint32_t frameBufferIndex, Semaphore& waitSem);
+        ResizeFlag present(const uint32_t frameBufferIndex, Semaphore& waitSem);
 
         void setFullScreen();
 
         void setWindowed();
+
+        void resize();
 
         // internal-------------
 
@@ -82,10 +88,14 @@ namespace vk2s
 
         vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities);
 
+        static void framebufferResizeCallback(GLFWwindow* pWindow, int width, int height);
+
     private:  // member variables
-        const uint32_t mWindowWidth;
-        const uint32_t mWindowHeight;
+        uint32_t mWindowWidth;
+        uint32_t mWindowHeight;
         const uint32_t mMaxFramesInFlight;
+
+        bool mResized;
 
         std::string_view mWindowName;
 

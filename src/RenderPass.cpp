@@ -73,14 +73,14 @@ namespace vk2s
     {
         const auto& vkDevice = mDevice.getVkDevice();
 
-        vk::AttachmentDescription colorAttachment({}, window.getVkSwapchainImageFormat(), vk::SampleCountFlagBits::e1, colorLoadOp, vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
-                                                  vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
+        vk::AttachmentDescription colorAttachment({}, window.getVkSwapchainImageFormat(), vk::SampleCountFlagBits::e1, colorLoadOp, vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
+                                                  vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
         vk::AttachmentReference colorAttachmentRef(0, vk::ImageLayout::eColorAttachmentOptimal);
 
         if (depthTarget)
         {
-            vk::AttachmentDescription depthAttachment({}, depthTarget->getVkFormat(), vk::SampleCountFlagBits::e1, depthLoadOp, vk::AttachmentStoreOp::eDontCare, vk::AttachmentLoadOp::eDontCare,
-                                                      vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+            vk::AttachmentDescription depthAttachment({}, depthTarget->getVkFormat(), vk::SampleCountFlagBits::e1, depthLoadOp, vk::AttachmentStoreOp::eDontCare, vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
+                                                      vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
             vk::AttachmentReference depthAttachmentRef(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
@@ -124,6 +124,28 @@ namespace vk2s
 
     RenderPass::~RenderPass()
     {
+    }
+
+    void RenderPass::recreateFrameBuffers(Window& window, const Handle<Image> depthTarget)
+    {
+        const auto& swapchainImageViews = window.getVkImageViews();
+        const auto extent               = window.getVkSwapchainExtent();
+        const auto& vkDevice            = mDevice.getVkDevice();
+
+        mFrameBuffers.clear();
+        mFrameBuffers.reserve(swapchainImageViews.size());
+
+        for (const auto& view : swapchainImageViews)
+        {
+            std::vector attachments = { view.get() };
+            if (depthTarget)
+            {
+                attachments.emplace_back(depthTarget->getVkImageView().get());
+            }
+
+            vk::FramebufferCreateInfo framebufferInfo({}, mRenderPass.get(), attachments, extent.width, extent.height, 1);
+            mFrameBuffers.emplace_back(vkDevice->createFramebufferUnique(framebufferInfo));
+        }
     }
 
     const vk::UniqueRenderPass& RenderPass::getVkRenderPass()
