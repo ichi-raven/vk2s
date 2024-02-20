@@ -78,9 +78,7 @@ namespace vk2s
 
     std::pair<uint32_t, uint32_t> Window::getWindowSize() const
     {
-        auto w = mWindowWidth;
-        auto h = mWindowHeight;
-        return { w, h };
+        return { mWindowWidth, mWindowHeight };
     }
 
     uint32_t Window::getFrameCount() const
