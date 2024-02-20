@@ -216,31 +216,6 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
             command->execute(fences[now], imageAvailableSems[now], renderCompletedSems[now]);
             // present swapchain(window) image
             resized = window->present(imageIndex, renderCompletedSems[now].get());
-            
-            //if ()
-            {
-                /*const auto [width, height] = window->getWindowSize();
-                windowWidth                = width;
-                windowHeight               = height;
-                window->resize();
-                {
-                    const auto format          = vk::Format::eD32Sfloat;
-                    const uint32_t size        = width * height * vk2s::Compiler::getSizeOfFormat(format);
-
-                    vk::ImageCreateInfo ci;
-                    ci.arrayLayers   = 1;
-                    ci.extent        = vk::Extent3D(width, height, 1);
-                    ci.format        = format;
-                    ci.imageType     = vk::ImageType::e2D;
-                    ci.mipLevels     = 1;
-                    ci.usage         = vk::ImageUsageFlagBits::eDepthStencilAttachment;
-                    ci.initialLayout = vk::ImageLayout::eUndefined;
-
-                    depthBuffer = device.create<vk2s::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eDepth);
-                }
-                renderpass->recreateFrameBuffers(window.get());
-                continue;*/
-            }
         }
     }
     catch (std::exception& e)

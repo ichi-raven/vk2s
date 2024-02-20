@@ -78,7 +78,9 @@ namespace vk2s
 
     std::pair<uint32_t, uint32_t> Window::getWindowSize() const
     {
-        return { mWindowWidth, mWindowHeight };
+        auto w = mWindowWidth;
+        auto h = mWindowHeight;
+        return { w, h };
     }
 
     uint32_t Window::getFrameCount() const
@@ -98,7 +100,7 @@ namespace vk2s
 
     std::pair<uint32_t, Window::ResizeFlag> Window::acquireNextImage(Semaphore& signalSem)
     {
-        const auto res = mDevice.getVkDevice()->acquireNextImageKHR(mSwapChain.get(), std::numeric_limits<std::uint64_t>::max(), signalSem.getVkSemaphore().get(), {});
+        auto res = mDevice.getVkDevice()->acquireNextImageKHR(mSwapChain.get(), std::numeric_limits<std::uint64_t>::max(), signalSem.getVkSemaphore().get(), {});
 
         return { res.value, (res.result == vk::Result::eErrorOutOfDateKHR || mResized) };
     }
