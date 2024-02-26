@@ -52,6 +52,11 @@ namespace vk2s
         glfwTerminate();
     }
 
+    void Device::waitIdle()
+    {
+        mDevice->waitIdle();
+    }
+
     void Device::createDescriptorPoolForImGui()
     {
         vk::DescriptorPoolSize size(vk::DescriptorType::eCombinedImageSampler, 1);

@@ -95,6 +95,8 @@ namespace vk2s
             std::get<Pool<T, PageSize, DefaultAllocator>>(mPools).deallocate(handle);
         }
 
+        void waitIdle();
+        
         void initImGui(const uint32_t frameBufferNum, Window& window, RenderPass& renderpass);
 
         std::string_view getPhysicalDeviceName() const;
