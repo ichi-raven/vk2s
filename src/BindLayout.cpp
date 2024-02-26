@@ -36,18 +36,23 @@ namespace vk2s
         }
     }
 
-    BindLayout::BindLayout(Device& device, const vk::ArrayProxy<vk::DescriptorSetLayoutBinding>& bindings)
+    BindLayout::BindLayout(Device& device, const vk::ArrayProxy<const vk::ArrayProxy<vk::DescriptorSetLayoutBinding>>& allBindings)
         : mDevice(device)
         , mInfo(0)
     {
         vk::DescriptorSetLayoutCreateInfo descLayoutci;
 
-        descLayoutci.bindingCount = static_cast<uint32_t>(bindings.size());
-        descLayoutci.pBindings    = bindings.data();
+        mDescriptorSetLayouts.reserve(allBindings.size());
 
-        initAllocationInfo(bindings);
+        for (const auto& bindings : allBindings)
+        {
+            descLayoutci.bindingCount = static_cast<uint32_t>(bindings.size());
+            descLayoutci.pBindings    = bindings.data();
 
-        mDescriptorSetLayouts.emplace_back(mDevice.getVkDevice()->createDescriptorSetLayout(descLayoutci));
+            initAllocationInfo(bindings);
+
+            mDescriptorSetLayouts.emplace_back(mDevice.getVkDevice()->createDescriptorSetLayout(descLayoutci));
+        }
     }
 
     BindLayout::~BindLayout()

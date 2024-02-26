@@ -8,6 +8,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <vector>
+#include <filesystem>
 
 namespace vk2s
 {
@@ -19,7 +20,7 @@ namespace vk2s
         public:
 
             ShaderIncluder(std::string_view directory)
-                : mDirectory(directory)
+                : mDirectory(std::filesystem::canonical(directory).string())
                 , shaderc::CompileOptions::IncluderInterface()
             {
 
@@ -28,7 +29,11 @@ namespace vk2s
             shaderc_include_result* GetInclude(const char* requested_source, shaderc_include_type type, const char* requesting_source, size_t include_depth)
             {
 
-                const std::string name     = std::string(mDirectory) + "/" + std::string(requested_source);
+                // get the directory of included path
+                const std::filesystem::path requestingPath = std::filesystem::canonical(mDirectory / requesting_source);
+                const std::filesystem::path requestedPath  = std::filesystem::canonical(requestingPath.parent_path() / requested_source);
+
+                const std::string name     = requestedPath.string();
                 const std::string contents = readFile(name);
 
                 auto container  = new std::array<std::string, 2>;
@@ -54,7 +59,7 @@ namespace vk2s
                 delete data;
             };
 
-            std::string_view mDirectory;
+            std::filesystem::path mDirectory;
         };
 
         std::string readFile(std::string_view path)

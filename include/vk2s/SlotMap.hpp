@@ -241,7 +241,7 @@ public:
 
 private:
     template <typename... Args>
-    IDType allocInternal(Args&&... args)
+    IDType allocInternal(Args... args)
     {
         if (mFreePosTable.empty())
         {
@@ -271,7 +271,7 @@ private:
         // construct
         {
             T* constructPtr = reinterpret_cast<T*>(mPageTable[div].first + sizeof(T) * mod);
-            new (constructPtr) T(args...);
+            new (constructPtr) T(std::forward<Args>(args)...);
         }
 
         auto pTargetID = reinterpret_cast<IDType*>(mPageTable[div].first + TypeOffset + sizeof(IDType) * mod);

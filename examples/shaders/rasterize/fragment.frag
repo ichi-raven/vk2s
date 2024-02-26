@@ -1,5 +1,9 @@
 #version 460
 #extension GL_ARB_separate_shader_objects : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+
+#include "../common/types.glsl"
+#include "../common/constants.glsl"
 
 layout(location = 0) in vec3 inPos;
 layout(location = 1) in vec3 inNormal;
@@ -7,17 +11,41 @@ layout(location = 2) in vec2 inTexCoord;
 
 layout(location = 0) out vec4 outColor;
 
-// layout(binding = 1, set = 0) uniform MaterialUB {
-//     vec4 albedo;
-//     int texIndex;
-//     int matType;
-//     float alpha;
-//     float IOR;
-// } material;
+layout(binding = 0, set = 0) uniform SceneUB {
+    mat4 model;
+    mat4 view;
+    mat4 proj;
+} sceneUB;
+
+
+layout(binding = 1, set = 0) uniform UniformBufferObject {
+    mat4 model;
+    uint matIndex;
+    vec3 padding;
+} instanceUB;
+
+layout(binding=2, set=0) readonly buffer Materials { Material materials[]; };
+layout(binding=3, set=0) uniform sampler2D texSamplers[];
 
 void main()
 {
-    outColor = vec4(inNormal, 1.0);
+    Material material = materials[instanceUB.matIndex];
+
+    if (instanceUB.matIndex % 3 == 0)
+    {
+        outColor = vec4(RED, 1.0);
+    }
+    else if (instanceUB.matIndex % 3 == 1)
+    {
+        outColor = vec4(GREEN, 1.0);
+    }
+    else
+    {
+        outColor = vec4(BLUE, 1.0);
+    }
+
+    //outColor = vec4(material.albedo, 1.0);
+    //outColor = vec4(material.emissive);
 
     // vec4 albedo = material.albedo;
 

@@ -8,14 +8,15 @@
 
 hitAttributeEXT vec3 attribs;
 
-#include "types.glsl"
-#include "constants.glsl"
-#include "bindings.glsl"
-#include "randoms.glsl"
-#include "BSDFs.glsl"
-#include "lights.glsl"
+#include "../common/types.glsl"
+#include "../common/constants.glsl"
+#include "../common/randoms.glsl"
+#include "../common/BSDFs.glsl"
+#include "../common/DisneyBSDF.glsl"
+#include "../common/lights.glsl"
 
-#include "DisneyBSDF.glsl"
+#include "bindings.glsl"
+
 
 layout(location = 0) rayPayloadInEXT Payload payload;
 

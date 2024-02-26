@@ -40,7 +40,7 @@ namespace vk2s
         {
         }
 
-        uint32_t sum()
+        uint32_t sum() const
         {
             return accelerationStructureNum + combinedImageSamplerNum + storageBufferNum + storageImageNum + uniformBufferNum + uniformBufferDynamicNum;
         }
@@ -58,7 +58,7 @@ namespace vk2s
     public:  // methods
         BindLayout(Device& device, const vk::ArrayProxy<Handle<Shader>>& shaders);
 
-        BindLayout(Device& device, const vk::ArrayProxy<vk::DescriptorSetLayoutBinding>& bindings);
+        BindLayout(Device& device, const vk::ArrayProxy<const vk::ArrayProxy<vk::DescriptorSetLayoutBinding>>& bindings);
 
         ~BindLayout();
 
