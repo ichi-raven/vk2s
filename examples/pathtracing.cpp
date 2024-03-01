@@ -232,7 +232,7 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
             .raygenShaders = { raygenShader },
             .missShaders   = { missShader, shadowShader },
             .chitShaders   = { chitShader },
-            .bindLayout    = bindLayout,
+            .bindLayouts   = bindLayout,
             .shaderGroups  = { vk::RayTracingShaderGroupCreateInfoKHR(vk::RayTracingShaderGroupTypeKHR::eGeneral, kIndexRaygen, VK_SHADER_UNUSED_KHR, VK_SHADER_UNUSED_KHR, VK_SHADER_UNUSED_KHR),
                                vk::RayTracingShaderGroupCreateInfoKHR(vk::RayTracingShaderGroupTypeKHR::eGeneral, kIndexMiss, VK_SHADER_UNUSED_KHR, VK_SHADER_UNUSED_KHR, VK_SHADER_UNUSED_KHR),
                                vk::RayTracingShaderGroupCreateInfoKHR(vk::RayTracingShaderGroupTypeKHR::eGeneral, kIndexShadow, VK_SHADER_UNUSED_KHR, VK_SHADER_UNUSED_KHR, VK_SHADER_UNUSED_KHR),
@@ -245,34 +245,34 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
         auto shaderBindingTable = device.create<vk2s::ShaderBindingTable>(raytracePipeline.get(), 1, 2, 1, 0, rpi.shaderGroups);
 
         vk2s::Pipeline::ComputePipelineInfo cpi{
-            .cs         = computeShader,
-            .bindLayout = computeBindLayout,
+            .cs          = computeShader,
+            .bindLayouts = computeBindLayout,
         };
 
         auto computePipeline = device.create<vk2s::Pipeline>(cpi);
 
         // create bindgroup
         auto bindGroup = device.create<vk2s::BindGroup>(bindLayout.get());
-        bindGroup->bind(0, 0, tlas.get());
-        bindGroup->bind(0, 1, vk::DescriptorType::eStorageImage, resultImage);
-        bindGroup->bind(0, 2, vk::DescriptorType::eUniformBufferDynamic, sceneBuffer.get());
-        bindGroup->bind(0, 3, vk::DescriptorType::eStorageBuffer, instanceMapBuffer.get());
-        bindGroup->bind(0, 4, vk::DescriptorType::eStorageBuffer, materialBuffer.get());
+        bindGroup->bind(0, tlas.get());
+        bindGroup->bind(1, vk::DescriptorType::eStorageImage, resultImage);
+        bindGroup->bind(2, vk::DescriptorType::eUniformBufferDynamic, sceneBuffer.get());
+        bindGroup->bind(3, vk::DescriptorType::eStorageBuffer, instanceMapBuffer.get());
+        bindGroup->bind(4, vk::DescriptorType::eStorageBuffer, materialBuffer.get());
         if (materialTextures.empty())
         {
-            bindGroup->bind(0, 5, vk::DescriptorType::eCombinedImageSampler, envmap, sampler);  // dummy
+            bindGroup->bind(5, vk::DescriptorType::eCombinedImageSampler, envmap, sampler);  // dummy
         }
         else
         {
-            bindGroup->bind(0, 5, vk::DescriptorType::eCombinedImageSampler, materialTextures, sampler);
+            bindGroup->bind(5, vk::DescriptorType::eCombinedImageSampler, materialTextures, sampler);
         }
-        bindGroup->bind(0, 6, vk::DescriptorType::eCombinedImageSampler, envmap, envmapSampler);
-        bindGroup->bind(0, 7, vk::DescriptorType::eStorageImage, poolImage);
+        bindGroup->bind(6, vk::DescriptorType::eCombinedImageSampler, envmap, envmapSampler);
+        bindGroup->bind(7, vk::DescriptorType::eStorageImage, poolImage);
 
         auto computeBindGroup = device.create<vk2s::BindGroup>(computeBindLayout.get());
-        computeBindGroup->bind(0, 0, vk::DescriptorType::eStorageImage, resultImage);
-        computeBindGroup->bind(0, 1, vk::DescriptorType::eUniformBufferDynamic, filterBuffer.get());
-        computeBindGroup->bind(0, 2, vk::DescriptorType::eStorageImage, computeResultImage);
+        computeBindGroup->bind(0, vk::DescriptorType::eStorageImage, resultImage);
+        computeBindGroup->bind(1, vk::DescriptorType::eUniformBufferDynamic, filterBuffer.get());
+        computeBindGroup->bind(2, vk::DescriptorType::eStorageImage, computeResultImage);
 
         // create commands and sync objects
         std::vector<Handle<vk2s::Command>> commands(frameCount);
@@ -463,14 +463,14 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
 
             {  // trace ray
                 command->setPipeline(raytracePipeline);
-                command->setBindGroup(bindGroup.get(), { static_cast<uint32_t>(now * sceneBuffer->getBlockSize()) });
+                command->setBindGroup(0, bindGroup.get(), { static_cast<uint32_t>(now * sceneBuffer->getBlockSize()) });
                 command->traceRays(shaderBindingTable.get(), windowWidth, windowHeight, 1);
             }
 
             if (applyFilter)
             {  // compute
                 command->setPipeline(computePipeline);
-                command->setBindGroup(computeBindGroup.get(), { static_cast<uint32_t>(now * filterBuffer->getBlockSize()) });
+                command->setBindGroup(0, computeBindGroup.get(), { static_cast<uint32_t>(now * filterBuffer->getBlockSize()) });
                 command->dispatch(windowWidth / 16 + 1, windowHeight / 16 + 1, 1);
             }
 
@@ -497,12 +497,13 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
                 }
 
                 // render GUI (ImGui)
+
+                command->beginRenderPass(renderpass.get(), imageIndex, vk::Rect2D({ 0, 0 }, { windowWidth, windowHeight }), clearValue);
                 if (showGUI)
                 {
-                    command->beginRenderPass(renderpass.get(), imageIndex, vk::Rect2D({ 0, 0 }, { windowWidth, windowHeight }), clearValue);
                     command->drawImGui();
-                    command->endRenderPass();
                 }
+                command->endRenderPass();
             }
             // end writing commands
             command->end();
@@ -517,6 +518,8 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
                 continue;
             }
         }
+
+        device.waitIdle();
     }
     catch (std::exception& e)
     {

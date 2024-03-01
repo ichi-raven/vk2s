@@ -11,10 +11,14 @@ namespace vk2s
         const auto& vkDevice = mDevice.getVkDevice();
 
         vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
-        if (info.bindLayout)
+        std::vector<vk::DescriptorSetLayout> layouts;
+        layouts.reserve(info.bindLayouts.size());
+        for (const auto& layout : info.bindLayouts)
         {
-            pipelineLayoutInfo.setSetLayouts(info.bindLayout->getVkDescriptorSetLayouts());
+            layouts.emplace_back(layout->getVkDescriptorSetLayout().get());
         }
+        
+        pipelineLayoutInfo.setSetLayouts(layouts);
 
         mLayout = vkDevice->createPipelineLayoutUnique(pipelineLayoutInfo);
 
@@ -44,10 +48,14 @@ namespace vk2s
         const auto& vkDevice = mDevice.getVkDevice();
 
         vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
-        if (info.bindLayout)
+        std::vector<vk::DescriptorSetLayout> layouts;
+        layouts.reserve(info.bindLayouts.size());
+        for (const auto& layout : info.bindLayouts)
         {
-            pipelineLayoutInfo.setSetLayouts(info.bindLayout->getVkDescriptorSetLayouts());
+            layouts.emplace_back(layout->getVkDescriptorSetLayout().get());
         }
+
+        pipelineLayoutInfo.setSetLayouts(layouts);
         mLayout = vkDevice->createPipelineLayoutUnique(pipelineLayoutInfo);
 
         vk::PipelineShaderStageCreateInfo ssci({}, vk::ShaderStageFlagBits::eCompute, info.cs->getVkShaderModule().get(), info.cs->getEntryPoint().c_str());
@@ -73,10 +81,14 @@ namespace vk2s
         const auto& vkDevice = mDevice.getVkDevice();
 
         vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
-        if (info.bindLayout)
+        std::vector<vk::DescriptorSetLayout> layouts;
+        layouts.reserve(info.bindLayouts.size());
+        for (const auto& layout : info.bindLayouts)
         {
-            pipelineLayoutInfo.setSetLayouts(info.bindLayout->getVkDescriptorSetLayouts());
+            layouts.emplace_back(layout->getVkDescriptorSetLayout().get());
         }
+
+        pipelineLayoutInfo.setSetLayouts(layouts);
 
         mLayout = vkDevice->createPipelineLayoutUnique(pipelineLayoutInfo);
 

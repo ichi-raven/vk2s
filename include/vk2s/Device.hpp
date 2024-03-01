@@ -52,7 +52,7 @@ namespace vk2s
         std::optional<uint32_t> graphicsFamily;
         std::optional<uint32_t> presentFamily;
 
-        bool isComplete()
+        bool isComplete() const
         {
             return graphicsFamily.has_value() && presentFamily.has_value();
         }
@@ -81,7 +81,7 @@ namespace vk2s
 
         // TODO: BAD
         template <typename T, size_t PageSize = kDefaultPageSize, typename Allocator = DefaultAllocator, typename... Args>
-        Handle<T, PageSize, DefaultAllocator> create(Args&&... args)
+        Handle<T, PageSize, DefaultAllocator> create(Args &&... args)
         {
             static_assert(IsContainedIn<Pool<T, PageSize, DefaultAllocator>, decltype(mPools)>::value, "invalid type of pool!");
             return std::get<Pool<T, PageSize, DefaultAllocator>>(mPools).allocate(*this, std::forward<Args>(args)...);
@@ -95,9 +95,9 @@ namespace vk2s
             std::get<Pool<T, PageSize, DefaultAllocator>>(mPools).deallocate(handle);
         }
 
-        void waitIdle();
-        
         void initImGui(const uint32_t frameBufferNum, Window& window, RenderPass& renderpass);
+
+        void waitIdle();
 
         std::string_view getPhysicalDeviceName() const;
 
@@ -118,9 +118,9 @@ namespace vk2s
         const vk::UniqueCommandPool& getVkCommandPool();
 
         // to trace allocation
-        const std::pair<std::vector<vk::DescriptorSet>, size_t> allocateVkDescriptorSets(const std::vector<vk::DescriptorSetLayout>& layouts, const DescriptorPoolAllocationInfo& allocInfo);
+        const std::pair<vk::DescriptorSet, size_t> allocateVkDescriptorSet(const vk::DescriptorSetLayout& layout, const DescriptorPoolAllocationInfo& allocInfo);
 
-        void deallocateVkDescriptorSets(std::vector<vk::DescriptorSet>& sets, const size_t poolIndex, const DescriptorPoolAllocationInfo& allocInfo);
+        void deallocateVkDescriptorSet(vk::DescriptorSet& set, const size_t poolIndex, const DescriptorPoolAllocationInfo& allocInfo);
 
         template <class T>
         T align(T size, uint32_t align)

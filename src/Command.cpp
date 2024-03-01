@@ -67,10 +67,10 @@ namespace vk2s
         mNowPipeline = pipeline;
     }
 
-    void Command::setBindGroup(BindGroup& bindGroup, vk::ArrayProxy<const uint32_t> const& dynamicOffsets)
+    void Command::setBindGroup(const uint8_t set, BindGroup& bindGroup, vk::ArrayProxy<const uint32_t> const& dynamicOffsets)
     {
         assert(mNowPipeline || !"pipeline isn't set yet!");
-        mCommandBuffer->bindDescriptorSets(mNowPipeline->getVkPipelineBindPoint(), mNowPipeline->getVkPipelineLayout().get(), 0, bindGroup.getVkDescriptorSets(), dynamicOffsets);
+        mCommandBuffer->bindDescriptorSets(mNowPipeline->getVkPipelineBindPoint(), mNowPipeline->getVkPipelineLayout().get(), set, bindGroup.getVkDescriptorSet(), dynamicOffsets);
     }
 
     void Command::bindVertexBuffer(Buffer& vertexBuffer)

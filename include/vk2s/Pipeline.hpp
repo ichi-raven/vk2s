@@ -33,7 +33,7 @@ namespace vk2s
         {
             Handle<Shader> vs;
             Handle<Shader> fs;
-            Handle<BindLayout> bindLayout;
+            vk::ArrayProxyNoTemporaries<Handle<BindLayout>> bindLayouts;
             Handle<RenderPass> renderPass;
 
             // TODO: too many
@@ -50,7 +50,7 @@ namespace vk2s
         struct ComputePipelineInfo
         {
             Handle<Shader> cs;
-            Handle<BindLayout> bindLayout;
+            vk::ArrayProxyNoTemporaries<Handle<BindLayout>> bindLayouts;
         };
 
         struct VkRayTracingPipelineInfo
@@ -59,7 +59,7 @@ namespace vk2s
             std::vector<Handle<Shader>> missShaders;
             std::vector<Handle<Shader>> chitShaders;
             std::vector<Handle<Shader>> callableShaders;
-            Handle<BindLayout> bindLayout;
+            vk::ArrayProxyNoTemporaries<Handle<BindLayout>> bindLayouts;
 
             std::vector<vk::RayTracingShaderGroupCreateInfoKHR> shaderGroups;
         };

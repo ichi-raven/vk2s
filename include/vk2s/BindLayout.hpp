@@ -56,27 +56,27 @@ namespace vk2s
     class BindLayout
     {
     public:  // methods
-        BindLayout(Device& device, const vk::ArrayProxy<Handle<Shader>>& shaders);
+        //BindLayout(Device& device, const vk::ArrayProxy<Handle<Shader>>& shaders);
 
-        BindLayout(Device& device, const vk::ArrayProxy<const vk::ArrayProxy<vk::DescriptorSetLayoutBinding>>& bindings);
+        BindLayout(Device& device, const vk::ArrayProxy<vk::DescriptorSetLayoutBinding>& bindings);
 
         ~BindLayout();
 
         NONCOPYABLE(BindLayout);
         NONMOVABLE(BindLayout);
 
-        const std::vector<vk::DescriptorSetLayout>& getVkDescriptorSetLayouts();
+        const vk::UniqueDescriptorSetLayout& getVkDescriptorSetLayout();
 
         const DescriptorPoolAllocationInfo& getDescriptorPoolAllocationInfo();
 
     private:  // methods
-        inline void initAllocationInfo(const vk::ArrayProxy<vk::DescriptorSetLayoutBinding>& bindings);
+        inline void initAllocationInfo(const vk::ArrayProxy<const vk::DescriptorSetLayoutBinding>& bindings);
 
     private:  // member variables
         Device& mDevice;
 
         DescriptorPoolAllocationInfo mInfo;
-        std::vector<vk::DescriptorSetLayout> mDescriptorSetLayouts;
+        vk::UniqueDescriptorSetLayout mDescriptorSetLayout;
     };
 }  // namespace vk2s
 

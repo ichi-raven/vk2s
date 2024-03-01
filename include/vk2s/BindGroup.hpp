@@ -42,39 +42,39 @@ namespace vk2s
         NONCOPYABLE(BindGroup);
         NONMOVABLE(BindGroup);
 
-        void bind(const uint8_t set, const uint8_t binding, const vk::DescriptorType type, Buffer& buffer);
-        void bind(const uint8_t set, const uint8_t binding, const vk::DescriptorType type, DynamicBuffer& buffer);
-        void bind(const uint8_t set, const uint8_t binding, const vk::DescriptorType type, const vk::ArrayProxy<Handle<Image>>& image, Handle<Sampler> sampler = Handle<Sampler>());
-        void bind(const uint8_t set, const uint8_t binding, AccelerationStructure& as);
+        void bind(const uint8_t binding, const vk::DescriptorType type, Buffer& buffer);
+        void bind(const uint8_t binding, const vk::DescriptorType type, DynamicBuffer& buffer);
+        void bind(const uint8_t binding, const vk::DescriptorType type, const vk::ArrayProxy<Handle<Image>>& image, Handle<Sampler> sampler = Handle<Sampler>());
+        void bind(const uint8_t binding, AccelerationStructure& as);
 
-        const std::vector<vk::DescriptorSet>& getVkDescriptorSets();
+        const vk::DescriptorSet& getVkDescriptorSet();
 
     private:  // types
         using DescriptorInfo = std::variant<vk::DescriptorBufferInfo, std::vector<vk::DescriptorImageInfo>, vk::WriteDescriptorSetAccelerationStructureKHR>;
 
-        struct HashPair
-        {
-            template <class T1, class T2>
-            size_t operator()(const std::pair<T1, T2>& p) const
-            {
-                const auto hash1 = std::hash<T1>{}(p.first);
+        //struct HashPair
+        //{
+        //    template <class T1, class T2>
+        //    size_t operator()(const std::pair<T1, T2>& p) const
+        //    {
+        //        const auto hash1 = std::hash<T1>{}(p.first);
 
-                const auto hash2 = std::hash<T2>{}(p.second);
+        //        const auto hash2 = std::hash<T2>{}(p.second);
 
-                size_t seed = 0;
-                seed ^= hash1 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-                seed ^= hash2 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-                return seed;
-            }
-        };
+        //        size_t seed = 0;
+        //        seed ^= hash1 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        //        seed ^= hash2 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        //        return seed;
+        //    }
+        //};
 
     private:  // member variables
         Device& mDevice;
 
-        std::vector<vk::DescriptorSet> mDescriptorSets;
+        vk::DescriptorSet mDescriptorSet;
         size_t mPoolIndex;
         DescriptorPoolAllocationInfo mAllocationInfo;
-        std::unordered_map<std::pair<uint8_t, uint8_t>, DescriptorInfo, HashPair> mInfoCaches;
+        std::unordered_map<uint8_t, DescriptorInfo> mInfoCaches;
         std::vector<vk::WriteDescriptorSet> mWriteQueue;
     };
 }  // namespace vk2s

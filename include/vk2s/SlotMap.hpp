@@ -183,9 +183,9 @@ public:
     Pool<T, PageSize>& operator=(Pool<T, PageSize>&& other) = delete;
 
     template <typename... Args>
-    HandleType allocate(Args&&... args)
+    HandleType allocate(Args &&...args)
     {
-        return HandleType(allocInternal<Args...>(std::forward<Args>(args)...), this);
+        return HandleType(allocInternal(std::forward<Args>(args)...), this);
     }
 
     bool deallocate(HandleType& handle)
@@ -241,7 +241,7 @@ public:
 
 private:
     template <typename... Args>
-    IDType allocInternal(Args... args)
+    IDType allocInternal(Args &&...args)
     {
         if (mFreePosTable.empty())
         {
@@ -270,8 +270,7 @@ private:
 
         // construct
         {
-            T* constructPtr = reinterpret_cast<T*>(mPageTable[div].first + sizeof(T) * mod);
-            new (constructPtr) T(std::forward<Args>(args)...);
+            new (mPageTable[div].first + sizeof(T) * mod) T(std::forward<Args>(args)...);
         }
 
         auto pTargetID = reinterpret_cast<IDType*>(mPageTable[div].first + TypeOffset + sizeof(IDType) * mod);

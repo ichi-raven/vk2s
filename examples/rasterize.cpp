@@ -88,16 +88,18 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
         auto vertexShader   = device.create<vk2s::Shader>("../../examples/shaders/rasterize/vertex.vert", "main");
         auto fragmentShader = device.create<vk2s::Shader>("../../examples/shaders/rasterize/fragment.frag", "main");
 
-        std::array bindings0 = { vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBufferDynamic, 1, vk::ShaderStageFlagBits::eAll),
-                                 vk::DescriptorSetLayoutBinding(1, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eAll),
-                                 vk::DescriptorSetLayoutBinding(2, vk::DescriptorType::eCombinedImageSampler, std::max(1ull, materialTextures.size()), vk::ShaderStageFlagBits::eAll),
-                                 vk::DescriptorSetLayoutBinding(3, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eAll) };
+        std::vector bindings0 = { vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBufferDynamic, 1, vk::ShaderStageFlagBits::eAll),
+                                  vk::DescriptorSetLayoutBinding(1, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eAll),
+                                  vk::DescriptorSetLayoutBinding(2, vk::DescriptorType::eCombinedImageSampler, std::max(1ull, materialTextures.size()), vk::ShaderStageFlagBits::eAll),
+                                  vk::DescriptorSetLayoutBinding(3, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eAll) };
 
-        std::array bindings1 = {
+        std::vector bindings1 = {
             vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAll),
         };
 
-        auto bindLayout = device.create<vk2s::BindLayout>({bindings0, bindings1});
+        auto sceneBindLayout    = device.create<vk2s::BindLayout>(bindings0);
+        auto materialBindLayout = device.create<vk2s::BindLayout>(bindings1);
+        std::array allLayouts   = { sceneBindLayout, materialBindLayout };
 
         vk::VertexInputBindingDescription inputBinding(0, sizeof(vk2s::AssetLoader::Vertex));
         vk::Viewport viewport(0.0f, 0.0f, static_cast<float>(windowWidth), static_cast<float>(windowHeight), 0.0f, 1.0f);
@@ -108,7 +110,7 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
         vk2s::Pipeline::VkGraphicsPipelineInfo gpi{
             .vs            = vertexShader,
             .fs            = fragmentShader,
-            .bindLayout    = bindLayout,
+            .bindLayouts   = allLayouts,
             .renderPass    = renderpass,
             .inputState    = vk::PipelineVertexInputStateCreateInfo({}, inputBinding, std::get<0>(vertexShader->getReflection())),
             .inputAssembly = vk::PipelineInputAssemblyStateCreateInfo({}, vk::PrimitiveTopology::eTriangleList),
@@ -137,6 +139,7 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
             InstanceUB data{
                 .model    = glm::mat4(1.0),
                 .matIndex = i,
+                .padding  = { 0.0 },
             };
 
             instanceBuffers[i]->write(&data, sizeof(InstanceUB));
@@ -145,20 +148,30 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
         }
 
         // create bindgroup
-        auto bindGroup = device.create<vk2s::BindGroup>(bindLayout.get());
+        auto sceneBindGroup = device.create<vk2s::BindGroup>(sceneBindLayout.get());
 
-        bindGroup->bind(0, 0, vk::DescriptorType::eUniformBufferDynamic, sceneBuffer.get());
+        sceneBindGroup->bind(0, vk::DescriptorType::eUniformBufferDynamic, sceneBuffer.get());
         // instance UB will bind at recording commands
-        bindGroup->bind(0, 2, vk::DescriptorType::eStorageBuffer, materialBuffer.get());
+        sceneBindGroup->bind(1, vk::DescriptorType::eStorageBuffer, materialBuffer.get());
         if (materialTextures.empty())
         {
-            bindGroup->bind(0, 3, vk::DescriptorType::eCombinedImageSampler, envmap, sampler);  // dummy
+            sceneBindGroup->bind(2, vk::DescriptorType::eCombinedImageSampler, envmap, sampler);  // dummy
         }
         else
         {
-            bindGroup->bind(0, 3, vk::DescriptorType::eCombinedImageSampler, materialTextures, sampler);
+            sceneBindGroup->bind(2, vk::DescriptorType::eCombinedImageSampler, materialTextures, sampler);
         }
-        bindGroup->bind(0, 4, vk::DescriptorType::eCombinedImageSampler, envmap, envmapSampler);
+        sceneBindGroup->bind(3, vk::DescriptorType::eCombinedImageSampler, envmap, envmapSampler);
+
+        std::vector<Handle<vk2s::BindGroup>> materialBindGroups;
+        materialBindGroups.resize(instanceBuffers.size());
+
+        for (uint32_t i = 0; auto& ib : instanceBuffers)
+        {
+            materialBindGroups[i] = device.create<vk2s::BindGroup>(materialBindLayout.get());
+            materialBindGroups[i]->bind(0, vk::DescriptorType::eUniformBuffer, ib.get());
+            ++i;
+        }
 
         // create commands and sync objects
         std::vector<Handle<vk2s::Command>> commands(frameCount);
@@ -174,7 +187,7 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
             fences[i]              = device.create<vk2s::Fence>();
         }
 
-        const auto colorClearValue   = vk::ClearValue(std::array{ 0.2f, 0.2f, 0.2f, 1.0f });
+        const auto colorClearValue   = vk::ClearValue(std::array{ 0.2f, 0.2f, 0.2f, 0.0f });
         const auto depthClearValue   = vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0));
         const std::array clearValues = { colorClearValue, depthClearValue };
         double lastTime              = 0;
@@ -261,12 +274,11 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
             command->beginRenderPass(renderpass.get(), imageIndex, vk::Rect2D({ 0, 0 }, { windowWidth, windowHeight }), clearValues);
 
             command->setPipeline(graphicsPipeline);
+            command->setBindGroup(0, sceneBindGroup.get(), { now * static_cast<uint32_t>(sceneBuffer->getBlockSize()) });
 
             for (uint32_t i = 0; auto& mesh : meshInstances)
             {
-                bindGroup->bind(0, 1, vk::DescriptorType::eUniformBuffer, instanceBuffers[i].get());
-                command->setBindGroup(bindGroup.get(), { now * static_cast<uint32_t>(sceneBuffer->getBlockSize()) });
-
+                command->setBindGroup(1, materialBindGroups[i].get());
                 command->bindVertexBuffer(mesh.vertexBuffer.get());
                 command->bindIndexBuffer(mesh.indexBuffer.get());
 
@@ -286,6 +298,8 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
             // present swapchain(window) image
             resized = window->present(imageIndex, renderCompletedSems[now].get());
         }
+
+        device.waitIdle();
     }
     catch (std::exception& e)
     {

@@ -39,7 +39,6 @@ namespace vk2s
 
         const Compiler::ReflectionResult& getReflection();
 
-    private:  // methods
     private:  // member variables
         Device& mDevice;
 

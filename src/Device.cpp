@@ -39,6 +39,8 @@ namespace vk2s
 
     Device::~Device()
     {
+        std::get<Pool<vk2s::BindGroup>>(mPools).clear();
+
         iterateTuple(mPools);
 
         if (mpImGuiContext)
@@ -134,7 +136,7 @@ namespace vk2s
         return mCommandPool;
     }
 
-    const std::pair<std::vector<vk::DescriptorSet>, size_t> Device::allocateVkDescriptorSets(const std::vector<vk::DescriptorSetLayout>& layouts, const DescriptorPoolAllocationInfo& allocInfo)
+    const std::pair<vk::DescriptorSet, size_t> Device::allocateVkDescriptorSet(const vk::DescriptorSetLayout& layout, const DescriptorPoolAllocationInfo& allocInfo)
     {
         size_t idx = 0;
         for (const auto& pool : mDescriptorPools)
@@ -160,12 +162,12 @@ namespace vk2s
         allocatedPool.now.uniformBufferNum -= allocInfo.uniformBufferNum;
         allocatedPool.now.uniformBufferDynamicNum -= allocInfo.uniformBufferDynamicNum;
 
-        vk::DescriptorSetAllocateInfo ai(allocatedPool.descriptorPool.get(), layouts);
+        vk::DescriptorSetAllocateInfo ai(allocatedPool.descriptorPool.get(), layout);
 
-        return { mDevice->allocateDescriptorSets(ai), idx };
+        return { mDevice->allocateDescriptorSets(ai).front(), idx };
     }
 
-    void Device::deallocateVkDescriptorSets(std::vector<vk::DescriptorSet>& sets, const size_t poolIndex, const DescriptorPoolAllocationInfo& allocInfo)
+    void Device::deallocateVkDescriptorSet(vk::DescriptorSet& set, const size_t poolIndex, const DescriptorPoolAllocationInfo& allocInfo)
     {
         auto& allocatedPool = mDescriptorPools[poolIndex];
 
@@ -176,13 +178,13 @@ namespace vk2s
         allocatedPool.now.uniformBufferNum += allocInfo.uniformBufferNum;
         allocatedPool.now.uniformBufferDynamicNum += allocInfo.uniformBufferDynamicNum;
 
-        mDevice->freeDescriptorSets(allocatedPool.descriptorPool.get(), sets);
+        mDevice->freeDescriptorSets(allocatedPool.descriptorPool.get(), set);
     }
 
     void Device::createInstance()
     {
         // TODO: change application name
-        constexpr std::string_view applicationName = "vk2s";
+        constexpr std::string_view applicationName = "vk2s application";
 
         // get the instance independent function pointers
         static vk::DynamicLoader dl;
@@ -194,7 +196,7 @@ namespace vk2s
             throw std::runtime_error("validation layers requested, but not available!");
         }
 
-        vk::ApplicationInfo appInfo(applicationName.data(), VK_MAKE_VERSION(1, 0, 0), "Vulkan Playground", VK_MAKE_VERSION(1, 0, 0), VK_API_VERSION_1_3);
+        vk::ApplicationInfo appInfo(applicationName.data(), VK_MAKE_VERSION(1, 0, 0), "vk2s", VK_MAKE_VERSION(1, 0, 0), VK_API_VERSION_1_3);
 
         const auto extensions = getRequiredExtensions();
 

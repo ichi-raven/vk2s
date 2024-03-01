@@ -6,7 +6,7 @@ layout(binding = 0, set = 0) uniform SceneUB {
     mat4 proj;
 } sceneUB;
 
-layout(binding = 1, set = 0) uniform UniformBufferObject {
+layout(binding = 0, set = 1) uniform InstanceUB {
     mat4 model;
     uint matIndex;
     vec3 padding;
@@ -25,6 +25,7 @@ layout(location = 2) out vec2 fragTexCoord;
 void main() 
 {
     vec4 worldPos = instanceUB.model * vec4(inPosition, 1.0);
+
     gl_Position = sceneUB.proj * sceneUB.view * worldPos;
     fragPos = worldPos.xyz;
     fragNormal = (inverse(transpose(instanceUB.model)) * vec4(inNormal, 1.0)).xyz;

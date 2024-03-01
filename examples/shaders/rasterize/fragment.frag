@@ -18,17 +18,20 @@ layout(binding = 0, set = 0) uniform SceneUB {
 } sceneUB;
 
 
-layout(binding = 1, set = 0) uniform UniformBufferObject {
+layout(binding = 0, set = 1) uniform InstanceUB {
     mat4 model;
     uint matIndex;
     vec3 padding;
 } instanceUB;
 
-layout(binding=2, set=0) readonly buffer Materials { Material materials[]; };
-layout(binding=3, set=0) uniform sampler2D texSamplers[];
+layout(binding=1, set=0) readonly buffer Materials { Material materials[]; };
+layout(binding=2, set=0) uniform sampler2D texSamplers[];
 
 void main()
 {
+    outColor = vec4(inPos, 1.0);
+    return;
+
     Material material = materials[instanceUB.matIndex];
 
     if (instanceUB.matIndex % 3 == 0)

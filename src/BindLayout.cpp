@@ -4,66 +4,58 @@
 
 namespace vk2s
 {
-    BindLayout::BindLayout(Device& device, const vk::ArrayProxy<Handle<Shader>>& shaders)
+    //BindLayout::BindLayout(Device& device, const vk::ArrayProxy<Handle<Shader>>& shaders)
+    //    : mDevice(device)
+    //    , mInfo(0)
+    //{
+    //    assert(!shaders.empty() || !"at least one shader is need to reflection!");
+
+    //    const auto& vkDevice = mDevice.getVkDevice();
+
+    //    Compiler::ShaderResourceMap table = std::get<1>(shaders.front()->getReflection());
+
+    //    for (const auto& shader : shaders)
+    //    {
+    //        Compiler::ShaderResourceMap t = std::get<1>(shaders.front()->getReflection());
+    //        table.merge(t);
+    //    }
+
+    //    auto allBindings = Compiler::createDescriptorSetLayoutBindings(table);
+    //    mDescriptorSetLayouts.reserve(allBindings.size());
+
+    //    vk::DescriptorSetLayoutCreateInfo descLayoutci;
+
+    //    for (auto& bindings : allBindings)
+    //    {
+    //        descLayoutci.bindingCount = static_cast<uint32_t>(bindings.size());
+    //        descLayoutci.pBindings    = bindings.data();
+
+    //        initAllocationInfo(bindings);
+
+    //        mDescriptorSetLayouts.emplace_back(vkDevice->createDescriptorSetLayout(descLayoutci));
+    //    }
+    //}
+
+    BindLayout::BindLayout(Device& device, const vk::ArrayProxy<vk::DescriptorSetLayoutBinding>& bindings)
         : mDevice(device)
         , mInfo(0)
     {
-        assert(!shaders.empty() || !"at least one shader is need to reflection!");
-
-        const auto& vkDevice = mDevice.getVkDevice();
-
-        Compiler::ShaderResourceMap table = std::get<1>(shaders.front()->getReflection());
-
-        for (const auto& shader : shaders)
-        {
-            Compiler::ShaderResourceMap t = std::get<1>(shaders.front()->getReflection());
-            table.merge(t);
-        }
-
-        auto allBindings = Compiler::createDescriptorSetLayoutBindings(table);
-        mDescriptorSetLayouts.reserve(allBindings.size());
-
         vk::DescriptorSetLayoutCreateInfo descLayoutci;
 
-        for (auto& bindings : allBindings)
-        {
-            descLayoutci.bindingCount = static_cast<uint32_t>(bindings.size());
-            descLayoutci.pBindings    = bindings.data();
+        descLayoutci.bindingCount = static_cast<uint32_t>(bindings.size());
+        descLayoutci.pBindings    = bindings.data();
 
-            initAllocationInfo(bindings);
+        initAllocationInfo(bindings);
 
-            mDescriptorSetLayouts.emplace_back(vkDevice->createDescriptorSetLayout(descLayoutci));
-        }
-    }
-
-    BindLayout::BindLayout(Device& device, const vk::ArrayProxy<const vk::ArrayProxy<vk::DescriptorSetLayoutBinding>>& allBindings)
-        : mDevice(device)
-        , mInfo(0)
-    {
-        vk::DescriptorSetLayoutCreateInfo descLayoutci;
-
-        mDescriptorSetLayouts.reserve(allBindings.size());
-
-        for (const auto& bindings : allBindings)
-        {
-            descLayoutci.bindingCount = static_cast<uint32_t>(bindings.size());
-            descLayoutci.pBindings    = bindings.data();
-
-            initAllocationInfo(bindings);
-
-            mDescriptorSetLayouts.emplace_back(mDevice.getVkDevice()->createDescriptorSetLayout(descLayoutci));
-        }
+        mDescriptorSetLayout = mDevice.getVkDevice()->createDescriptorSetLayoutUnique(descLayoutci);
     }
 
     BindLayout::~BindLayout()
     {
-        for (auto& layout : mDescriptorSetLayouts)
-        {
-            mDevice.getVkDevice()->destroyDescriptorSetLayout(layout);
-        }
+
     }
 
-    inline void BindLayout::initAllocationInfo(const vk::ArrayProxy<vk::DescriptorSetLayoutBinding>& bindings)
+    inline void BindLayout::initAllocationInfo(const vk::ArrayProxy<const vk::DescriptorSetLayoutBinding>& bindings)
     {
         for (const auto& b : bindings)
         {
@@ -94,9 +86,9 @@ namespace vk2s
         }
     }
 
-    const std::vector<vk::DescriptorSetLayout>& BindLayout::getVkDescriptorSetLayouts()
+    const vk::UniqueDescriptorSetLayout& BindLayout::getVkDescriptorSetLayout()
     {
-        return mDescriptorSetLayouts;
+        return mDescriptorSetLayout;
     }
 
     const DescriptorPoolAllocationInfo& BindLayout::getDescriptorPoolAllocationInfo()

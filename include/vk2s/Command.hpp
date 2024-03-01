@@ -53,7 +53,7 @@ namespace vk2s
 
         void setPipeline(Handle<Pipeline> pipeline);
 
-        void setBindGroup(BindGroup& bindGroup, vk::ArrayProxy<const uint32_t> const& dynamicOffsets = {});
+        void setBindGroup(const uint8_t set, BindGroup& bindGroup, vk::ArrayProxy<const uint32_t> const& dynamicOffsets = {});
 
         void bindVertexBuffer(Buffer& vertexBuffer);
         void bindIndexBuffer(Buffer& indexBuffer);
