@@ -298,8 +298,6 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
             // present swapchain(window) image
             resized = window->present(imageIndex, renderCompletedSems[now].get());
         }
-
-        device.waitIdle();
     }
     catch (std::exception& e)
     {

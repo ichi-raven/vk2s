@@ -518,8 +518,6 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
                 continue;
             }
         }
-
-        device.waitIdle();
     }
     catch (std::exception& e)
     {

@@ -39,7 +39,8 @@ namespace vk2s
 
     Device::~Device()
     {
-        std::get<Pool<vk2s::BindGroup>>(mPools).clear();
+
+        mDevice->waitIdle();
 
         iterateTuple(mPools);
 
