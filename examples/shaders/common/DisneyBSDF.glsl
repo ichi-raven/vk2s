@@ -12,6 +12,7 @@ precision highp int;
 #include "types.glsl"
 #include "constants.glsl"
 #include "randoms.glsl"
+#include "BSDFs.glsl"
 
 // Maths-------------------------------------
 void basis(in vec3 n, out vec3 b1, out vec3 b2) 

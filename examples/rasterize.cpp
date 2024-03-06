@@ -8,6 +8,7 @@ struct SceneUB  // std430
 {
     glm::mat4 view;
     glm::mat4 proj;
+    glm::vec4 camPos;
 };
 
 struct InstanceUB
@@ -230,15 +231,6 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
             // acquire next image from swapchain(window)
             const auto [imageIndex, resize] = window->acquireNextImage(imageAvailableSems[now].get());
 
-            {  // write data
-                SceneUB sceneUBO{
-                    .view = camera.getViewMatrix(),
-                    .proj = camera.getProjectionMatrix(),
-                };
-
-                sceneBuffer->write(&sceneUBO, sizeof(SceneUB), now * sceneBuffer->getBlockSize());
-            }
-
             if (resize || resized)
             {
                 const auto [width, height] = window->getWindowSize();
@@ -266,6 +258,16 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
             }
 
             fences[now]->reset();
+
+            {  // write data
+                SceneUB sceneUBO{
+                    .view   = camera.getViewMatrix(),
+                    .proj   = camera.getProjectionMatrix(),
+                    .camPos = glm::vec4(camera.getPos(), 1.0),
+                };
+
+                sceneBuffer->write(&sceneUBO, sizeof(SceneUB), now * sceneBuffer->getBlockSize());
+            }
 
             auto& command = commands[now];
             // start writing command
