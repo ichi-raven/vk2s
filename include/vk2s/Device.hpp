@@ -73,7 +73,7 @@ namespace vk2s
         };
 
     public:  // methods
-        Device();
+        Device(const bool supportRayTracing = true);
 
         ~Device();
 
@@ -144,8 +144,9 @@ namespace vk2s
 
         constexpr static std::array validationLayers = { "VK_LAYER_KHRONOS_validation" };
 
-        constexpr static std::array deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, VK_KHR_RAY_QUERY_EXTENSION_NAME,
-                                                         VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME};
+        constexpr static std::array deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+
+        constexpr static std::array rayTracingDeviceExtensions = { VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, VK_KHR_RAY_QUERY_EXTENSION_NAME, VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME };
 
         constexpr static uint32_t kMaxDescriptorNum = 256;
 
@@ -182,6 +183,7 @@ namespace vk2s
         vk::UniqueInstance mInstance;
         vk::UniqueDebugUtilsMessengerEXT mDebugUtilsMessenger;
 
+        const bool mRayTracingSupported;
         vk::PhysicalDevice mPhysicalDevice;
         vk::PhysicalDeviceMemoryProperties mPhysMemProps;
         vk::UniqueDevice mDevice;

@@ -29,23 +29,9 @@ layout(binding=2, set=0) uniform sampler2D texSamplers[];
 
 void main()
 {
-    outColor = vec4(inPos, 1.0);
-    return;
-
     Material material = materials[instanceUB.matIndex];
 
-    if (instanceUB.matIndex % 3 == 0)
-    {
-        outColor = vec4(RED, 1.0);
-    }
-    else if (instanceUB.matIndex % 3 == 1)
-    {
-        outColor = vec4(GREEN, 1.0);
-    }
-    else
-    {
-        outColor = vec4(BLUE, 1.0);
-    }
+    outColor = material.albedo;
 
     //outColor = vec4(material.albedo, 1.0);
     //outColor = vec4(material.emissive);

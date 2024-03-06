@@ -30,7 +30,6 @@ add_executable(${APP_NAME}
 main.cpp
 pathtracing.cpp
 rasterize.cpp
-raytracing.cpp
 )
 
 # link libraries

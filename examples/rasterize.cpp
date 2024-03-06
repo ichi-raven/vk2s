@@ -21,7 +21,7 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
 {
     try
     {
-        vk2s::Device device;
+        vk2s::Device device(false);
 
         auto window = device.create<vk2s::Window>(windowWidth, windowHeight, frameCount, "rasterize window");
 
@@ -115,12 +115,12 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
             .inputState    = vk::PipelineVertexInputStateCreateInfo({}, inputBinding, std::get<0>(vertexShader->getReflection())),
             .inputAssembly = vk::PipelineInputAssemblyStateCreateInfo({}, vk::PrimitiveTopology::eTriangleList),
             .viewportState = vk::PipelineViewportStateCreateInfo({}, 1, &viewport, 1, &scissor),
-            .rasterizer    = vk::PipelineRasterizationStateCreateInfo({}, VK_FALSE, VK_FALSE, vk::PolygonMode::eFill, vk::CullModeFlagBits::eNone, vk::FrontFace::eClockwise, VK_FALSE, 0.0f, 0.0f, 0.0f, 1.0f),
+            .rasterizer    = vk::PipelineRasterizationStateCreateInfo({}, VK_FALSE, VK_FALSE, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eClockwise, VK_FALSE, 0.0f, 0.0f, 0.0f, 1.0f),
             .multiSampling = vk::PipelineMultisampleStateCreateInfo({}, vk::SampleCountFlagBits::e1, VK_FALSE),
             .depthStencil  = vk::PipelineDepthStencilStateCreateInfo({}, VK_TRUE, VK_TRUE, vk::CompareOp::eLess, VK_FALSE),
             .colorBlending = vk::PipelineColorBlendStateCreateInfo({}, VK_FALSE, vk::LogicOp::eCopy, 1, &colorBlendAttachment),
         };
-
+        //vk::PipelineDepthStencilStateCreateInfo()
         auto graphicsPipeline = device.create<vk2s::Pipeline>(gpi);
 
         // uniform buffer
@@ -151,7 +151,6 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
         auto sceneBindGroup = device.create<vk2s::BindGroup>(sceneBindLayout.get());
 
         sceneBindGroup->bind(0, vk::DescriptorType::eUniformBufferDynamic, sceneBuffer.get());
-        // instance UB will bind at recording commands
         sceneBindGroup->bind(1, vk::DescriptorType::eStorageBuffer, materialBuffer.get());
         if (materialTextures.empty())
         {
@@ -187,7 +186,7 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
             fences[i]              = device.create<vk2s::Fence>();
         }
 
-        const auto colorClearValue   = vk::ClearValue(std::array{ 0.2f, 0.2f, 0.2f, 0.0f });
+        const auto colorClearValue   = vk::ClearValue(std::array{ 0.2f, 0.2f, 0.2f, 1.0f });
         const auto depthClearValue   = vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0));
         const std::array clearValues = { colorClearValue, depthClearValue };
         double lastTime              = 0;

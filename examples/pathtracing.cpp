@@ -50,7 +50,8 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
         //load("../../examples/resources/model/fireplace-room/fireplace_room.obj", device, loader, meshInstances, materialBuffer, materialTextures);
         //load("../../examples/resources/model/Sponza/sponza.obj", device, loader, meshInstances, materialBuffer, materialTextures);
 
-        load("../../examples/resources/model/plototype1/prototype1.obj", device, loader, meshInstances, materialBuffer, materialTextures);
+        //load("../../examples/resources/model/plototype1/prototype1.obj", device, loader, meshInstances, materialBuffer, materialTextures);
+        load("../../examples/resources/model/kirby/kirby.obj", device, loader, meshInstances, materialBuffer, materialTextures);
 
         // create scene UB
         Handle<vk2s::DynamicBuffer> sceneBuffer;

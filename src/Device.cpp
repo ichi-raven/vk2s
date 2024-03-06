@@ -11,8 +11,9 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace vk2s
 {
-    Device::Device()
+    Device::Device(const bool supportRayTracing)
         : mpImGuiContext(nullptr)
+        , mRayTracingSupported(supportRayTracing)
     {
         glfwInit();
 
@@ -418,6 +419,10 @@ namespace vk2s
             SwapChainSupportDetails swapChainSupport = SwapChainSupportDetails::querySwapChainSupport(mDevice, testSurface);
             swapChainAdequate                        = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
         }
+        else
+        {
+            throw std::runtime_error("extension is not supported!");
+        }
 
         return indices.isComplete() && extensionsSupported && swapChainAdequate;
     }
@@ -468,10 +473,21 @@ namespace vk2s
         std::vector<vk::ExtensionProperties> availableExtensions = mDevice.enumerateDeviceExtensionProperties();
 
         std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+        std::set<std::string> requiredRTExtensions(rayTracingDeviceExtensions.begin(), rayTracingDeviceExtensions.end());
 
         for (const auto& extension : availableExtensions)
         {
             requiredExtensions.erase(extension.extensionName);
+        }
+
+        if (mRayTracingSupported)
+        {
+            std::set<std::string> requiredRTExtensions(rayTracingDeviceExtensions.begin(), rayTracingDeviceExtensions.end());
+            for (const auto& extension : availableExtensions)
+            {
+                requiredRTExtensions.erase(extension.extensionName);
+            }
+            return requiredExtensions.empty() && requiredRTExtensions.empty();
         }
 
         return requiredExtensions.empty();
