@@ -101,15 +101,10 @@ void main()
   disneyMat.clearcoat = 0.1;
   disneyMat.clearcoatGloss = 0.1;
 
-  /*switch(material.matType)
+  switch(material.matType)
   {
-    // case MAT_LAMBERT:
-    //   disneyMat.roughness = 1.0;
-    // break;
     case MAT_CONDUCTOR:
       disneyMat.roughness = 0.01;
-      //const float rate = 0.6;//float((sceneParams.frame / 20) % 10) / 10.0;
-      //disneyMat.anisotropic = mix(-1.0, 1.0, rate);
       disneyMat.anisotropic = 0.5;
       disneyMat.metallic = 1.0;
       disneyMat.clearcoat = 0.1;
@@ -129,17 +124,11 @@ void main()
     default:
     // ERROR
     break;
-  }*/
-
-  //BSDFSample sampleDisneyBSDF(const DisneyMaterial mat, const vec3 x, const vec3 normal, bool thin, inout DisneyBSDFState state, inout uint prngState)
+  }
 
   payload.bsdf = sampleDisneyBSDF(disneyMat, -gl_WorldRayDirectionEXT, worldNormal, false, payload.state, payload.prngState);
   payload.state.lastIOR = material.IOR;
   payload.mat = disneyMat;
 
-  // DEBUG
-  //payload.Le = payload.bsdf.f;
-  //payload.intersected = false;
   return;
-  
 }

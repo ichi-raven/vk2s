@@ -295,7 +295,16 @@ namespace vk2s
 
         vk::PhysicalDeviceFeatures mDeviceFeatures{};
 
-        vk::DeviceCreateInfo createInfo({}, queueCreateInfos, {}, deviceExtensions, &mDeviceFeatures);
+        vk::DeviceCreateInfo createInfo{};        
+        if (mRayTracingSupported)
+        {
+            createInfo = vk::DeviceCreateInfo({}, queueCreateInfos, {}, allExtensions, &mDeviceFeatures);
+        }
+        else
+        {
+            createInfo = vk::DeviceCreateInfo({}, queueCreateInfos, {}, deviceExtensions, &mDeviceFeatures);
+        }
+       
 
         // for ray tracing
         vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR enabledBufferDeviceAddressFeatures(VK_TRUE);
@@ -350,18 +359,23 @@ namespace vk2s
 
     void Device::createDescriptorPool()
     {
-        std::array arr = {
-            vk::DescriptorPoolSize(vk::DescriptorType::eAccelerationStructureKHR, kMaxDescriptorNum),
+        std::vector poolSize = {
             vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, kMaxDescriptorNum),
             vk::DescriptorPoolSize(vk::DescriptorType::eStorageImage, kMaxDescriptorNum),
             vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, kMaxDescriptorNum),
             vk::DescriptorPoolSize(vk::DescriptorType::eUniformBufferDynamic, kMaxDescriptorNum),
             vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, kMaxDescriptorNum),
+            vk::DescriptorPoolSize(vk::DescriptorType::eAccelerationStructureKHR, kMaxDescriptorNum),
         };
+
+        if (!mRayTracingSupported)
+        {
+            poolSize.pop_back();
+        }
 
         auto& added = mDescriptorPools.emplace_back();
 
-        vk::DescriptorPoolCreateInfo ci(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, kMaxDescriptorNum, arr);
+        vk::DescriptorPoolCreateInfo ci(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, kMaxDescriptorNum, poolSize);
         added.descriptorPool = mDevice->createDescriptorPoolUnique(ci);
         added.now            = DescriptorPoolAllocationInfo(kMaxDescriptorNum);
     }

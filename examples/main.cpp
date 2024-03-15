@@ -20,7 +20,7 @@ int main()
 
     //raytracing(kWidth, kHeight, kFrameCount);
     
-    //pathtracing(kWidth, kHeight, kFrameCount);
+    pathtracing(kWidth, kHeight, kFrameCount);
 
     return 0;
 }

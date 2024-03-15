@@ -81,7 +81,7 @@ namespace vk2s
 
         // TODO: BAD
         template <typename T, size_t PageSize = kDefaultPageSize, typename Allocator = DefaultAllocator, typename... Args>
-        Handle<T, PageSize, DefaultAllocator> create(Args &&... args)
+        Handle<T, PageSize, DefaultAllocator> create(Args&&... args)
         {
             static_assert(IsContainedIn<Pool<T, PageSize, DefaultAllocator>, decltype(mPools)>::value, "invalid type of pool!");
             return std::get<Pool<T, PageSize, DefaultAllocator>>(mPools).allocate(*this, std::forward<Args>(args)...);
@@ -144,9 +144,12 @@ namespace vk2s
 
         constexpr static std::array validationLayers = { "VK_LAYER_KHRONOS_validation" };
 
-        constexpr static std::array deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+        constexpr static std::array deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
         constexpr static std::array rayTracingDeviceExtensions = { VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, VK_KHR_RAY_QUERY_EXTENSION_NAME, VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME };
+
+        constexpr static std::array allExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, VK_KHR_RAY_QUERY_EXTENSION_NAME,
+                                                      VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME };
 
         constexpr static uint32_t kMaxDescriptorNum = 256;
 

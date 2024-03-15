@@ -56,7 +56,6 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
         vk2s::AssetLoader loader;
 
         load("../../examples/resources/model/CornellBox/CornellBox-Sphere.obj", device, loader, meshInstances, materialBuffer, materialTextures);
-        //load("../../examples/resources/model/plototype1/prototype1.obj", device, loader, meshInstances, materialBuffer, materialTextures);
 
         // create envmap
         Handle<vk2s::Image> envmap;
