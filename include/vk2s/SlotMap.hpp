@@ -97,7 +97,7 @@ public:
         return !static_cast<bool>(*this);
     }
 
-    T& get()
+    T& get() const
     {
         return mpPool->get(*this);
     }

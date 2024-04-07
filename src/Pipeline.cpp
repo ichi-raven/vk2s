@@ -4,7 +4,7 @@
 
 namespace vk2s
 {
-    Pipeline::Pipeline(Device& device, const VkGraphicsPipelineInfo& info)
+    Pipeline::Pipeline(Device& device, const GraphicsPipelineInfo& info)
         : mDevice(device)
         , mBindPoint(vk::PipelineBindPoint::eGraphics)
     {
@@ -74,7 +74,7 @@ namespace vk2s
         }
     }
 
-    Pipeline::Pipeline(Device& device, const VkRayTracingPipelineInfo& info)
+    Pipeline::Pipeline(Device& device, const RayTracingPipelineInfo& info)
         : mDevice(device)
         , mBindPoint(vk::PipelineBindPoint::eRayTracingKHR)
     {

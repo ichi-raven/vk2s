@@ -26,16 +26,16 @@ namespace vk2s
     {
     public:  // methods
         // BLAS
-        AccelerationStructure(Device& device, const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, Handle<Command> buildCommand = Handle<Command>());
+        AccelerationStructure(Device& device, const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, const Handle<Command>& buildCommand = Handle<Command>());
 
         // TLAS
-        AccelerationStructure(Device& device, const vk::ArrayProxy<vk::AccelerationStructureInstanceKHR>& instances, Handle<Command> buildCommand = Handle<Command>());
+        AccelerationStructure(Device& device, const vk::ArrayProxy<vk::AccelerationStructureInstanceKHR>& instances, const Handle<Command>& buildCommand = Handle<Command>());
 
         ~AccelerationStructure();
 
-        void build(const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, Handle<Command> buildCommand = Handle<Command>());
+        void build(const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, const Handle<Command>& buildCommand = Handle<Command>());
 
-        void build(const vk::ArrayProxy<vk::AccelerationStructureInstanceKHR>& instances, Handle<Command> buildCommand = Handle<Command>());
+        void build(const vk::ArrayProxy<vk::AccelerationStructureInstanceKHR>& instances, const Handle<Command>& buildCommand = Handle<Command>());
 
         NONCOPYABLE(AccelerationStructure);
         NONMOVABLE(AccelerationStructure);
@@ -46,7 +46,7 @@ namespace vk2s
 
     private:  // methods
         void buildInternal(const vk::AccelerationStructureTypeKHR type, const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureGeometryKHR>& asGeometry,
-                   const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureBuildRangeInfoKHR>& asBuildRangeInfo, vk::BuildAccelerationStructureFlagsKHR flags, Handle<Command> buildCommand = Handle<Command>());
+                   const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureBuildRangeInfoKHR>& asBuildRangeInfo, vk::BuildAccelerationStructureFlagsKHR flags, const Handle<Command>& buildCommand = Handle<Command>());
 
     private:  // member variables
         Device& mDevice;

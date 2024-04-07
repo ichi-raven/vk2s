@@ -6,7 +6,7 @@
 
 namespace vk2s
 {
-    RenderPass::RenderPass(Device& device, const vk::ArrayProxy<Handle<Image>>& colorTargets, const Handle<Image> depthTarget)
+    RenderPass::RenderPass(Device& device, const vk::ArrayProxy<Handle<Image>>& colorTargets, const Handle<Image>& depthTarget)
         : mDevice(device)
     {
         const auto& vkDevice = mDevice.getVkDevice();
@@ -68,7 +68,69 @@ namespace vk2s
         mFrameBuffers.push_back(vkDevice->createFramebufferUnique(framebufferInfo));
     }
 
-    RenderPass::RenderPass(Device& device, Window& window, const vk::AttachmentLoadOp colorLoadOp, Handle<Image> depthTarget, const vk::AttachmentLoadOp depthLoadOp)
+    RenderPass::RenderPass(Device& device, const vk::ArrayProxy<UniqueHandle<Image>>& colorTargets, const Handle<Image>& depthTarget)
+        : mDevice(device)
+    {
+        const auto& vkDevice = mDevice.getVkDevice();
+
+        // TODO: control clear and dontcare
+
+        std::vector<vk::AttachmentDescription> attachments;
+        std::vector<vk::AttachmentReference> colorAttachmentRefs;
+        attachments.reserve(colorTargets.size());
+        colorAttachmentRefs.reserve(colorTargets.size());
+
+        for (const auto& ct : colorTargets)
+        {
+            attachments.emplace_back(vk::AttachmentDescription({}, colorTargets.front()->getVkFormat(), vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
+                                                               vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal));
+            colorAttachmentRefs.emplace_back(vk::AttachmentReference(colorAttachmentRefs.size(), vk::ImageLayout::eColorAttachmentOptimal));
+        }
+
+        if (depthTarget)
+        {
+            vk::AttachmentDescription depthAttachment({}, depthTarget->getVkFormat(), vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eDontCare, vk::AttachmentLoadOp::eDontCare,
+                                                      vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+            attachments.emplace_back(depthAttachment);
+
+            vk::AttachmentReference depthAttachmentRef(colorAttachmentRefs.size(), vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+            vk::SubpassDescription subpass({}, vk::PipelineBindPoint::eGraphics, {}, colorAttachmentRefs, {}, &depthAttachmentRef);
+            const auto srcStageMask  = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests;
+            const auto dstStageMask  = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests;
+            const auto dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+            vk::SubpassDependency dependency(VK_SUBPASS_EXTERNAL, 0, srcStageMask, dstStageMask, {}, dstAccessMask);
+            vk::RenderPassCreateInfo renderPassInfo({}, attachments, subpass, dependency);
+            mRenderPass = vkDevice->createRenderPassUnique(renderPassInfo);
+        }
+        else
+        {
+            vk::SubpassDescription subpass({}, vk::PipelineBindPoint::eGraphics, {}, colorAttachmentRefs);
+            const auto srcStageMask  = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+            const auto dstStageMask  = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+            const auto dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+            vk::SubpassDependency dependency(VK_SUBPASS_EXTERNAL, 0, srcStageMask, dstStageMask, {}, dstAccessMask);
+            vk::RenderPassCreateInfo renderPassInfo({}, attachments, subpass, dependency);
+            mRenderPass = vkDevice->createRenderPassUnique(renderPassInfo);
+        }
+
+        const auto extent = colorTargets.front()->getVkExtent();
+        std::vector<vk::ImageView> views;
+        views.reserve(colorTargets.size() + 1);
+        for (const auto& ct : colorTargets)
+        {
+            views.emplace_back(ct->getVkImageView().get());
+        }
+        if (depthTarget)
+        {
+            views.emplace_back(depthTarget->getVkImageView().get());
+        }
+
+        vk::FramebufferCreateInfo framebufferInfo({}, mRenderPass.get(), views, extent.width, extent.height, 1);
+        mFrameBuffers.push_back(vkDevice->createFramebufferUnique(framebufferInfo));
+    }
+
+    RenderPass::RenderPass(Device& device, Window& window, const vk::AttachmentLoadOp colorLoadOp, const Handle<Image>& depthTarget, const vk::AttachmentLoadOp depthLoadOp)
         : mDevice(device)
     {
         const auto& vkDevice = mDevice.getVkDevice();

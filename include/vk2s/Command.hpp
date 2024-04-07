@@ -80,7 +80,7 @@ namespace vk2s
 
         void drawImGui();
 
-        void execute(Handle<Fence> signalFence = Handle<Fence>(), Handle<Semaphore> waitSem = Handle<Semaphore>(), Handle<Semaphore> signalSem = Handle<Semaphore>());
+        void execute(const Handle<Fence>& signalFence = Handle<Fence>(), const Handle<Semaphore>& waitSem = Handle<Semaphore>(), const Handle<Semaphore>& signalSem = Handle<Semaphore>());
 
         const vk::UniqueCommandBuffer& getVkCommandBuffer();
 

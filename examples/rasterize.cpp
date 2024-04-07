@@ -107,7 +107,7 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
         vk::PipelineColorBlendAttachmentState colorBlendAttachment(VK_FALSE);
         colorBlendAttachment.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
 
-        vk2s::Pipeline::VkGraphicsPipelineInfo gpi{
+        vk2s::Pipeline::GraphicsPipelineInfo gpi{
             .vs            = vertexShader,
             .fs            = fragmentShader,
             .bindLayouts   = allLayouts,

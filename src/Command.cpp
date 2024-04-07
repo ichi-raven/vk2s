@@ -168,7 +168,7 @@ namespace vk2s
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), mCommandBuffer.get());
     }
 
-    void Command::execute(Handle<Fence> fence, Handle<Semaphore> wait, Handle<Semaphore> signal)
+    void Command::execute(const Handle<Fence>& fence, const Handle<Semaphore>& wait, const Handle<Semaphore>& signal)
     {
         vk::SubmitInfo submitInfo(nullptr, nullptr, mCommandBuffer.get(), nullptr);
 

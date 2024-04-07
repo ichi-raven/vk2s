@@ -223,7 +223,7 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
         constexpr int kIndexClosestHit = 3;
 
         // create ray tracing pipeline
-        vk2s::Pipeline::VkRayTracingPipelineInfo rpi{
+        vk2s::Pipeline::RayTracingPipelineInfo rpi{
             .raygenShaders = { raygenShader },
             .missShaders   = { missShader, shadowShader },
             .chitShaders   = { chitShader },

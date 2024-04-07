@@ -29,14 +29,12 @@ namespace vk2s
     class Pipeline
     {
     public:  // types
-        struct VkGraphicsPipelineInfo
+        struct GraphicsPipelineInfo
         {
             Handle<Shader> vs;
             Handle<Shader> fs;
             vk::ArrayProxyNoTemporaries<Handle<BindLayout>> bindLayouts;
             Handle<RenderPass> renderPass;
-
-            // TODO: too many
 
             vk::PipelineVertexInputStateCreateInfo inputState;
             vk::PipelineInputAssemblyStateCreateInfo inputAssembly;
@@ -53,7 +51,7 @@ namespace vk2s
             vk::ArrayProxyNoTemporaries<Handle<BindLayout>> bindLayouts;
         };
 
-        struct VkRayTracingPipelineInfo
+        struct RayTracingPipelineInfo
         {
             std::vector<Handle<Shader>> raygenShaders;
             std::vector<Handle<Shader>> missShaders;
@@ -65,9 +63,9 @@ namespace vk2s
         };
 
     public:  // methods
-        Pipeline(Device& device, const VkGraphicsPipelineInfo& info);
+        Pipeline(Device& device, const GraphicsPipelineInfo& info);
         Pipeline(Device& device, const ComputePipelineInfo& info);
-        Pipeline(Device& device, const VkRayTracingPipelineInfo& info);
+        Pipeline(Device& device, const RayTracingPipelineInfo& info);
 
         NONCOPYABLE(Pipeline);
         NONMOVABLE(Pipeline);

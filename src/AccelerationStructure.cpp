@@ -5,14 +5,14 @@
 namespace vk2s
 {
     // BLAS
-    AccelerationStructure::AccelerationStructure(Device& device, const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, Handle<Command> buildCommand)
+    AccelerationStructure::AccelerationStructure(Device& device, const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, const Handle<Command>& buildCommand)
         : mDevice(device)
     {
         build(vertexNum, vertexStride, vertexBuffer, faceNum, indexBuffer, buildCommand);
     }
 
     // TLAS
-    AccelerationStructure::AccelerationStructure(Device& device, const vk::ArrayProxy<vk::AccelerationStructureInstanceKHR>& instances, Handle<Command> buildCommand)
+    AccelerationStructure::AccelerationStructure(Device& device, const vk::ArrayProxy<vk::AccelerationStructureInstanceKHR>& instances, const Handle<Command>& buildCommand)
         : mDevice(device)
     {
         build(instances, buildCommand);
@@ -32,7 +32,7 @@ namespace vk2s
         return mDeviceAddress;
     }
 
-    void AccelerationStructure::build(const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, Handle<Command> buildCommand)
+    void AccelerationStructure::build(const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, const Handle<Command>& buildCommand)
     {
         const auto& vkDevice = mDevice.getVkDevice();
 
@@ -63,7 +63,7 @@ namespace vk2s
         mDevice.destroy(mScratchBuffer);
     }
 
-    void AccelerationStructure::build(const vk::ArrayProxy<vk::AccelerationStructureInstanceKHR>& instances, Handle<Command> buildCommand)
+    void AccelerationStructure::build(const vk::ArrayProxy<vk::AccelerationStructureInstanceKHR>& instances, const Handle<Command>& buildCommand)
     {
         const auto& vkDevice = mDevice.getVkDevice();
 
@@ -95,7 +95,7 @@ namespace vk2s
     }
 
     void AccelerationStructure::buildInternal(const vk::AccelerationStructureTypeKHR type, const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureGeometryKHR>& asGeometry,
-                                      const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureBuildRangeInfoKHR>& asBuildRangeInfo, vk::BuildAccelerationStructureFlagsKHR flags, Handle<Command> buildCommand)
+                                      const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureBuildRangeInfoKHR>& asBuildRangeInfo, vk::BuildAccelerationStructureFlagsKHR flags, const Handle<Command>& buildCommand)
     {
         const auto& vkDevice = mDevice.getVkDevice();
 
