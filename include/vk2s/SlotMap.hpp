@@ -1,4 +1,4 @@
-/*****************************************************************//**
+/*****************************************************************/ /**
  * @file   SlotMap.hpp
  * @brief  template definition of class SlotMap
  * 
@@ -84,6 +84,7 @@ public:
 
     IDType getRawID() const
     {
+        assert(mID != kInvalidID || !"invalid handle!");
         return mID;
     }
 
@@ -99,11 +100,13 @@ public:
 
     T& get() const
     {
+        assert(mID != kInvalidID || !"invalid handle!");
         return mpPool->get(*this);
     }
 
     T* operator->() const
     {
+        assert(mID != kInvalidID || !"invalid handle!");
         return &mpPool->get(*this);
     }
 
@@ -153,6 +156,12 @@ public:
         return *this;
     }
 
+    explicit operator HandleType() const noexcept
+    {
+        assert(this->mID != kInvalidID || !"invalid handle!");
+        return HandleType(this->mID, this->mpPool);
+    }
+
 protected:
     UniqueHandle(IDType id, HandleType::PoolType* pPool)
         : HandleType(id, pPool)
@@ -183,7 +192,7 @@ public:
     Pool<T, PageSize>& operator=(Pool<T, PageSize>&& other) = delete;
 
     template <typename... Args>
-    HandleType allocate(Args &&...args)
+    HandleType allocate(Args&&... args)
     {
         return HandleType(allocInternal(std::forward<Args>(args)...), this);
     }
@@ -191,7 +200,7 @@ public:
     bool deallocate(HandleType& handle)
     {
         const bool res = deallocInternal(handle.getRawID());
-        
+
         handle.mID = kInvalidID;
         return res;
     }
@@ -241,7 +250,7 @@ public:
 
 private:
     template <typename... Args>
-    IDType allocInternal(Args &&...args)
+    IDType allocInternal(Args&&... args)
     {
         if (mFreePosTable.empty())
         {

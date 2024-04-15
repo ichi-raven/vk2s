@@ -482,7 +482,7 @@ namespace vk2s
         return details;
     }
 
-    bool Device::checkDeviceExtensionSupport(vk::PhysicalDevice mDevice)
+    bool Device::checkDeviceExtensionSupport(vk::PhysicalDevice mDevice) const
     {
         std::vector<vk::ExtensionProperties> availableExtensions = mDevice.enumerateDeviceExtensionProperties();
 

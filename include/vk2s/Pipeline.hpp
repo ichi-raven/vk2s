@@ -35,7 +35,6 @@ namespace vk2s
             Handle<Shader> fs;
             vk::ArrayProxyNoTemporaries<Handle<BindLayout>> bindLayouts;
             Handle<RenderPass> renderPass;
-
             vk::PipelineVertexInputStateCreateInfo inputState;
             vk::PipelineInputAssemblyStateCreateInfo inputAssembly;
             vk::PipelineViewportStateCreateInfo viewportState;

@@ -8,8 +8,6 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
 
 void rasterize(const uint32_t windowWidth, const uint32_t windowHeight, const uint32_t frameCount);
 
-void raytracing(const uint32_t windowWidth, const uint32_t windowHeight, const uint32_t frameCount);
-
 int main()
 {
     constexpr uint32_t kWidth = 1000;
@@ -17,8 +15,6 @@ int main()
     constexpr uint32_t kFrameCount = 3;
 
     rasterize(kWidth, kHeight, kFrameCount);
-
-    //raytracing(kWidth, kHeight, kFrameCount);
     
     pathtracing(kWidth, kHeight, kFrameCount);
 

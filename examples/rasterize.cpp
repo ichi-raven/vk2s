@@ -97,9 +97,9 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
             vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAll),
         };
 
-        auto sceneBindLayout    = device.create<vk2s::BindLayout>(bindings0);
-        auto materialBindLayout = device.create<vk2s::BindLayout>(bindings1);
-        std::array allLayouts   = { sceneBindLayout, materialBindLayout };
+        UniqueHandle<vk2s::BindLayout> sceneBindLayout    = device.create<vk2s::BindLayout>(bindings0);
+        UniqueHandle<vk2s::BindLayout> materialBindLayout = device.create<vk2s::BindLayout>(bindings1);
+        std::array<Handle<vk2s::BindLayout>, 2> allLayouts = { sceneBindLayout, materialBindLayout };
 
         vk::VertexInputBindingDescription inputBinding(0, sizeof(vk2s::AssetLoader::Vertex));
         vk::Viewport viewport(0.0f, 0.0f, static_cast<float>(windowWidth), static_cast<float>(windowHeight), 0.0f, 1.0f);
@@ -120,7 +120,6 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
             .depthStencil  = vk::PipelineDepthStencilStateCreateInfo({}, VK_TRUE, VK_TRUE, vk::CompareOp::eLess, VK_FALSE),
             .colorBlending = vk::PipelineColorBlendStateCreateInfo({}, VK_FALSE, vk::LogicOp::eCopy, 1, &colorBlendAttachment),
         };
-        //vk::PipelineDepthStencilStateCreateInfo()
         auto graphicsPipeline = device.create<vk2s::Pipeline>(gpi);
 
         // uniform buffer

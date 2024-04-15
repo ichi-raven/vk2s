@@ -177,7 +177,7 @@ namespace vk2s
         std::vector<const char*> getRequiredExtensions();
         bool checkValidationLayerSupport();
         bool isDeviceSuitable(vk::PhysicalDevice device, const vk::UniqueSurfaceKHR& testSurface);
-        bool checkDeviceExtensionSupport(vk::PhysicalDevice device);
+        bool checkDeviceExtensionSupport(vk::PhysicalDevice device) const;
 
         static VKAPI_ATTR VkBool32 VKAPI_CALL debugUtilsMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes, VkDebugUtilsMessengerCallbackDataEXT const* pCallbackData,
                                                                           void* pUserData);

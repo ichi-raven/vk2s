@@ -12,7 +12,6 @@ namespace vk2s
 
         const auto&& [descriptorSet, poolIndex] = mDevice.allocateVkDescriptorSet(layout.getVkDescriptorSetLayout().get(), mAllocationInfo);
 
-        
         mDescriptorSet = descriptorSet;
         mPoolIndex     = poolIndex;
 
@@ -22,7 +21,7 @@ namespace vk2s
 
     BindGroup::~BindGroup()
     {
-       mDevice.deallocateVkDescriptorSet(mDescriptorSet, mPoolIndex, mAllocationInfo);
+        mDevice.deallocateVkDescriptorSet(mDescriptorSet, mPoolIndex, mAllocationInfo);
     }
 
     void BindGroup::bind(const uint8_t binding, const vk::DescriptorType type, Buffer& buffer)
@@ -39,35 +38,7 @@ namespace vk2s
         mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSet, binding, 0, type, {}, std::get<0>(info)));
     }
 
-    void BindGroup::bind(const uint8_t binding, const vk::DescriptorType type, const vk::ArrayProxy<UniqueHandle<Image>>& images, const Handle<Sampler>& sampler)
-    {
-        assert(!images.empty() || !"images must be greater than 0");
-
-        // HACK;
-        const auto imageLayout = type == vk::DescriptorType::eStorageImage ? vk::ImageLayout::eGeneral : vk::ImageLayout::eShaderReadOnlyOptimal;
-
-        std::vector<vk::DescriptorImageInfo> infos;
-        infos.reserve(images.size());
-
-        for (const auto& image : images)
-        {
-            const vk::ImageView vkImageView = image->getVkImageView().get();
-            if (sampler)
-            {
-                infos.emplace_back(vk::DescriptorImageInfo(sampler->getVkSampler().get(), vkImageView, imageLayout));
-            }
-            else
-            {
-                infos.emplace_back(vk::DescriptorImageInfo({}, vkImageView, imageLayout));
-            }
-        }
-
-        const auto& info = mInfoCaches[binding] = infos;
-
-        mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSet, binding, 0, type, std::get<1>(info)));
-    }
-
-        void BindGroup::bind(const uint8_t binding, const vk::DescriptorType type, const vk::ArrayProxy<Handle<Image>>& images, const Handle<Sampler>& sampler)
+    void BindGroup::bind(const uint8_t binding, const vk::DescriptorType type, const vk::ArrayProxy<Handle<Image>>& images, const Handle<Sampler>& sampler)
     {
         assert(!images.empty() || !"images must be greater than 0");
 

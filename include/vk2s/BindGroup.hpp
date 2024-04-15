@@ -45,7 +45,6 @@ namespace vk2s
         void bind(const uint8_t binding, const vk::DescriptorType type, Buffer& buffer);
         void bind(const uint8_t binding, const vk::DescriptorType type, DynamicBuffer& buffer);
         void bind(const uint8_t binding, const vk::DescriptorType type, const vk::ArrayProxy<Handle<Image>>& image, const Handle<Sampler>& sampler = Handle<Sampler>());
-        void bind(const uint8_t binding, const vk::DescriptorType type, const vk::ArrayProxy<UniqueHandle<Image>>& image, const Handle<Sampler>& sampler = Handle<Sampler>());
 
         void bind(const uint8_t binding, AccelerationStructure& as);
 
