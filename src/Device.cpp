@@ -40,7 +40,6 @@ namespace vk2s
 
     Device::~Device()
     {
-
         mDevice->waitIdle();
 
         iterateTuple(mPools);
@@ -293,19 +292,7 @@ namespace vk2s
             queueCreateInfos.push_back(queueCreateInfo);
         }
 
-        vk::PhysicalDeviceFeatures mDeviceFeatures{};
-
-        vk::DeviceCreateInfo createInfo{};        
-        if (mRayTracingSupported)
-        {
-            createInfo = vk::DeviceCreateInfo({}, queueCreateInfos, {}, allExtensions, &mDeviceFeatures);
-        }
-        else
-        {
-            createInfo = vk::DeviceCreateInfo({}, queueCreateInfos, {}, deviceExtensions, &mDeviceFeatures);
-        }
-       
-
+        vk::PhysicalDeviceFeatures deviceFeatures{};
         // for ray tracing
         vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR enabledBufferDeviceAddressFeatures(VK_TRUE);
 
@@ -327,8 +314,18 @@ namespace vk2s
 
         vk::PhysicalDeviceFeatures2 physicalDeviceFeatures2(features, &enabledDescriptorIndexingFeatures);
 
-        createInfo.pNext            = &physicalDeviceFeatures2;
-        createInfo.pEnabledFeatures = nullptr;
+        vk::DeviceCreateInfo createInfo{};
+        if (mRayTracingSupported)
+        {
+            createInfo = vk::DeviceCreateInfo({}, queueCreateInfos, {}, allExtensions, &deviceFeatures);
+
+            createInfo.pNext            = &physicalDeviceFeatures2;
+            createInfo.pEnabledFeatures = nullptr;
+        }
+        else
+        {
+            createInfo = vk::DeviceCreateInfo({}, queueCreateInfos, {}, deviceExtensions, &deviceFeatures);
+        }
 
         if (enableValidationLayers)
         {
@@ -336,14 +333,7 @@ namespace vk2s
         }
 
         mDevice = mPhysicalDevice.createDeviceUnique(createInfo);
-        if (!mDevice)
-        {
-            // failed to activate ray tracing feature
-            createInfo.pNext = nullptr;
-            mDevice          = mPhysicalDevice.createDeviceUnique(createInfo);
-
-            assert(mDevice || !"failed to create logical device!");
-        }
+        assert(mDevice || !"failed to create logical device!");
 
         mGraphicsQueue = mDevice->getQueue(mQueueFamilyIndices.graphicsFamily.value(), 0);
         mPresentQueue  = mDevice->getQueue(mQueueFamilyIndices.presentFamily.value(), 0);
@@ -360,12 +350,9 @@ namespace vk2s
     void Device::createDescriptorPool()
     {
         std::vector poolSize = {
-            vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, kMaxDescriptorNum),
-            vk::DescriptorPoolSize(vk::DescriptorType::eStorageImage, kMaxDescriptorNum),
-            vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, kMaxDescriptorNum),
-            vk::DescriptorPoolSize(vk::DescriptorType::eUniformBufferDynamic, kMaxDescriptorNum),
-            vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, kMaxDescriptorNum),
-            vk::DescriptorPoolSize(vk::DescriptorType::eAccelerationStructureKHR, kMaxDescriptorNum),
+            vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, kMaxDescriptorNum), vk::DescriptorPoolSize(vk::DescriptorType::eStorageImage, kMaxDescriptorNum),
+            vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, kMaxDescriptorNum),        vk::DescriptorPoolSize(vk::DescriptorType::eUniformBufferDynamic, kMaxDescriptorNum),
+            vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, kMaxDescriptorNum),        vk::DescriptorPoolSize(vk::DescriptorType::eAccelerationStructureKHR, kMaxDescriptorNum),
         };
 
         if (!mRayTracingSupported)

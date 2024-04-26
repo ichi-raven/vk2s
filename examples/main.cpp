@@ -14,7 +14,7 @@ int main()
     constexpr uint32_t kHeight = 1000;
     constexpr uint32_t kFrameCount = 3;
 
-    rasterize(kWidth, kHeight, kFrameCount);
+    //rasterize(kWidth, kHeight, kFrameCount);
     
     pathtracing(kWidth, kHeight, kFrameCount);
 

@@ -104,7 +104,7 @@ void main()
   switch(material.matType)
   {
     case MAT_CONDUCTOR:
-      disneyMat.roughness = 0.01;
+      disneyMat.roughness = 0.1;
       disneyMat.anisotropic = 0.5;
       disneyMat.metallic = 1.0;
       disneyMat.clearcoat = 0.1;
