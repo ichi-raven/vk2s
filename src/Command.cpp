@@ -231,7 +231,7 @@ namespace vk2s
             barrier.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
             barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 
-            sourceStage      = vk::PipelineStageFlagBits::eBottomOfPipe;
+            sourceStage      = vk::PipelineStageFlagBits::eColorAttachmentOutput;
             destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
         }
         else if (from == vk::ImageLayout::eShaderReadOnlyOptimal && to == vk::ImageLayout::eColorAttachmentOptimal)
@@ -240,7 +240,7 @@ namespace vk2s
             barrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
 
             sourceStage      = vk::PipelineStageFlagBits::eFragmentShader;
-            destinationStage = vk::PipelineStageFlagBits::eBottomOfPipe;
+            destinationStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
         }
         else if (from == vk::ImageLayout::eTransferDstOptimal && to == vk::ImageLayout::eShaderReadOnlyOptimal)
         {
