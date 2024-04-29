@@ -6,7 +6,13 @@
 
 namespace vk2s
 {
-    RenderPass::RenderPass(Device& device, const vk::ArrayProxy<Handle<Image>>& colorTargets, const Handle<Image>& depthTarget)
+    RenderPass::RenderPass(Device& device, const vk::ArrayProxy<Handle<Image>>& colorTargets, const Handle<Image>& depthTarget, const vk::AttachmentLoadOp loadOp)
+        : RenderPass(device, colorTargets, loadOp, depthTarget)
+    {
+        
+    }
+
+    RenderPass::RenderPass(Device& device, const vk::ArrayProxy<Handle<Image>>& colorTargets, const vk::ArrayProxy<vk::AttachmentLoadOp>& loadOps, const Handle<Image>& depthTarget)
         : mDevice(device)
     {
         const auto& vkDevice = mDevice.getVkDevice();
@@ -18,9 +24,14 @@ namespace vk2s
         attachments.reserve(colorTargets.size());
         colorAttachmentRefs.reserve(colorTargets.size());
 
-        for (const auto& ct : colorTargets)
+        assert(loadOps.size() <= colorTargets.size() || !"invalid loadOps size!");
+
+        for (size_t i = 0; i < colorTargets.size(); ++i)
         {
-            attachments.emplace_back(vk::AttachmentDescription({}, colorTargets.front()->getVkFormat(), vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
+            const auto& ct = colorTargets.begin() + i;
+            const auto loadOp = loadOps.size() == 1 ? *loadOps.begin() : *(loadOps.begin() + i);
+
+            attachments.emplace_back(vk::AttachmentDescription({}, colorTargets.front()->getVkFormat(), vk::SampleCountFlagBits::e1, loadOp, vk::AttachmentStoreOp::eStore, loadOp,
                                                                vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal));
             colorAttachmentRefs.emplace_back(vk::AttachmentReference(colorAttachmentRefs.size(), vk::ImageLayout::eColorAttachmentOptimal));
         }
