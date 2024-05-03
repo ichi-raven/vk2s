@@ -7,7 +7,7 @@
 namespace vk2s
 {
     RenderPass::RenderPass(Device& device, const vk::ArrayProxy<Handle<Image>>& colorTargets, const Handle<Image>& depthTarget, const vk::AttachmentLoadOp loadOp)
-        : RenderPass(device, colorTargets, loadOp, depthTarget)
+        : RenderPass(device, colorTargets, std::array{ loadOp }, depthTarget)
     {
         
     }

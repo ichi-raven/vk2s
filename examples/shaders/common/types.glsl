@@ -76,8 +76,8 @@ struct BSDFSample
 {
   vec3 f;
   vec3 wi;
-  float forwardPdfW;
-  float reversePdfW;
+  float pdf;
+  float eta;
   uint flags;
 };
 
@@ -85,6 +85,7 @@ struct LightSample
 {
   vec3 on;
   vec3 to;
+  vec3 normal;
   vec3 L;
   float pdf;
 };
@@ -97,10 +98,12 @@ struct Payload
   vec3 Le;
   uint prngState;
   bool intersected;
+  bool emissive;
 
+  Material mat;
   // for Disney BSDF
-  DisneyBSDFState state;
-  DisneyMaterial mat;
+  //DisneyBSDFState state;
+  //DisneyMaterial mat;
 };
 
 struct ONB

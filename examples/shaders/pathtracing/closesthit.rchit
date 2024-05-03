@@ -12,7 +12,8 @@ hitAttributeEXT vec3 attribs;
 #include "../common/constants.glsl"
 #include "../common/randoms.glsl"
 #include "../common/BSDFs.glsl"
-#include "../common/DisneyBSDF.glsl"
+//#include "../common/DisneyBSDF.glsl"
+#include "../common/pbrtBSDF.glsl"
 #include "../common/lights.glsl"
 
 #include "bindings.glsl"
@@ -72,63 +73,72 @@ void main()
   payload.x = worldPos;
   payload.normal = setFaceNormal(-gl_WorldRayDirectionEXT, worldNormal);
   payload.Le = material.emissive.xyz;
+  payload.emissive = dot(payload.Le, payload.Le) > EPS;
   payload.intersected = true;
-  
+  payload.mat = material;
+  // pbrt
+  payload.bsdf = samplePBRTBSDF(material, -gl_WorldRayDirectionEXT, worldNormal, payload.prngState);
+
   // for simple BSDF
   // payload.bsdf = sampleBSDF(material, -gl_WorldRayDirectionEXT, worldNormal, payload.prngState);
   //return;
 
   // test Disney BSDF
   
-  DisneyMaterial disneyMat;
-  disneyMat.baseColor = material.albedo.xyz;
-  disneyMat.metallic = 0.4;
-  disneyMat.roughness = 0.01;
-  disneyMat.flatness = 1.0;
-  disneyMat.emissive = material.emissive.xyz;
+  // DisneyMaterial disneyMat;
+  // disneyMat.baseColor = material.albedo.xyz;
+  // disneyMat.metallic = 0.1;
+  // disneyMat.roughness = 0.5;
+  // disneyMat.flatness = 1.0;
+  // disneyMat.emissive = material.emissive.xyz;
   
-  disneyMat.specularTint = 0.1;
-  disneyMat.specTrans = 0.0;
-  disneyMat.diffTrans = 0.0;
-  disneyMat.ior = material.IOR;
-  disneyMat.relativeIOR = payload.state.lastIOR / material.IOR;
-  disneyMat.absorption = 0.0;
+  // disneyMat.specularTint = 0.1;
+  // disneyMat.specTrans = 0.0;
+  // disneyMat.diffTrans = 0.0;
+  // disneyMat.ior = material.IOR;
+  // disneyMat.relativeIOR = payload.state.lastIOR / material.IOR;
+  // disneyMat.absorption = 0.0;
 
-  disneyMat.sheen = 0.1;
-  disneyMat.sheenTint = vec3(0.1);
-  disneyMat.anisotropic = 0.01;
+  // disneyMat.sheen = 0.1;
+  // disneyMat.sheenTint = vec3(0.1);
+  // disneyMat.anisotropic = 0.01;
 
-  disneyMat.clearcoat = 0.1;
-  disneyMat.clearcoatGloss = 0.1;
+  // disneyMat.clearcoat = 0.01;
+  // disneyMat.clearcoatGloss = 0.01;
 
-  switch(material.matType)
-  {
-    case MAT_CONDUCTOR:
-      disneyMat.roughness = 0.1;
-      disneyMat.anisotropic = 0.5;
-      disneyMat.metallic = 1.0;
-      disneyMat.clearcoat = 0.1;
-      disneyMat.clearcoatGloss = 0.1;
-      disneyMat.flatness = 0.0;
-    break;
-    case MAT_DIELECTRIC:
-      disneyMat.roughness = 0.001;
-      disneyMat.metallic = 0.01;
-      disneyMat.specTrans = 1.0;
-      disneyMat.diffTrans = 1.0;
-      disneyMat.anisotropic = 0.0;
-      disneyMat.clearcoat = 0.1;
-      disneyMat.clearcoatGloss = 0.0;
-      disneyMat.flatness = 0.0;
-    break;
-    default:
-    // ERROR
-    break;
-  }
+  // switch(material.matType)
+  // {
+  //   case MAT_CONDUCTOR:
+  //     disneyMat.roughness = 0.1;
+  //     disneyMat.anisotropic = 0.5;
+  //     disneyMat.metallic = 1.0;
+  //     disneyMat.clearcoat = 0.1;
+  //     disneyMat.clearcoatGloss = 0.1;
+  //     disneyMat.flatness = 0.0;
+  //   break;
+  //   case MAT_DIELECTRIC:
+  //     disneyMat.roughness = 0.001;
+  //     disneyMat.metallic = 0.01;
+  //     disneyMat.specTrans = 1.0;
+  //     disneyMat.diffTrans = 1.0;
+  //     disneyMat.anisotropic = 0.0;
+  //     disneyMat.clearcoat = 0.1;
+  //     disneyMat.clearcoatGloss = 0.0;
+  //     disneyMat.flatness = 0.0;
+  //   break;
+  //   default:
+  //   // ERROR
+  //   break;
+  // }
 
-  payload.bsdf = sampleDisneyBSDF(disneyMat, -gl_WorldRayDirectionEXT, worldNormal, false, payload.state, payload.prngState);
-  payload.state.lastIOR = material.IOR;
-  payload.mat = disneyMat;
+  // payload.bsdf = sampleDisneyBSDF(disneyMat, -gl_WorldRayDirectionEXT, worldNormal, false, payload.state, payload.prngState);
+  // payload.state.lastIOR = material.IOR;
+  // payload.mat = disneyMat;
+
+  // debug
+  //payload.Le = vec3(payload.bsdf.forwardPdfW);
+  //payload.Le = vec3(payload.bsdf.reversePdfW);
+  //payload.intersected = false;
 
   return;
 }

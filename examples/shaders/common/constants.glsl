@@ -10,7 +10,7 @@ precision highp int;
 #extension GL_EXT_control_flow_attributes : enable
 
 // constants
-#define EPS (1e-3)
+#define EPS (1e-4)
 #define INFTY (1e8)
 
 #define M_PI  (3.1415926535897932384626433832795)

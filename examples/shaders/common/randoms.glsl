@@ -66,4 +66,11 @@ vec3 randomCosDirection(inout uint randState)
   return vec3(cos(phi) * r2Sqrt, sin(phi) * r2Sqrt, z);
 }
 
+vec2 randomUniformDiskPolar(const vec2 u)
+{
+  const float r = sqrt(u.x);
+  const float theta = M_PI2 * u.y;
+  return vec2(r * cos(theta), r * sin(theta));
+}
+
 #endif

@@ -470,7 +470,7 @@ void CalculateLobePdfs(const DisneyMaterial mat,
     float diffuseWeight      = dielectricBRDF;
     float clearcoatWeight    = 1.0 * clamp(mat.clearcoat, 0.0, 1.0); 
 
-    float norm = clamp(1.0 / (specularWeight + transmissionWeight + diffuseWeight + clearcoatWeight), EPS, INFTY);
+    float norm = 1.0 / (specularWeight + transmissionWeight + diffuseWeight + clearcoatWeight);
 
     pSpecular  = specularWeight     * norm;
     pSpecTrans = transmissionWeight * norm;
@@ -578,6 +578,9 @@ vec3 EvaluateDisneyBSDF(const DisneyMaterial mat, vec3 v, vec3 l, vec3 normal, b
         reversePdf += pBRDF * reverseMetallicPdfW / (4. * abs(dot(wi, wm)));
     }
 
+    //forwardPdf = clamp(forwardPdf, 0.0, 1.0);
+    //reversePdf = clamp(reversePdf, 0.0, 1.0);
+
     reflectance *= abs(dotNL);
 
     return reflectance;
@@ -589,7 +592,7 @@ vec3 SampleGgxVndfAnisotropic(const vec3 wo, float ax, float ay, float u1, float
     // -- Stretch the view vector so we are sampling as though roughness==1
     vec3 v = normalize(vec3(wo.x * ax, wo.y, wo.z * ay));
     // -- Build an orthonormal basis with v, t1, and t2
-    vec3 t1 = (v.y < 0.9999) ? normalize(cross(v, vec3(0.0, 1.0, 0.0))) : vec3(1.0, 0.0, 0.0);
+    vec3 t1 = (v.y < 0.99999) ? normalize(cross(v, vec3(0.0, 1.0, 0.0))) : vec3(1.0, 0.0, 0.0);
     vec3 t2 = cross(t1, v);
     // -- Choose a point on a disk with each half of the disk weighted proportionally to its projection onto direction v
     float a = 1.0 / (1.0 + v.y);
@@ -605,9 +608,6 @@ vec3 SampleGgxVndfAnisotropic(const vec3 wo, float ax, float ay, float u1, float
 
 bool SampleDisneySpecTransmission(const DisneyMaterial mat, vec3 wo, bool thin, out BSDFSample sample_out, inout uint prngState)
 {
-    // tangent space
-    //vec3 wo = MatrixMultiply(v, surface.worldToTangent);
-
     if(cosTheta(wo) == 0.0) 
     {
         sample_out.forwardPdfW = 0.0;
@@ -873,8 +873,8 @@ bool SampleDisneyBRDF(const DisneyMaterial mat, const vec3 wo,
     vec3 wi = normalize(reflect(-wo, wm));
     if(cosTheta(wi) < EPS)
     {
-        sample_out.forwardPdfW = 0.0;
-        sample_out.reversePdfW = 0.0;
+        sample_out.forwardPdfW = EPS;
+        sample_out.reversePdfW = EPS;
         sample_out.f = vec3(INFTY, 0.0, 0.0);
         sample_out.wi = DisneyFresnel(mat.baseColor, mat.specularTint, mat.metallic, mat.ior, mat.relativeIOR, wo, wm, wi);
         return false;
@@ -952,7 +952,7 @@ BSDFSample sampleDisneyBSDF(const DisneyMaterial mat, const vec3 x, const vec3 n
     else 
     {
         // -- Make sure we notice if this is occurring.
-        ret.f = vec3(INFTY);
+        ret.f = vec3(EPS);
         ret.forwardPdfW = EPS;
         ret.reversePdfW = EPS;
     }
@@ -977,9 +977,10 @@ BSDFSample sampleDisneyBSDF(const DisneyMaterial mat, const vec3 x, const vec3 n
         ret.reversePdfW *= pLobe;
     }
 
+    // debug
     if (!success)
     {
-        ret.f = vec3(INFTY, 0.0, INFTY);
+        ret.f = vec3(0.0, 0.0, 0.0);
         ret.flags = BSDF_FLAGS_FAILED;
     }
 
