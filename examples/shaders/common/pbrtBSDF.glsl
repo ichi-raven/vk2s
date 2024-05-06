@@ -316,8 +316,13 @@ BSDFSample sampleDiffuse(const vec3 albedo, const vec3 wo, inout uint prngState)
     return ret;
 }
 
-float pdfDiffuse(const vec3 wi)
+float pdfDiffuse(const vec3 wo, const vec3 wi)
 {
+    if (wo.z * wi.z <= 0.) // not in same hemisphere
+    {
+        return EPS;
+    }
+
     return M_INVPI * abs(wi.z);
 }
 
@@ -338,9 +343,9 @@ vec3 evalConductor(const vec3 albedo, const float ax, const float ay, const floa
     }
 
     vec3 wm = wi + wo;
-    if (dot(wm, wm) == 0.)
+    if (dot(wm, wm) == 0.) // invalid microfacet normal
     {
-        return vec3(0.0);
+        return vec3(0.);
     }
     wm = normalize(wm);
 
@@ -392,13 +397,13 @@ float pdfConductor(const vec3 wo, const vec3 wi, const float ax, const float ay)
 {
     if (wo.z * wi.z <= 0.) // not in same hemisphere
     {
-        return 0.;
+        return EPS;
     }
 
     vec3 wm = wo + wi;
     if (dot(wm, wm) == 0.)
     {
-        return 0.0;
+        return EPS;
     }
     wm = faceforward(wm, wm, vec3(0., 0., 1.));
 
@@ -555,7 +560,7 @@ float pdfDielectric(const vec3 wo, const vec3 wi, const float ax, const float ay
 {
     if (eta == 1.0 || isEffectivelySmooth(ax, ay))
     {
-        return 0.;
+        return EPS;
     }
     
     const float ct_o = cosTheta(wo);
@@ -581,13 +586,13 @@ float pdfDielectric(const vec3 wo, const vec3 wi, const float ax, const float ay
     // discard backfacing microfacets
     if (dot(wm, wi) * ct_i < 0. || dot(wm, wo) * ct_o < 0.)
     {
-        return 0.0;
+        return EPS;
     }
 
     const float pR = frDielectric(dot(wo, wm), eta);
     const float pT = 1. - pR;
     
-    float pdf = 0.0;
+    float pdf = EPS;
     if (refl)
     {
         pdf = pdfGGX(wo, wm, ax, ay) / (4. * abs(dot(wo, wm))) * pR / (pR + pT);
@@ -604,7 +609,7 @@ float pdfDielectric(const vec3 wo, const vec3 wi, const float ax, const float ay
 
 // interface-----------------------------------
 
-vec3 evalPBRTBSDF(const Material mat, vec3 wo, vec3 wi, vec3 normal)
+vec3 evalPBRTBSDF(const Material mat, vec3 wo, vec3 wi, const vec3 normal)
 {
     // calc tangent space
     vec3 T, B;
@@ -679,7 +684,6 @@ BSDFSample samplePBRTBSDF(const Material mat, vec3 wo, const vec3 normal, inout 
             ret = sampleDiffuse(mat.albedo.xyz, wo, prngState);
         break;
         case MAT_CONDUCTOR:
-            // currently unused complex eta
             ret = sampleConductor(mat.albedo.xyz, ax, ay, eta, k, wo, u); 
         break;
         case MAT_DIELECTRIC:
@@ -687,6 +691,7 @@ BSDFSample samplePBRTBSDF(const Material mat, vec3 wo, const vec3 normal, inout 
         break;
         default:
             // ERROR
+            ret.flags = BSDF_FLAGS_FAILED;
         break;
     }
 
@@ -706,7 +711,7 @@ float pdfPBRTBSDF(const Material mat, vec3 wo, vec3 wi, vec3 normal)
 
     if (wo.z == 0.) // completely horizontal incidence 
     {
-        return 0.;
+        return EPS;
     }
 
     const float ax = mat.alpha;
@@ -717,7 +722,7 @@ float pdfPBRTBSDF(const Material mat, vec3 wo, vec3 wi, vec3 normal)
     switch(mat.matType)
     {
         case MAT_LAMBERT:
-            return pdfDiffuse(wi);
+            return pdfDiffuse(wo, wi);
         break;
         case MAT_CONDUCTOR:
             return pdfConductor(wo, wi, ax, ay);
@@ -731,7 +736,7 @@ float pdfPBRTBSDF(const Material mat, vec3 wo, vec3 wi, vec3 normal)
     }
 
     // invalid
-    return 0.;
+    return EPS;
 }
 
 #endif

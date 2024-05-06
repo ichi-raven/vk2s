@@ -18,7 +18,7 @@ LightSample sampleLight(const vec3 pos, inout uint prngState)
 {
     LightSample ls;
     ls.pdf = 1.0;
-    ls.L = vec3(15.0);
+    ls.L = vec3(10.0);
 
     // Debug: for direct light sampling
     const vec3 debugLight[4] = {vec3(0.2300, 1.5800, -0.2200), vec3(0.2300, 1.5800, 0.1600), vec3(-0.2400, 1.5800, 0.1600), vec3(-0.2400, 1.5800, -0.2200)};    
@@ -33,18 +33,18 @@ LightSample sampleLight(const vec3 pos, inout uint prngState)
     const float randLightX = clamp(r1 * (xRange[1] - xRange[0]) + xRange[0], xRange[0], xRange[1]);
     const float randLightZ = clamp(r2 * (zRange[1] - zRange[0]) + zRange[0], zRange[0], zRange[1]);
     ls.on = vec3(randLightX, debugLight[0].y, randLightZ);
-    ls.normal = lightNormal;
     ls.to = ls.on - pos;
     const float distSq = dot(ls.to, ls.to);
 
     const float lightCos = abs(dot(normalize(ls.to), lightNormal));
     
-    ls.pdf = max(EPS, distSq / (lightCos * lightArea));
+    ls.G = lightCos / distSq;
+    ls.pdf = max(EPS, 1. / lightArea);
 
     return ls;
 }
 
-float calcLightPdf(const vec3 x, const vec3 lightPos)
+float calcLightPdf(const vec3 x, const vec3 lightPos, out float invG)
 {
     // Debug: for direct light sampling test
     const vec3 debugLight[4] = {vec3(0.2300, 1.5800, -0.2200), vec3(0.2300, 1.5800, 0.1600), vec3(-0.2400, 1.5800, 0.1600), vec3(-0.2400, 1.5800, -0.2200)};    
@@ -58,7 +58,8 @@ float calcLightPdf(const vec3 x, const vec3 lightPos)
 
     const float lightCos = abs(dot(normalize(to), lightNormal));
     
-    return distSq / (lightCos * lightArea);
+    invG = distSq / lightCos;
+    return max(EPS, 1. / lightArea);
 }
 
 #endif

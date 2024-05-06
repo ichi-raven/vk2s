@@ -85,7 +85,7 @@ struct LightSample
 {
   vec3 on;
   vec3 to;
-  vec3 normal;
+  float G;
   vec3 L;
   float pdf;
 };

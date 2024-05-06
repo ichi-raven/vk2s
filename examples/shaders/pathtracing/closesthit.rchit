@@ -67,6 +67,9 @@ void main()
     material.albedo = texture(texSamplers[nonuniformEXT(material.texIndex)], vtx.texCoord);
   }
 
+  // test
+  //material.alpha = 0.2;
+
   const vec3 worldPos    = (gl_ObjectToWorldEXT * vec4(vtx.position, 1.0)).xyz;
   const vec3 worldNormal = normalize(mat3(gl_ObjectToWorldEXT) * vtx.normal);
 

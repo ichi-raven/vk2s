@@ -9,6 +9,7 @@
 #include "../common/constants.glsl"
 #include "../common/randoms.glsl"
 #include "../common/BSDFs.glsl"
+#include "../common/pbrtBSDF.glsl"
 #include "../common/lights.glsl"
 
 #include "bindings.glsl"
@@ -70,6 +71,7 @@ vec3 sampleLi(const uint sampleIndex)
     {
       break;
     }
+    beta /= prr;
 
     if (depth > MAX_DEPTH)
     {
@@ -88,8 +90,7 @@ vec3 sampleLi(const uint sampleIndex)
     payload.Le = vec3(0.0);
     payload.emissive = false;
     // update beta
-    const float invPrr = 1. / prr;
-    beta *= invPrr * payload.bsdf.f * abs(dot(payload.normal, payload.bsdf.wi)) / max(EPS, payload.bsdf.pdf);
+    beta *= payload.bsdf.f * abs(dot(payload.normal, payload.bsdf.wi)) / max(EPS, payload.bsdf.pdf);
 
     // trace next ray
     traceRayEXT(TLAS, flags, 0xFF, 0, 0, 0, payload.x, tmin, payload.bsdf.wi, tmax, 0);
@@ -109,6 +110,7 @@ vec3 sampleLiMIS(const uint sampleIndex)
 
   vec3 L = vec3(0.0);
   vec3 beta = vec3(1.0);
+  vec3 wo = vec3(1.0);
   uint depth = 0;
   bool specularBounce = false;
 
@@ -122,54 +124,61 @@ vec3 sampleLiMIS(const uint sampleIndex)
 
   // set primary ray
   const Ray primaryRay = getCameraRay(payload.prngState);
-
+  wo = primaryRay.direction;
   // trace primary ray
   traceRayEXT(TLAS, flags, 0xFF, 0, 0, 0, primaryRay.origin, tmin, primaryRay.direction, tmax, 0);
 
   // add emissive contribution only primaly ray
   L += beta * payload.Le;
 
-  while (payload.intersected && !payload.emissive)
+  while (payload.intersected)
   {
     // russian roulette
-    const float prr = max(max(beta.x, beta.y), beta.z);
-    if (stepAndOutputRNGFloat(payload.prngState) >= prr)
     {
-      break;
+      const float prr = max(max(beta.x, beta.y), beta.z);
+      if (stepAndOutputRNGFloat(payload.prngState) >= prr)
+      {
+        break;
+      }
+      beta /= prr;
     }
 
-    // update
-    ++depth;
-    specularBounce = isSpecular(payload.bsdf.flags);
-    payload.Le = vec3(0.0);
-    // update beta
-    const float invPrr = 1. / prr;
-    beta *= invPrr * payload.bsdf.f * abs(dot(payload.normal, payload.bsdf.wi)) / max(EPS, payload.bsdf.pdf);
-
-
-    // account emissive surface if prev surface was specular
-    LightSample ls = sampleLight(payload.x, payload.prngState);
-    // cast shadow ray
-    shadowed = true;
-    const float dist = length(ls.to);
-    traceRayEXT(TLAS, shadowFlags, 0xFF, 0, 0, 1, payload.x, tmin, normalize(ls.to), dist - EPS, 1);
-
-    if (!shadowed)
+    // NEE
     {
-      float pathpdf = pdfPBRTBSDF(payload.mat, -payload.bsdf.wi, ls.to, payload.normal);
-      vec3 f = evalPBRTBSDF(payload.mat, -payload.bsdf.wi, ls.to, payload.normal);
-      const float MISWeight = ls.pdf / (ls.pdf + pathpdf);
-      L += MISWeight * beta * f * ls.L / ls.pdf;
+      // account emissive surface if prev surface was specular
+      LightSample ls = sampleLight(payload.x, payload.prngState);
+      // cast shadow ray
+      shadowed = true;
+      const float dist = length(ls.to);
+      traceRayEXT(TLAS, shadowFlags, 0xFF, 0, 0, 1, payload.x, tmin, normalize(ls.to), dist - EPS, 1);
+
+      if (!shadowed)
+      {
+        float pathpdf = ls.G * pdfPBRTBSDF(payload.mat, -wo, ls.to, payload.normal);
+        float cos1 = abs(dot(payload.normal, normalize(ls.to)));
+        const vec3 f = evalPBRTBSDF(payload.mat, -wo, ls.to, payload.normal);
+        const float MISWeight = ls.pdf / (ls.pdf + pathpdf);
+        L += MISWeight * beta * f * ls.G * cos1 * ls.L / ls.pdf;
+      }
     }
     
-    const Payload cache = payload;
-    traceRayEXT(TLAS, flags, 0xFF, 0, 0, 0, cache.x, tmin, cache.bsdf.wi, tmax, 0);
-    if (payload.emissive && payload.intersected) // hit to emitter
+    // BSDF
     {
-      const float lightpdf = calcLightPdf(cache.x, payload.x);
-      const float BSDFpdf = payload.bsdf.pdf; 
-      const float MISWeight = BSDFpdf / (lightpdf + BSDFpdf);
-      L += MISWeight * beta * payload.Le * payload.bsdf.f / BSDFpdf;
+      const Payload cache = payload;
+      traceRayEXT(TLAS, flags, 0xFF, 0, 0, 0, cache.x, tmin, cache.bsdf.wi, tmax, 0);
+      if (payload.emissive && payload.intersected) // hit to emitter
+      {
+        float invG;
+        float lightpdf = calcLightPdf(cache.x, payload.x, invG);
+        lightpdf *= invG;
+        const float cos1 = abs(dot(payload.normal, payload.bsdf.wi));
+        const float BSDFpdf = payload.bsdf.pdf; 
+        const float MISWeight = BSDFpdf / (lightpdf + BSDFpdf);
+        L += MISWeight * beta * cos1 * payload.Le * payload.bsdf.f / BSDFpdf;
+      }
+      uint prngStateTmp = payload.prngState;
+      payload = cache;
+      payload.prngState = prngStateTmp;
     }
     
     if (depth >= MAX_DEPTH)
@@ -182,7 +191,15 @@ vec3 sampleLiMIS(const uint sampleIndex)
       break;
     }
 
-    //payload.bsdf = sampleDisneyBSDF(payload.mat, -gl_WorldRayDirectionEXT, payload.normal, false, payload.state, payload.prngState);
+    // update
+    ++depth;
+    wo = payload.bsdf.wi;
+    specularBounce = isSpecular(payload.bsdf.flags);
+    payload.Le = vec3(0.0);
+    // update beta
+    beta *= payload.bsdf.f * abs(dot(payload.normal, payload.bsdf.wi)) / max(EPS, payload.bsdf.pdf);
+
+    traceRayEXT(TLAS, flags, 0xFF, 0, 0, 0, payload.x, tmin, payload.bsdf.wi, tmax, 0);
   }
 
   return L;
