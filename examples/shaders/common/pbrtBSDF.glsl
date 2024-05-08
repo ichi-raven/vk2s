@@ -320,7 +320,7 @@ float pdfDiffuse(const vec3 wo, const vec3 wi)
 {
     if (wo.z * wi.z <= 0.) // not in same hemisphere
     {
-        return EPS;
+        return 0.;
     }
 
     return M_INVPI * abs(wi.z);
@@ -397,13 +397,13 @@ float pdfConductor(const vec3 wo, const vec3 wi, const float ax, const float ay)
 {
     if (wo.z * wi.z <= 0.) // not in same hemisphere
     {
-        return EPS;
+        return 0.;
     }
 
     vec3 wm = wo + wi;
     if (dot(wm, wm) == 0.)
     {
-        return EPS;
+        return 0.;
     }
     wm = faceforward(wm, wm, vec3(0., 0., 1.));
 
@@ -560,7 +560,7 @@ float pdfDielectric(const vec3 wo, const vec3 wi, const float ax, const float ay
 {
     if (eta == 1.0 || isEffectivelySmooth(ax, ay))
     {
-        return EPS;
+        return 0.;
     }
     
     const float ct_o = cosTheta(wo);
@@ -578,7 +578,7 @@ float pdfDielectric(const vec3 wo, const vec3 wi, const float ax, const float ay
     vec3 wm = wi * etap + wo;
     if (ct_i == 0. || ct_o == 0. || dot(wm, wm) == 0.)
     {
-        return 0.0;
+        return 0.;
     }
 
     wm = faceforward(wm, wm, vec3(0., 0., 1.));
@@ -586,7 +586,7 @@ float pdfDielectric(const vec3 wo, const vec3 wi, const float ax, const float ay
     // discard backfacing microfacets
     if (dot(wm, wi) * ct_i < 0. || dot(wm, wo) * ct_o < 0.)
     {
-        return EPS;
+        return 0.;
     }
 
     const float pR = frDielectric(dot(wo, wm), eta);
@@ -736,7 +736,7 @@ float pdfPBRTBSDF(const Material mat, vec3 wo, vec3 wi, vec3 normal)
     }
 
     // invalid
-    return EPS;
+    return 0.;
 }
 
 #endif

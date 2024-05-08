@@ -74,7 +74,7 @@ void main()
   const vec3 worldNormal = normalize(mat3(gl_ObjectToWorldEXT) * vtx.normal);
 
   payload.x = worldPos;
-  payload.normal = setFaceNormal(-gl_WorldRayDirectionEXT, worldNormal);
+  payload.normal = worldNormal;//setFaceNormal(-gl_WorldRayDirectionEXT, worldNormal);
   payload.Le = material.emissive.xyz;
   payload.emissive = dot(payload.Le, payload.Le) > EPS;
   payload.intersected = true;

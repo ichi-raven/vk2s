@@ -131,7 +131,9 @@ vec3 sampleLiMIS(const uint sampleIndex)
   // add emissive contribution only primaly ray
   L += beta * payload.Le;
 
-  while (payload.intersected)
+  //return payload.bsdf.wi;
+
+  while (payload.intersected && !payload.emissive)
   {
     // russian roulette
     {
@@ -154,8 +156,8 @@ vec3 sampleLiMIS(const uint sampleIndex)
 
       if (!shadowed)
       {
-        float pathpdf = ls.G * pdfPBRTBSDF(payload.mat, -wo, ls.to, payload.normal);
-        float cos1 = abs(dot(payload.normal, normalize(ls.to)));
+        const float pathpdf = 0.0;//ls.G * pdfPBRTBSDF(payload.mat, -wo, ls.to, payload.normal);
+        const float cos1 = abs(dot(payload.normal, normalize(ls.to)));
         const vec3 f = evalPBRTBSDF(payload.mat, -wo, ls.to, payload.normal);
         const float MISWeight = ls.pdf / (ls.pdf + pathpdf);
         L += MISWeight * beta * f * ls.G * cos1 * ls.L / ls.pdf;
@@ -168,13 +170,13 @@ vec3 sampleLiMIS(const uint sampleIndex)
       traceRayEXT(TLAS, flags, 0xFF, 0, 0, 0, cache.x, tmin, cache.bsdf.wi, tmax, 0);
       if (payload.emissive && payload.intersected) // hit to emitter
       {
-        float invG;
+        float invG = 0.0;
         float lightpdf = calcLightPdf(cache.x, payload.x, invG);
         lightpdf *= invG;
-        const float cos1 = abs(dot(payload.normal, payload.bsdf.wi));
-        const float BSDFpdf = payload.bsdf.pdf; 
+        const float cos1 = abs(dot(cache.normal, cache.bsdf.wi));
+        const float BSDFpdf = cache.bsdf.pdf; 
         const float MISWeight = BSDFpdf / (lightpdf + BSDFpdf);
-        L += MISWeight * beta * cos1 * payload.Le * payload.bsdf.f / BSDFpdf;
+        //L += MISWeight * beta * cache.bsdf.f * cos1 * payload.Le / BSDFpdf;
       }
       uint prngStateTmp = payload.prngState;
       payload = cache;
