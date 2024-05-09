@@ -156,11 +156,11 @@ vec3 sampleLiMIS(const uint sampleIndex)
 
       if (!shadowed)
       {
-        const float pathpdf = 0.0;//ls.G * pdfPBRTBSDF(payload.mat, -wo, ls.to, payload.normal);
-        const float cos1 = abs(dot(payload.normal, normalize(ls.to)));
-        const vec3 f = evalPBRTBSDF(payload.mat, -wo, ls.to, payload.normal);
+        const float pathpdf = ls.G * pdfPBRTBSDF(payload.mat, -wo, normalize(ls.to), payload.normal);
+        const float cosine = abs(dot(payload.normal, normalize(ls.to)));
+        const vec3 f = evalPBRTBSDF(payload.mat, -wo, normalize(ls.to), payload.normal);
         const float MISWeight = ls.pdf / (ls.pdf + pathpdf);
-        L += MISWeight * beta * f * ls.G * cos1 * ls.L / ls.pdf;
+        L += MISWeight * beta * f * ls.G * cosine * ls.L / max(EPS, ls.pdf);
       }
     }
     
@@ -173,10 +173,10 @@ vec3 sampleLiMIS(const uint sampleIndex)
         float invG = 0.0;
         float lightpdf = calcLightPdf(cache.x, payload.x, invG);
         lightpdf *= invG;
-        const float cos1 = abs(dot(cache.normal, cache.bsdf.wi));
+        const float cosine = abs(dot(cache.normal, cache.bsdf.wi));
         const float BSDFpdf = cache.bsdf.pdf; 
         const float MISWeight = BSDFpdf / (lightpdf + BSDFpdf);
-        //L += MISWeight * beta * cache.bsdf.f * cos1 * payload.Le / BSDFpdf;
+        L += MISWeight * beta * cache.bsdf.f * cosine * payload.Le / max(EPS, BSDFpdf);
       }
       uint prngStateTmp = payload.prngState;
       payload = cache;
@@ -209,9 +209,6 @@ vec3 sampleLiMIS(const uint sampleIndex)
 
 vec3 correct(const vec3 v)
 {
-  //const float pos_infinity = uintBitsToFloat(0x7F800000);
-  //const float neg_infinity = uintBitsToFloat(0xFF800000);
-
   // NaN
   if (v.x != v.x || v.y != v.y || v.z != v.z)
   {
@@ -225,14 +222,14 @@ vec3 correct(const vec3 v)
 }
 
 // if MIS, define this
-#define MIS
+//#define MIS
 
 void main() 
 {
   const ivec2 imageUV = ivec2(gl_LaunchIDEXT.xy);
 
   vec3 L = vec3(0.);
-  [[unroll]]
+  //[[unroll]]
   for (int i = 0; i < sceneParams.spp; ++i)
   {
 //#ifdef MIS

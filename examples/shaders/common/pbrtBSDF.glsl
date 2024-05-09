@@ -82,7 +82,7 @@ float sgn(const float v)
         return 0.0;
     }
 
-    return v >= 0. ? 1.0 : -1.0;
+    return v >= 0.0 ? 1.0 : -1.0;
 }
 
 float cosTheta(const vec3 v)
@@ -104,19 +104,19 @@ float sinTheta(const vec3 v)
 float tanTheta(const vec3 v)
 {
     float c = cosTheta(v);
-    return sqrt(1. - c * c) / c;
+    return sqrt(1.0 - c * c) / c;
 }
 
 float tan2Theta(const vec3 v)
 {
     const float c2 = cos2Theta(v);
-    return 1. / c2 - 1.;
+    return 1.0 / c2 - 1.0;
 }
 
 float cosPhi(const vec3 v)
 {
     float s = sinTheta(v);
-    return (s == 0) ? 1.0 : clamp(v.x / s, -1.0, 1.0);
+    return (s == 0.0) ? 1.0 : clamp(v.x / s, -1.0, 1.0);
 }
 
 float cos2Phi(const vec3 v)
@@ -284,7 +284,7 @@ vec3 sampleWmGGX(const vec3 w, const vec2 u, const float ax, const float ay)
     // reproject to hemisphere and transform normal to ellipsoid configuration
     const float pz = sqrt(max(0., 1. - dot(p, p)));
     const vec3 nh = toWorld(T1, T2, wh, vec3(p.x, p.y, pz));
-    return normalize(vec3(ax * nh.x, ay * nh.y, max(EPS, nh.z)));
+    return normalize(vec3(ax * nh.x, ay * nh.y, max(1e-6, nh.z)));
 }
 
 // BSDFs-----------------------------------
@@ -405,7 +405,8 @@ float pdfConductor(const vec3 wo, const vec3 wi, const float ax, const float ay)
     {
         return 0.;
     }
-    wm = faceforward(wm, wm, vec3(0., 0., 1.));
+    const vec3 nwm = normalize(wm);
+    wm = faceforward(-nwm, vec3(0., 0., 1.), nwm);
 
     return pdfGGX(wo, wm, ax, ay) / (4. * abs(dot(wo, wm)));
 }
@@ -422,7 +423,7 @@ vec3 evalDielectric(const float ax, const float ay, const float eta, const vec3 
     const float ct_o = cosTheta(wo);
     const float ct_i = cosTheta(wi);
 
-    bool refl = ct_i * ct_o > 0.;
+    const bool refl = ct_i * ct_o > 0.;
     float etap = 1.;
 
     if (!refl)
@@ -436,7 +437,8 @@ vec3 evalDielectric(const float ax, const float ay, const float eta, const vec3 
         return vec3(0.);
     }
 
-    wm = faceforward(wm, wm, vec3(0., 0., 1.));
+    const vec3 nwm = normalize(wm);
+    wm = faceforward(-nwm, vec3(0., 0., 1.), nwm);
 
     // discard backfacing microfacets
     if (dot(wm, wi) * ct_i < 0. || dot(wm, wo) * ct_o < 0.)
@@ -448,14 +450,16 @@ vec3 evalDielectric(const float ax, const float ay, const float eta, const vec3 
 
     if (refl)
     {
-        return vec3(D(wm, ax, ay) * F * G(wo, wi, ax, ay) / (4. * ct_i * ct_o));
+        return vec3(D(wm, ax, ay) * F * G(wo, wi, ax, ay) / abs(4. * ct_i * ct_o));
     }
     else
     {
         const float denom = sqr(dot(wi, wm) + dot(wo, wm) / etap) * ct_i * ct_o;
-        const float dwm_dwi = abs(dot(wi, wm)) / denom;
+        const float ft = D(wm, ax, ay) * (1. - F) * G(wo, wi, ax, ay) * abs(dot(wi, wm)) * abs(dot(wo, wm) / denom);
+        //const float dwm_dwi = abs(dot(wi, wm)) / denom;
 
-        return vec3((1. - F) * D(wm, ax, ay) * G(wo, wi, ax, ay)* abs(dot(wi, wm)) * abs(dot(wo, wm)) / denom);
+        // if radiance
+        return vec3(ft / sqr(etap));
     }
 }
 
@@ -581,7 +585,8 @@ float pdfDielectric(const vec3 wo, const vec3 wi, const float ax, const float ay
         return 0.;
     }
 
-    wm = faceforward(wm, wm, vec3(0., 0., 1.));
+    const vec3 nwm = normalize(wm);
+    wm = faceforward(-nwm, vec3(0., 0., 1.), nwm);
 
     // discard backfacing microfacets
     if (dot(wm, wi) * ct_i < 0. || dot(wm, wo) * ct_o < 0.)
