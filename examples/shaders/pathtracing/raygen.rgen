@@ -131,8 +131,6 @@ vec3 sampleLiMIS(const uint sampleIndex)
   // add emissive contribution only primaly ray
   L += beta * payload.Le;
 
-  //return payload.bsdf.wi;
-
   while (payload.intersected && !payload.emissive)
   {
     // russian roulette
@@ -146,6 +144,7 @@ vec3 sampleLiMIS(const uint sampleIndex)
     }
 
     // NEE
+    if (!isSpecular(payload.bsdf.flags))
     {
       // account emissive surface if prev surface was specular
       LightSample ls = sampleLight(payload.x, payload.prngState);
@@ -171,7 +170,7 @@ vec3 sampleLiMIS(const uint sampleIndex)
       if (payload.emissive && payload.intersected) // hit to emitter
       {
         float invG = 0.0;
-        float lightpdf = calcLightPdf(cache.x, payload.x, invG);
+        float lightpdf = isSpecular(cache.bsdf.flags) ? 0. : calcLightPdf(cache.x, payload.x, invG);
         lightpdf *= invG;
         const float cosine = abs(dot(cache.normal, cache.bsdf.wi));
         const float BSDFpdf = cache.bsdf.pdf; 
@@ -222,7 +221,7 @@ vec3 correct(const vec3 v)
 }
 
 // if MIS, define this
-//#define MIS
+#define MIS
 
 void main() 
 {
@@ -232,18 +231,18 @@ void main()
   //[[unroll]]
   for (int i = 0; i < sceneParams.spp; ++i)
   {
-//#ifdef MIS
-      if (imageUV.x <= imageUV.y)
+#ifdef MIS
+      if (true || imageUV.x <= imageUV.y)
       {
         L += correct(sampleLiMIS(i + sceneParams.untilSPP));
-        //L += correct(sampleLi(i + sceneParams.untilSPP));
       }
-//#else
       else
       {
         L += correct(sampleLi(i + sceneParams.untilSPP));
       }
-//#endif
+#else
+      L += correct(sampleLi(i + sceneParams.untilSPP));
+#endif
   }
 
   L /= float(sceneParams.spp);

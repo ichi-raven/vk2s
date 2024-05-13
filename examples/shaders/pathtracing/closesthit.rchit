@@ -68,7 +68,7 @@ void main()
   }
 
   // test
-  material.alpha = 0.2;
+  //material.alpha = 0.2;
 
   const vec3 worldPos    = (gl_ObjectToWorldEXT * vec4(vtx.position, 1.0)).xyz;
   const vec3 worldNormal = normalize(mat3(gl_ObjectToWorldEXT) * vtx.normal);
