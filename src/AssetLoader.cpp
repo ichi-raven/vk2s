@@ -238,6 +238,11 @@ namespace vk2s
         if (mLoaded) unload();
     }
 
+    const std::string& AssetLoader::getPath() const
+    {
+        return mPath;
+    }
+
     void AssetLoader::unload()
     {
         for (auto& e : mTexturesLoaded)

@@ -226,20 +226,22 @@ vec3 correct(const vec3 v)
 void main() 
 {
   const ivec2 imageUV = ivec2(gl_LaunchIDEXT.xy);
+  const vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy);
+  const vec2 screenPos = pixelCenter / vec2(gl_LaunchSizeEXT.xy) - vec2(0.5);
 
-  vec3 L = vec3(0.);
+  vec3 L = vec3(0.0);
   //[[unroll]]
   for (int i = 0; i < sceneParams.spp; ++i)
   {
 #ifdef MIS
-      if (true || imageUV.x <= imageUV.y)
-      {
+      //if (screenPos.x <= screenPos.y)
+      //{
         L += correct(sampleLiMIS(i + sceneParams.untilSPP));
-      }
-      else
-      {
-        L += correct(sampleLi(i + sceneParams.untilSPP));
-      }
+      //}
+      //else
+      //{
+        //L += correct(sampleLi(i + sceneParams.untilSPP));
+      //}
 #else
       L += correct(sampleLi(i + sceneParams.untilSPP));
 #endif

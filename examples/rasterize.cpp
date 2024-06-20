@@ -53,36 +53,8 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
         Handle<vk2s::Buffer> materialBuffer;
         std::vector<Handle<vk2s::Image>> materialTextures;
         auto sampler = device.create<vk2s::Sampler>(vk::SamplerCreateInfo());
-        vk2s::AssetLoader loader;
 
-        load("../../examples/resources/model/CornellBox/CornellBox-Sphere.obj", device, loader, meshInstances, materialBuffer, materialTextures);
-
-        // create envmap
-        Handle<vk2s::Image> envmap;
-        Handle<vk2s::Sampler> envmapSampler;
-        {
-            const auto& hostTexture = loader.loadTexture("../../examples/resources/envmap1.png", "envmap");
-            const auto width        = hostTexture.width;
-            const auto height       = hostTexture.height;
-            const auto size         = width * height * static_cast<uint32_t>(STBI_rgb_alpha);
-
-            vk::ImageCreateInfo ci;
-            ci.arrayLayers   = 1;
-            ci.extent        = vk::Extent3D(width, height, 1);
-            ci.format        = vk::Format::eR8G8B8A8Srgb;
-            ci.imageType     = vk::ImageType::e2D;
-            ci.mipLevels     = 1;
-            ci.usage         = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
-            ci.initialLayout = vk::ImageLayout::eUndefined;
-
-            envmap = device.create<vk2s::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
-
-            envmap->write(hostTexture.pData, size);
-
-            vk::SamplerCreateInfo sci;
-            sci.magFilter = vk::Filter::eLinear;
-            envmapSampler = device.create<vk2s::Sampler>(sci);
-        }
+        load("../../examples/resources/model/CornellBox/CornellBox-Sphere.obj", device, meshInstances, materialBuffer, materialTextures);
 
         // craete shaders
         auto vertexShader   = device.create<vk2s::Shader>("../../examples/shaders/rasterize/vertex.vert", "main");
@@ -90,8 +62,8 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
 
         std::vector bindings0 = { vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBufferDynamic, 1, vk::ShaderStageFlagBits::eAll),
                                   vk::DescriptorSetLayoutBinding(1, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eAll),
-                                  vk::DescriptorSetLayoutBinding(2, vk::DescriptorType::eCombinedImageSampler, std::max(1ull, materialTextures.size()), vk::ShaderStageFlagBits::eAll),
-                                  vk::DescriptorSetLayoutBinding(3, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eAll) };
+                                  vk::DescriptorSetLayoutBinding(2, vk::DescriptorType::eCombinedImageSampler, std::max(1ull, materialTextures.size()), vk::ShaderStageFlagBits::eAll) 
+        };
 
         std::vector bindings1 = {
             vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAll),
@@ -101,7 +73,7 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
         UniqueHandle<vk2s::BindLayout> materialBindLayout = device.create<vk2s::BindLayout>(bindings1);
         std::array<Handle<vk2s::BindLayout>, 2> allLayouts = { sceneBindLayout, materialBindLayout };
 
-        vk::VertexInputBindingDescription inputBinding(0, sizeof(vk2s::AssetLoader::Vertex));
+        vk::VertexInputBindingDescription inputBinding(0, sizeof(vk2s::Vertex));
         vk::Viewport viewport(0.0f, 0.0f, static_cast<float>(windowWidth), static_cast<float>(windowHeight), 0.0f, 1.0f);
         vk::Rect2D scissor({ 0, 0 }, window->getVkSwapchainExtent());
         vk::PipelineColorBlendAttachmentState colorBlendAttachment(VK_FALSE);
@@ -151,15 +123,8 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
 
         sceneBindGroup->bind(0, vk::DescriptorType::eUniformBufferDynamic, sceneBuffer.get());
         sceneBindGroup->bind(1, vk::DescriptorType::eStorageBuffer, materialBuffer.get());
-        if (materialTextures.empty())
-        {
-            sceneBindGroup->bind(2, vk::DescriptorType::eCombinedImageSampler, envmap, sampler);  // dummy
-        }
-        else
-        {
-            sceneBindGroup->bind(2, vk::DescriptorType::eCombinedImageSampler, materialTextures, sampler);
-        }
-        sceneBindGroup->bind(3, vk::DescriptorType::eCombinedImageSampler, envmap, envmapSampler);
+        sceneBindGroup->bind(2, vk::DescriptorType::eCombinedImageSampler, materialTextures, sampler);
+        
 
         std::vector<Handle<vk2s::BindGroup>> materialBindGroups;
         materialBindGroups.resize(instanceBuffers.size());

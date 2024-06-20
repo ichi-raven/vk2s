@@ -43,9 +43,8 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
         Handle<vk2s::Buffer> materialBuffer;
         std::vector<Handle<vk2s::Image>> materialTextures;
         auto sampler = device.create<vk2s::Sampler>(vk::SamplerCreateInfo());
-        vk2s::AssetLoader loader;
 
-        load("../../examples/resources/model/CornellBox/CornellBox-Sphere.obj", device, loader, meshInstances, materialBuffer, materialTextures);
+        load("../../examples/resources/model/CornellBox/CornellBox-Sphere.obj", device, meshInstances, materialBuffer, materialTextures);
         //load("../../examples/resources/model/fireplace-room/fireplace_room.obj", device, loader, meshInstances, materialBuffer, materialTextures);
 
         // create scene UB
@@ -119,37 +118,10 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
             cmd->execute();
         }
 
-        // create envmap
-        Handle<vk2s::Image> envmap;
-        Handle<vk2s::Sampler> envmapSampler;
-        {
-            const auto& hostTexture = loader.loadTexture("../../examples/resources/envmap1.png", "envmap");
-            const auto width        = hostTexture.width;
-            const auto height       = hostTexture.height;
-            const auto size         = width * height * static_cast<uint32_t>(STBI_rgb_alpha);
-
-            vk::ImageCreateInfo ci;
-            ci.arrayLayers   = 1;
-            ci.extent        = vk::Extent3D(width, height, 1);
-            ci.format        = vk::Format::eR8G8B8A8Srgb;
-            ci.imageType     = vk::ImageType::e2D;
-            ci.mipLevels     = 1;
-            ci.usage         = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
-            ci.initialLayout = vk::ImageLayout::eUndefined;
-
-            envmap = device.create<vk2s::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
-
-            envmap->write(hostTexture.pData, size);
-
-            vk::SamplerCreateInfo sci;
-            sci.magFilter = vk::Filter::eLinear;
-            envmapSampler = device.create<vk2s::Sampler>(sci);
-        }
-
         // create BLAS
         for (auto& mesh : meshInstances)
         {
-            mesh.blas = device.create<vk2s::AccelerationStructure>(mesh.hostMesh.vertices.size(), sizeof(vk2s::AssetLoader::Vertex), mesh.vertexBuffer.get(), mesh.hostMesh.indices.size() / 3, mesh.indexBuffer.get());
+            mesh.blas = device.create<vk2s::AccelerationStructure>(mesh.hostMesh.vertices.size(), sizeof(vk2s::Vertex), mesh.vertexBuffer.get(), mesh.hostMesh.indices.size() / 3, mesh.indexBuffer.get());
         }
 
         // deploy instances
@@ -198,10 +170,8 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
             vk::DescriptorSetLayoutBinding(4, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eAll),
             // 5 : material textures
             vk::DescriptorSetLayoutBinding(5, vk::DescriptorType::eCombinedImageSampler, std::max(1ull, materialTextures.size()), vk::ShaderStageFlagBits::eAll),
-            // 6 : envmap texture
-            vk::DescriptorSetLayoutBinding(6, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eAll),
-            // 7: sampling pool image
-            vk::DescriptorSetLayoutBinding(7, vk::DescriptorType::eStorageImage, 1, vk::ShaderStageFlagBits::eAll),
+            // 6: sampling pool image
+            vk::DescriptorSetLayoutBinding(6, vk::DescriptorType::eStorageImage, 1, vk::ShaderStageFlagBits::eAll),
         };
 
         auto bindLayout = device.create<vk2s::BindLayout>(bindings);
@@ -254,16 +224,11 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
         bindGroup->bind(2, vk::DescriptorType::eUniformBufferDynamic, sceneBuffer.get());
         bindGroup->bind(3, vk::DescriptorType::eStorageBuffer, instanceMapBuffer.get());
         bindGroup->bind(4, vk::DescriptorType::eStorageBuffer, materialBuffer.get());
-        if (materialTextures.empty())
-        {
-            bindGroup->bind(5, vk::DescriptorType::eCombinedImageSampler, envmap, sampler);  // dummy
-        }
-        else
+        if (!materialTextures.empty())
         {
             bindGroup->bind(5, vk::DescriptorType::eCombinedImageSampler, materialTextures, sampler);
         }
-        bindGroup->bind(6, vk::DescriptorType::eCombinedImageSampler, envmap, envmapSampler);
-        bindGroup->bind(7, vk::DescriptorType::eStorageImage, poolImage);
+        bindGroup->bind(6, vk::DescriptorType::eStorageImage, poolImage);
 
         auto computeBindGroup = device.create<vk2s::BindGroup>(computeBindLayout.get());
         computeBindGroup->bind(0, vk::DescriptorType::eStorageImage, resultImage);
@@ -517,7 +482,7 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
     }
     catch (std::exception& e)
     {
-        std::cerr << e.what() << "\n";
+        std::cerr << "CAUGHT EXCEPTION : " << e.what() << "\n";
     }
 
     return;

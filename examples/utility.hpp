@@ -1,6 +1,6 @@
 
 #include <vk2s/Device.hpp>
-#include <vk2s/AssetLoader.hpp>
+#include <vk2s/Scene.hpp>
 #include <vk2s/Camera.hpp>
 
 #include <stb_image.h>
@@ -37,19 +37,24 @@ struct InstanceMappingUB  // std430
 
 struct MeshInstance
 {
-    vk2s::AssetLoader::Mesh hostMesh;
+    vk2s::Mesh hostMesh;
     Handle<vk2s::Buffer> vertexBuffer;
     Handle<vk2s::Buffer> indexBuffer;
 
     Handle<vk2s::AccelerationStructure> blas;
 };
 
-inline void load(std::string_view path, vk2s::Device& device, vk2s::AssetLoader& loader, std::vector<MeshInstance>& meshInstances, Handle<vk2s::Buffer>& materialUB,
+inline void load(std::string_view path, vk2s::Device& device, std::vector<MeshInstance>& meshInstances, Handle<vk2s::Buffer>& materialUB,
           std::vector<Handle<vk2s::Image>>& materialTextures)
 {
-    std::vector<vk2s::AssetLoader::Mesh> hostMeshes;
-    std::vector<vk2s::AssetLoader::Material> hostMaterials;
-    loader.load(path.data(), hostMeshes, hostMaterials);
+    //std::vector<vk2s::Mesh> hostMeshes;
+    //std::vector<vk2s::Material> hostMaterials;
+    //loader.load(path.data(), hostMeshes, hostMaterials);
+
+    vk2s::Scene scene(path);
+
+    const std::vector<vk2s::Mesh>& hostMeshes = scene.getMeshes();
+    const std::vector<vk2s::Material>& hostMaterials = scene.getMaterials();
 
     //hostMeshes.erase(hostMeshes.begin());
     //hostMeshes.erase(hostMeshes.begin());
@@ -64,7 +69,7 @@ inline void load(std::string_view path, vk2s::Device& device, vk2s::AssetLoader&
         const auto& hostMesh = meshInstances[i].hostMesh;
 
         {  // vertex buffer
-            const auto vbSize  = hostMesh.vertices.size() * sizeof(vk2s::AssetLoader::Vertex);
+            const auto vbSize  = hostMesh.vertices.size() * sizeof(vk2s::Vertex);
             const auto vbUsage = vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eStorageBuffer;
             vk::BufferCreateInfo ci({}, vbSize, vbUsage);
             vk::MemoryPropertyFlags fb = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
@@ -108,7 +113,7 @@ inline void load(std::string_view path, vk2s::Device& device, vk2s::AssetLoader&
             mat.texIndex = materialTextures.size();
 
             auto& texture           = materialTextures.emplace_back();
-            const auto& hostTexture = std::get<vk2s::AssetLoader::Texture>(hostMat.diffuse);
+            const auto& hostTexture = std::get<vk2s::Texture>(hostMat.diffuse);
             const auto width        = hostTexture.width;
             const auto height       = hostTexture.height;
             const auto size         = width * height * static_cast<uint32_t>(STBI_rgb_alpha);
@@ -161,6 +166,30 @@ inline void load(std::string_view path, vk2s::Device& device, vk2s::AssetLoader&
         materialUB = device.create<vk2s::Buffer>(ci, fb);
         materialUB->write(materialData.data(), ubSize);
     }
+
+    // if textures are empty, add dummy texture
+    if (materialTextures.empty())
+    {
+        auto& texture           = materialTextures.emplace_back();
+        const auto width        = 1;
+        const auto height       = 1;
+        const auto size         = width * height * static_cast<uint32_t>(STBI_rgb_alpha);
+
+        vk::ImageCreateInfo ci;
+        ci.arrayLayers   = 1;
+        ci.extent        = vk::Extent3D(width, height, 1);
+        ci.format        = vk::Format::eR8G8B8A8Srgb;
+        ci.imageType     = vk::ImageType::e2D;
+        ci.mipLevels     = 1;
+        ci.usage         = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
+        ci.initialLayout = vk::ImageLayout::eUndefined;
+
+        texture = device.create<vk2s::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
+
+        uint8_t dummyData[4] = { 255, 0, 255, 255 };
+        texture->write(dummyData, size);
+    }
+    
 }
 
 inline vk::TransformMatrixKHR convert(const glm::mat4x3& m)

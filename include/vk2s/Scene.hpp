@@ -1,12 +1,12 @@
 /*****************************************************************/ /**
- * @file   AssetLoader.hpp
- * @brief  asset loader class
+ * @file   Scene.hpp
+ * @brief  header file of scene class 
  * 
  * @author ichi-raven
- * @date   October 2023
+ * @date   June 2024
  *********************************************************************/
-#ifndef VK2S_ASSETLOADER_HPP_
-#define VK2S_ASSETLOADER_HPP_
+#ifndef VK2S_SCENE_HPP_
+#define VK2S_SCENE_HPP_
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -19,6 +19,7 @@
 #include <vector>
 #include <memory>
 #include <map>
+#include <unordered_map>
 #include <optional>
 #include <variant>
 
@@ -27,9 +28,6 @@
 namespace vk2s
 {
 
-class AssetLoader
-{
-public:
     struct VertexBoneData
     {
         VertexBoneData()
@@ -63,6 +61,7 @@ public:
         std::vector<uint32_t> indices;
         std::string nodeName;
         std::string meshName;
+        std::uint32_t materialIdx;
     };
 
     struct Texture
@@ -128,41 +127,39 @@ public:
         glm::mat4 mGlobalInverse;
     };
 
-    AssetLoader();
+    class Scene
+    {
+    public:
 
-    ~AssetLoader();
+        Scene(std::string_view path);
 
-    void load(const char* path, std::vector<Mesh>& meshes_out, std::vector<Material>& materials_out);
+        const std::vector<Mesh>& getMeshes() const;
 
-    void loadSkeletal(const char* path, std::vector<Mesh>& meshes_out, std::vector<Material>& materials_out, Skeleton& skeleton_out);
+        const std::vector<Material>& getMaterials() const;
 
-    Texture loadTexture(const char* path, const char* type);
+        const std::vector<Texture>& getTextures() const;
 
-    const std::string& getPath() const;
+    private:
 
-private:
-    void unload();
+        void processNode(const aiScene* pScene, const aiNode* node);
 
-    void processNode(const aiNode* node, std::vector<Mesh>& meshes_out, std::vector<Material>& materials_out);
+        bool processMesh(const aiScene* pScene, const aiNode* pNode, const aiMesh* pMesh);
 
-    std::pair<Mesh, Material> processMesh(const aiNode* node, const aiMesh* mesh);
+        std::vector<Texture> loadMaterialTextures(const aiScene* pScene, const aiMaterial* mat, const aiTextureType type, std::string_view typeName);
 
-    std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName);
+    private:
 
-    void loadBones(const aiNode* node, const aiMesh* mesh, std::vector<VertexBoneData>& vbdata_out);
+        std::string mDirectory;
+        std::string mPath;
 
-    bool mLoaded;
-    bool mSkeletal;
-    std::string mDirectory;
-    std::string mPath;
+        std::vector<Mesh> mMeshes;
+        std::vector<Material> mMaterials;
+        std::vector<Texture> mTextures;
 
-    uint32_t mBoneNum;
-    Skeleton mSkeleton;
+        std::unordered_map<std::string, uint32_t> mTextureMap;
 
-    std::vector<Texture> mTexturesLoaded;
+        Assimp::Importer mImporter;
+    };
+}  // namespace vk2s
 
-    Assimp::Importer mImporter;
-    std::vector<const aiScene*> mpScenes;
-};
-}
 #endif

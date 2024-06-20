@@ -26,7 +26,7 @@ set(IMGUI_SOURCE_FILES
 add_library(${LIB_NAME}
 Compiler.cpp
 AccelerationStructure.cpp
-AssetLoader.cpp
+#AssetLoader.cpp
 Buffer.cpp
 BindGroup.cpp
 BindLayout.cpp
@@ -39,6 +39,7 @@ Image.cpp
 Pipeline.cpp
 RenderPass.cpp
 Sampler.cpp
+Scene.cpp
 Semaphore.cpp
 Shader.cpp
 ShaderBindingTable.cpp
