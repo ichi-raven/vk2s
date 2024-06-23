@@ -1,4 +1,4 @@
-/*****************************************************************//**
+/*****************************************************************/ /**
  * @file   Scene.cpp
  * @brief  source file of scene class
  * 
@@ -98,7 +98,7 @@ namespace
         assert(!"failed to find position index!");
         return 0;
     }
-}
+}  // namespace
 
 namespace vk2s
 {
@@ -244,8 +244,6 @@ namespace vk2s
         }
 
         processNode(pScene, pScene->mRootNode);
-
-        
     }
 
     const std::vector<Mesh>& Scene::getMeshes() const
@@ -353,120 +351,131 @@ namespace vk2s
             }
         }
 
-        Material& material = mMaterials.emplace_back();
+        // load and add material
+        auto [matIdx, hasEmissive] = addMaterial(pScene, pMesh);
+
+        // if the material has emissive component, treat as emitter
+        if (hasEmissive)
         {
-            std::vector<Texture> diffuseMaps;
-            if (pMesh->mMaterialIndex >= 0 && pMesh->mMaterialIndex < pScene->mNumMaterials)
+            
+        }
+
+        mMeshes.emplace_back(Mesh{ .vertices = vertices, .indices = indices, .nodeName = std::string(pNode->mName.C_Str()), .meshName = std::string(pMesh->mName.C_Str()), .materialIdx = matIdx });
+
+        return true;
+    }
+
+    std::pair<uint32_t, bool> Scene::addMaterial(const aiScene* pScene, const aiMesh* pMesh)
+    {
+        Material& material = mMaterials.emplace_back();
+        bool hasEmissive   = false;
+
+        std::vector<Texture> diffuseMaps;
+        if (pMesh->mMaterialIndex >= 0 && pMesh->mMaterialIndex < pScene->mNumMaterials)
+        {
+            aiMaterial* pMat = pScene->mMaterials[pMesh->mMaterialIndex];
+            material.name    = pMat->GetName().C_Str();
+
+            diffuseMaps = loadMaterialTextures(pScene, pMat, aiTextureType_DIFFUSE, Texture::TextureType::eAlbedo);
+
+            if (!diffuseMaps.empty())
             {
-                aiMaterial* pMat = pScene->mMaterials[pMesh->mMaterialIndex];
-                material.name    = pMat->GetName().C_Str();
+                material.diffuse = diffuseMaps.front();
+            }
 
-                diffuseMaps = loadMaterialTextures(pScene, pMat, aiTextureType_DIFFUSE, "texture_diffuse");
+            //std::cerr << "material index " << pMesh->mMaterialIndex << " : " << pMat->GetName().C_Str() << "\n";
+            //std::cerr << "material num " << pMat->mNumProperties << "\n";
 
-                if (!diffuseMaps.empty())
+            {
+                aiColor4D color;
+                if (AI_SUCCESS == aiGetMaterialColor(pMat, AI_MATKEY_COLOR_DIFFUSE, &color) && diffuseMaps.empty())
                 {
-                    material.diffuse = diffuseMaps.front();
+                    //std::cerr << "\tfound diffuse : " << showColor(color) << "\n";
+                    material.diffuse = convertVec4(color);
+                }
+                else
+                {
+                    //std::cerr << "\tdiffuse not found...\n";
                 }
 
-                //std::cerr << "material index " << pMesh->mMaterialIndex << " : " << pMat->GetName().C_Str() << "\n";
-                //std::cerr << "material num " << pMat->mNumProperties << "\n";
-
+                if (AI_SUCCESS == aiGetMaterialColor(pMat, AI_MATKEY_COLOR_SPECULAR, &color))
                 {
-                    aiColor4D color;
-                    if (AI_SUCCESS == aiGetMaterialColor(pMat, AI_MATKEY_COLOR_DIFFUSE, &color) && diffuseMaps.empty())
-                    {
-                        //std::cerr << "\tfound diffuse : " << showColor(color) << "\n";
-                        material.diffuse = convertVec4(color);
-                    }
-                    else
-                    {
-                        //std::cerr << "\tdiffuse not found...\n";
-                    }
+                    //std::cerr << "\tfound specular : " << showColor(color) << "\n";
+                    material.specular = convertVec4(color);
+                }
+                else
+                {
+                    //std::cerr << "\tspecular not found...\n";
+                }
 
-                    if (AI_SUCCESS == aiGetMaterialColor(pMat, AI_MATKEY_COLOR_SPECULAR, &color))
-                    {
-                        //std::cerr << "\tfound specular : " << showColor(color) << "\n";
-                        material.specular = convertVec4(color);
-                    }
-                    else
-                    {
-                        //std::cerr << "\tspecular not found...\n";
-                    }
+                if (AI_SUCCESS == aiGetMaterialColor(pMat, AI_MATKEY_COLOR_EMISSIVE, &color))
+                {
+                    //std::cerr << "\tfound emissive : " << showColor(color) << "\n";
+                    material.emissive = convertVec4(color);
+                    hasEmissive       = true;
+                }
+                else
+                {
+                    //std::cerr << "\temissive not found...\n";
+                }
 
-                    if (AI_SUCCESS == aiGetMaterialColor(pMat, AI_MATKEY_COLOR_EMISSIVE, &color))
-                    {
-                        //std::cerr << "\tfound emissive : " << showColor(color) << "\n";
-                        material.emissive = convertVec4(color);
-                    }
-                    else
-                    {
-                        //std::cerr << "\temissive not found...\n";
-                    }
+                if (AI_SUCCESS == aiGetMaterialColor(pMat, AI_MATKEY_COLOR_TRANSPARENT, &color))
+                {
+                    //std::cerr << "\tfound transparent : " << showColor(color) << "\n";
+                    material.transparent = convertVec4(color);
+                }
+                else
+                {
+                    //std::cerr << "\transparent not found...\n";
+                }
 
-                    if (AI_SUCCESS == aiGetMaterialColor(pMat, AI_MATKEY_COLOR_TRANSPARENT, &color))
-                    {
-                        //std::cerr << "\tfound transparent : " << showColor(color) << "\n";
-                        material.transparent = convertVec4(color);
-                    }
-                    else
-                    {
-                        //std::cerr << "\transparent not found...\n";
-                    }
+                float Ns = 0.f;
+                int iNs  = 0;
 
-                    float Ns = 0.f;
-                    int iNs  = 0;
+                if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_SHININESS, &Ns))
+                {
+                    //std::cerr << "\tfloat shininess factor : " << Ns << "\n";
+                    material.shininess = Ns;
+                }
+                else if (AI_SUCCESS == aiGetMaterialInteger(pMat, AI_MATKEY_SHININESS, &iNs))
+                {
+                    //std::cerr << "\tint shininess factor : " << iNs << "\n";
+                    material.shininess = static_cast<float>(iNs);
+                }
+                else
+                {
+                    //std::cerr << "\tshininess not found...\n";
+                }
 
-                    if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_SHININESS, &Ns))
-                    {
-                        //std::cerr << "\tfloat shininess factor : " << Ns << "\n";
-                        material.shininess = Ns;
-                    }
-                    else if (AI_SUCCESS == aiGetMaterialInteger(pMat, AI_MATKEY_SHININESS, &iNs))
-                    {
-                        //std::cerr << "\tint shininess factor : " << iNs << "\n";
-                        material.shininess = static_cast<float>(iNs);
-                    }
-                    else
-                    {
-                        //std::cerr << "\tshininess not found...\n";
-                    }
+                float reflect = 0.f;
+                if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_REFLECTIVITY, &reflect))
+                {
+                    //std::cerr << "\treflectivity : " << reflect << "\n";
+                }
+                else
+                {
+                    //std::cerr << "\treflectivity not found...\n";
+                }
 
-                    float reflect = 0.f;
-                    if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_REFLECTIVITY, &reflect))
-                    {
-                        //std::cerr << "\treflectivity : " << reflect << "\n";
-                    }
-                    else
-                    {
-                        //std::cerr << "\treflectivity not found...\n";
-                    }
-
-                    float IOR = 0.f;
-                    if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_REFRACTI, &IOR))
-                    {
-                        //std::cerr << "\tIOR : " << IOR << "\n";
-                        material.IOR = IOR;
-                    }
-                    else
-                    {
-                        //std::cerr << "\tIOR not found...\n";
-                    }
+                float IOR = 0.f;
+                if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_REFRACTI, &IOR))
+                {
+                    //std::cerr << "\tIOR : " << IOR << "\n";
+                    material.IOR = IOR;
+                }
+                else
+                {
+                    //std::cerr << "\tIOR not found...\n";
                 }
             }
         }
 
-        mMeshes.emplace_back(Mesh{
-            .vertices = vertices,
-            .indices  = indices,
-            .nodeName = std::string(pNode->mName.C_Str()),
-            .meshName = std::string(pMesh->mName.C_Str()),
-            .materialIdx = static_cast<uint32_t>(mMaterials.size() - 1)
-        });
-        
-        return true;
+        uint32_t matIdx = static_cast<uint32_t>(mMaterials.size() - 1);
+
+        return { matIdx, hasEmissive };
     }
 
-    Texture loadTexture(const char* path, const char* type)
+    Texture loadTexture(const char* path, const Texture::TextureType type)
     {
         Texture texture;
         if (!path)
@@ -477,14 +486,7 @@ namespace vk2s
 
         texture.path = std::string(path);
 
-        if (type)
-        {
-            texture.type = std::string(type);
-        }
-        else
-        {
-            texture.type = texture.path.substr(texture.path.find_last_of("/\\"), texture.path.size());
-        }
+        texture.type = type;
 
         texture.pData = reinterpret_cast<std::byte*>(stbi_load(path, &texture.width, &texture.height, &texture.bpp, STBI_rgb_alpha));
 
@@ -497,13 +499,13 @@ namespace vk2s
         return texture;
     }
 
-    std::vector<Texture> Scene::loadMaterialTextures(const aiScene* pScene, const aiMaterial* mat, const aiTextureType type, std::string_view typeName)
+    std::vector<Texture> Scene::loadMaterialTextures(const aiScene* pScene, const aiMaterial* mat, const aiTextureType aiType, const Texture::TextureType type)
     {
         std::vector<Texture> textures;
-        for (uint32_t i = 0; i < mat->GetTextureCount(type); ++i)
+        for (uint32_t i = 0; i < mat->GetTextureCount(aiType); ++i)
         {
             aiString str;
-            mat->GetTexture(type, i, &str);
+            mat->GetTexture(aiType, i, &str);
             bool skip = false;
             for (uint32_t j = 0; j < mTextures.size(); ++j)
             {
@@ -533,9 +535,9 @@ namespace vk2s
                     std::string filename = std::regex_replace(str.C_Str(), std::regex("\\\\"), "/");
                     filename             = mDirectory + '/' + filename;
 
-                    texture = loadTexture(filename.c_str(), typeName.data());
+                    texture = loadTexture(filename.c_str(), type);
                 }
-                texture.type = typeName;
+                texture.type = type;
                 texture.path = str.C_Str();
                 textures.push_back(texture);
                 mTextures.emplace_back(texture);  // Store it as texture loaded for entire model, to ensure we won't unnecesery load duplicate textures
@@ -545,5 +547,4 @@ namespace vk2s
         return textures;
     }
 
-}
-
+}  // namespace vk2s

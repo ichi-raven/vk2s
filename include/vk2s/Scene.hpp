@@ -61,24 +61,64 @@ namespace vk2s
         std::vector<uint32_t> indices;
         std::string nodeName;
         std::string meshName;
-        std::uint32_t materialIdx;
+        uint32_t materialIdx;
+    };
+
+    enum class EmitterType
+    {
+        eTri,
+        ePoint,
+        eInfinite
+    };
+
+    // std430
+    struct TriEmitter
+    {
+        glm::vec4 p[3];
+        glm::vec3 emissive;
+        float area;
+    };
+
+    // std430
+    struct PointEmitter
+    {
+        glm::vec4 p;
+        glm::vec3 emissive;
+        float padding;
+    };
+
+    // std430
+    struct InfiniteEmitter
+    {
+        uint32_t envmapIdx;
+        uint32_t pdfIdx;
+        uint32_t padding[2];
     };
 
     struct Texture
     {
+        enum class TextureType
+        {
+            eAlbedo,
+            eMetalness,
+            eRoughness,
+            eNormal,
+            eEnvmap
+        };
+
         std::byte* pData = nullptr;
         bool embedded    = false;
         int width        = 0;
         int height       = 0;
         int bpp          = 0;
         std::string path;
-        std::string type;
+        TextureType type;
     };
 
     struct Material
     {
         std::string name;
-        std::variant<glm::vec4, Texture> diffuse;
+        std::variant<glm::vec4, uint32_t> diffuse;
         std::optional<glm::vec4> specular;
         std::optional<glm::vec4> emissive;
         std::optional<glm::vec4> transparent;
@@ -139,13 +179,19 @@ namespace vk2s
 
         const std::vector<Texture>& getTextures() const;
 
+        const std::vector<TriEmitter>& getTriEmitters() const;
+
     private:
 
         void processNode(const aiScene* pScene, const aiNode* node);
 
         bool processMesh(const aiScene* pScene, const aiNode* pNode, const aiMesh* pMesh);
 
-        std::vector<Texture> loadMaterialTextures(const aiScene* pScene, const aiMaterial* mat, const aiTextureType type, std::string_view typeName);
+        std::pair<uint32_t, bool> addMaterial(const aiScene* pScene, const aiMesh* pMesh);
+
+        void addEmitter();
+
+        std::vector<Texture> loadMaterialTextures(const aiScene* pScene, const aiMaterial* mat, const aiTextureType aiType, const Texture::TextureType type);
 
     private:
 
@@ -155,6 +201,10 @@ namespace vk2s
         std::vector<Mesh> mMeshes;
         std::vector<Material> mMaterials;
         std::vector<Texture> mTextures;
+
+        std::vector<TriEmitter> mTriEmitters;
+        std::vector<PointEmitter> mPointEmitters;
+        InfiniteEmitter mInfiniteEmitter;
 
         std::unordered_map<std::string, uint32_t> mTextureMap;
 
