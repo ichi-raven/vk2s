@@ -20,14 +20,18 @@ struct InstanceMapping
 struct Material
 {
   uint32_t matType;
-  vec4 albedo;
-  vec3 eta;
-  vec3 k;
-  vec2 roughness;
-  vec4 emissive;
-  int32_t albedoTex;
   int32_t roughnessTex;
+  vec2 roughness;
+
+  vec4 albedo;
+
+  vec3 eta;
+  int32_t albedoTex;
+
+  vec3 k;
   int32_t normalTex;
+
+  vec4 emissive;
 };
 
 struct DisneyMaterial
@@ -80,7 +84,7 @@ struct BSDFSample
   vec3 f;
   vec3 wi;
   float pdf;
-  float eta;
+  vec3 eta;
   uint flags;
 };
 

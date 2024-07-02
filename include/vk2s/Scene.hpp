@@ -118,22 +118,26 @@ namespace vk2s
     // std430
     struct Material
     {
-        enum class Type : uint32_t
+        enum Type : uint32_t
         {
             eDiffuse = 0,
             eConductor = 1,
             eDielectric = 2,
         };
 
-        Type type;
-        glm::vec4 albedo;
-        glm::vec3 eta; // Re(IOR)
-        glm::vec3 k; // Im(IOR)
+        uint32_t type;
+        int32_t rougnnessTex;
         glm::vec2 roughness;
+
+        glm::vec4 albedo;
+
+        glm::vec3 eta; // Re(IOR)
+        int32_t albedoTex;
+
+        glm::vec3 k; // Im(IOR)
+        int32_t normalMapTex;
+
         glm::vec4 emissive; // cause problem with NEE
-        uint32_t albedoTex;
-        uint32_t rougnnessTex;
-        uint32_t normalMapTex;
     };
 
     struct Bone

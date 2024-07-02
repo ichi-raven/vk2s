@@ -326,7 +326,7 @@ float pdfDiffuse(const vec3 wo, const vec3 wi)
 
 // Conductor---
 
-vec3 evalConductor(const vec3 albedo, const float ax, const float ay, const float eta, const float k, const vec3 wo, const vec3 wi)
+vec3 evalConductor(const vec3 albedo, const float ax, const float ay, const vec3 eta, const vec3 k, const vec3 wo, const vec3 wi)
 {
     // not in same hemisphere or specular reflection
     if (wo.z * wi.z <= 0. || isEffectivelySmooth(ax, ay)) 
@@ -347,15 +347,19 @@ vec3 evalConductor(const vec3 albedo, const float ax, const float ay, const floa
     }
     wm = normalize(wm);
 
-    const float F = frComplex(abs(dot(wo, wm)), vec2(eta, k));
+    const float Fr = frComplex(abs(dot(wo, wm)), vec2(eta.r, k.r));
+    const float Fg = frComplex(abs(dot(wo, wm)), vec2(eta.g, k.g));
+    const float Fb = frComplex(abs(dot(wo, wm)), vec2(eta.b, k.b));
 
-    return vec3(D(wm, ax, ay) * F * G(wo, wi, ax, ay) / (4. * ct_i * ct_o));
+    const float tmp = D(wm, ax, ay) * G(wo, wi, ax, ay) / (4. * ct_i * ct_o);
+
+    return tmp * vec3(Fr, Fg, Fb);
 }
 
-BSDFSample sampleConductor(const vec3 albedo, const float ax, const float ay, const float eta, const float k, const vec3 wo, const vec2 u)
+BSDFSample sampleConductor(const vec3 albedo, const float ax, const float ay, const vec3 eta, const vec3 k, const vec3 wo, const vec2 u)
 {
     BSDFSample ret;
-    ret.eta = 1.;
+    ret.eta = eta;
     ret.f = vec3(0.0);
     ret.pdf = 1.0;
 
@@ -365,7 +369,11 @@ BSDFSample sampleConductor(const vec3 albedo, const float ax, const float ay, co
         ret.pdf = 1.0;// delta
         const vec3 wi = vec3(-wo.x, -wo.y, wo.z);
         const float absctwi = abs(cosTheta(wi));
-        ret.f = vec3(frComplex(absctwi, vec2(eta, k)) / absctwi);
+        const float Fr = frComplex(absctwi, vec2(eta.r, k));
+        const float Fg = frComplex(absctwi, vec2(eta.g, k));
+        const float Fb = frComplex(absctwi, vec2(eta.b, k));
+
+        ret.f = vec3(Fr, Fg, Fb) / absctwi;
         ret.wi = wi;
         return ret;
     }
@@ -383,9 +391,13 @@ BSDFSample sampleConductor(const vec3 albedo, const float ax, const float ay, co
     const float ct_o = abs(cosTheta(wo));
     const float ct_i = abs(cosTheta(wi));
     // Fresnel term
-    const float F = frComplex(abs(dot(wo, wm)), vec2(eta, k));
+    const float Fr = frComplex(abs(dot(wo, wm)), vec2(eta.r, k.r));
+    const float Fg = frComplex(abs(dot(wo, wm)), vec2(eta.g, k.g));
+    const float Fb = frComplex(abs(dot(wo, wm)), vec2(eta.b, k.b));
+    const float tmp = D(wm, ax, ay) * G(wo, wi, ax, ay) / (4. * ct_i * ct_o);
+
     ret.pdf = pdfGGX(wo, wm, ax, ay) / (4. * abs(dot(wo, wm)));
-    ret.f = vec3(D(wm, ax, ay) * F * G(wo, wi, ax, ay) / (4. * ct_i * ct_o));
+    ret.f = vec3(Fr, Fg, Fb) * tmp;
     ret.wi = wi;
 
     return ret;
@@ -442,7 +454,7 @@ vec3 evalDielectric(const float ax, const float ay, const float eta, const vec3 
         return vec3(0.);
     }
 
-    const float F = frDielectric(dot(wo, wm), eta);
+    const float F = frDielectric(dot(wo, wm), eta.r);
 
     if (refl)
     {
@@ -452,7 +464,6 @@ vec3 evalDielectric(const float ax, const float ay, const float eta, const vec3 
     {
         const float denom = sqr(dot(wi, wm) + dot(wo, wm) / etap) * ct_i * ct_o;
         const float dwm_dwi = abs(dot(wi, wm)) / denom;
-
         return vec3((1. - F) * D(wm, ax, ay) * G(wo, wi, ax, ay)* abs(dot(wi, wm)) * abs(dot(wo, wm)) / denom);
     }
 }
@@ -461,7 +472,7 @@ BSDFSample sampleDielectric(const float ax, const float ay, const float eta, con
 {
     BSDFSample ret;
     ret.flags |= isEffectivelySmooth(ax, ay) ? BSDF_FLAGS_SPECULAR : BSDF_FLAGS_GLOSSY;
-    ret.eta = eta;
+    ret.eta = vec3(eta);
     ret.f = vec3(0.0);
     ret.pdf = 1.0;
 
@@ -621,12 +632,8 @@ vec3 evalPBRTBSDF(const Material mat, vec3 wo, vec3 wi, const vec3 normal)
         return vec3(0.);
     }
 
-    const float ax = mat.alpha;
-    const float ay = mat.alpha;
-
-    // currently unused complex eta
-    const float eta = mat.IOR;
-    const float k = 1.0;
+    const float ax = mat.roughness.x;
+    const float ay = mat.roughness.y;
 
     switch(mat.matType)
     {
@@ -634,10 +641,10 @@ vec3 evalPBRTBSDF(const Material mat, vec3 wo, vec3 wi, const vec3 normal)
             return evalDiffuse(mat.albedo.xyz, wo, wi);
         break;
         case MAT_CONDUCTOR:
-            return evalConductor(mat.albedo.xyz, ax, ay, eta, k, wo, wi); 
+            return evalConductor(mat.albedo.xyz, ax, ay, mat.eta, mat.k, wo, wi); 
         break;
         case MAT_DIELECTRIC:
-            return evalDielectric(ax, ay, eta, wo, wi);
+            return evalDielectric(ax, ay, mat.eta.r, wo, wi);
         break;
         default:
             // ERROR
@@ -658,11 +665,8 @@ BSDFSample samplePBRTBSDF(const Material mat, vec3 wo, const vec3 normal, inout 
     const vec2 u = vec2(stepAndOutputRNGFloat(prngState), stepAndOutputRNGFloat(prngState));
     const float uc = stepAndOutputRNGFloat(prngState);
 
-    const float ax = mat.alpha;
-    const float ay = mat.alpha;
-
-    const float eta = mat.IOR;
-    const float k = 1.0;
+    const float ax = mat.roughness.x;
+    const float ay = mat.roughness.y;
 
     // calc tangent space
     vec3 T, B;
@@ -682,10 +686,10 @@ BSDFSample samplePBRTBSDF(const Material mat, vec3 wo, const vec3 normal, inout 
             ret = sampleDiffuse(mat.albedo.xyz, wo, prngState);
         break;
         case MAT_CONDUCTOR:
-            ret = sampleConductor(mat.albedo.xyz, ax, ay, eta, k, wo, u); 
+            ret = sampleConductor(mat.albedo.xyz, ax, ay, mat.eta, mat.k, wo, u); 
         break;
         case MAT_DIELECTRIC:
-            ret = sampleDielectric(ax, ay, eta, wo, uc, u);
+            ret = sampleDielectric(ax, ay, mat.eta.r, wo, uc, u);
         break;
         default:
             // ERROR
@@ -712,10 +716,8 @@ float pdfPBRTBSDF(const Material mat, vec3 wo, vec3 wi, vec3 normal)
         return 0.;
     }
 
-    const float ax = mat.alpha;
-    const float ay = mat.alpha;
-
-    const float eta = mat.IOR;
+    const float ax = mat.roughness.x;
+    const float ay = mat.roughness.y;
 
     switch(mat.matType)
     {
@@ -726,7 +728,7 @@ float pdfPBRTBSDF(const Material mat, vec3 wo, vec3 wi, vec3 normal)
             return pdfConductor(wo, wi, ax, ay);
         break;
         case MAT_DIELECTRIC:
-            return pdfDielectric(wo, wi, ax, ay, eta);
+            return pdfDielectric(wo, wi, ax, ay, mat.eta.r);
         break;
         default:
         // ERROR

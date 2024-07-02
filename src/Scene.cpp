@@ -416,12 +416,25 @@ namespace vk2s
                 if (AI_SUCCESS == aiGetMaterialColor(pMat, AI_MATKEY_COLOR_SPECULAR, &color))
                 {
                     //std::cerr << "\tfound specular : " << showColor(color) << "\n";
-                    material.k = convertVec4(color);
-                    material.type = Material::Type::eConductor;
+                    material.eta  = glm::vec3(1.0);
+                    material.k = convertVec4(color) + glm::vec4(1.0);
+                    if (color.r > 0.5f && color.g > 0.5f && color.b > 0.5f)
+                    {
+                        material.type = Material::Type::eConductor;
+                    }
                 }
                 else
                 {
                     //std::cerr << "\tspecular not found...\n";
+                }
+
+                float metallicFactor = 0.f;
+                if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_METALLIC_FACTOR, &metallicFactor))
+                {
+                    if (metallicFactor > 0.5f)
+                    {
+                        material.type = Material::Type::eConductor;
+                    }
                 }
 
                 if (AI_SUCCESS == aiGetMaterialColor(pMat, AI_MATKEY_COLOR_EMISSIVE, &color))
@@ -433,16 +446,6 @@ namespace vk2s
                 else
                 {
                     //std::cerr << "\temissive not found...\n";
-                }
-
-                if (AI_SUCCESS == aiGetMaterialColor(pMat, AI_MATKEY_COLOR_TRANSPARENT, &color))
-                {
-                    material.eta = convertVec4(color);
-                    material.type = Material::Type::eDielectric;
-                }
-                else
-                {
-                    //std::cerr << "\transparent not found...\n";
                 }
 
                 float Ns = 0.f;
@@ -473,13 +476,15 @@ namespace vk2s
                     //std::cerr << "\treflectivity not found...\n";
                 }
 
-                float IOR = 0.f;
-                if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_REFRACTI, &IOR))
+                float IOR = 1.f;
+                if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_REFRACTI, &IOR) && IOR != 1.f)
                 {
                     material.eta = glm::vec3(IOR);
+                    material.type = Material::Type::eDielectric;
                 }
                 else
                 {
+                    material.eta = glm::vec3(1.0);
                     //std::cerr << "\tIOR not found...\n";
                 }
             }
@@ -537,6 +542,11 @@ namespace vk2s
     {
         aiString str;
         mat->GetTexture(aiType, 0, &str);
+
+        if (str.length == 0)
+        {
+            return -1;
+        }
 
         const auto& itr = mTextureMap.find(std::string(str.C_Str()));
         if (itr != mTextureMap.end())

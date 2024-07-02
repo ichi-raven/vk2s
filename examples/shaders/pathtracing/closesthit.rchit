@@ -60,18 +60,22 @@ void main()
   const vec3 barys = vec3(1.0 - attribs.x - attribs.y, attribs.x, attribs.y);
   const InstanceMapping mapping = instanceMappings[gl_InstanceID];
   const Vertex vtx = FetchVertexInterleaved(barys, mapping.vertexBuffer, mapping.indexBuffer);
+  const vec3 worldPos    = (gl_ObjectToWorldEXT * vec4(vtx.position, 1.0)).xyz;
+  vec3 worldNormal = normalize(mat3(gl_ObjectToWorldEXT) * vtx.normal);
 
   Material material = materials[nonuniformEXT(mapping.materialIndex)];
-  if (material.texIndex != -1)
+  if (material.albedoTex != -1)
   {
-    material.albedo = texture(texSamplers[nonuniformEXT(material.texIndex)], vtx.texCoord);
+    material.albedo = texture(texSamplers[nonuniformEXT(material.albedoTex)], vtx.texCoord);
   }
-
-  // test
-  //material.alpha = 0.2;
-
-  const vec3 worldPos    = (gl_ObjectToWorldEXT * vec4(vtx.position, 1.0)).xyz;
-  const vec3 worldNormal = normalize(mat3(gl_ObjectToWorldEXT) * vtx.normal);
+  if (material.roughnessTex != -1)
+  {
+    material.roughness = texture(texSamplers[nonuniformEXT(material.roughnessTex)], vtx.texCoord).xy;
+  }
+  if (material.normalTex != -1)
+  {
+    worldNormal = texture(texSamplers[nonuniformEXT(material.normalTex)], vtx.texCoord).xyz;
+  }
 
   payload.x = worldPos;
   payload.normal = worldNormal;//setFaceNormal(-gl_WorldRayDirectionEXT, worldNormal);

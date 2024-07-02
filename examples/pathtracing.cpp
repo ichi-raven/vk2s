@@ -74,7 +74,7 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
                 auto& mapping         = meshMappings.emplace_back();
                 mapping.VBAddress     = mesh.vertexBuffer->getVkDeviceAddress();
                 mapping.IBAddress     = mesh.indexBuffer->getVkDeviceAddress();
-                mapping.materialIndex = i;  //simple
+                mapping.materialIndex = i;  // WARNING: simple
             }
 
             const auto ubSize = sizeof(InstanceMappingUB) * meshInstances.size();
