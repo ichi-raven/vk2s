@@ -74,7 +74,8 @@ namespace vk2s
     // std430
     struct TriEmitter
     {
-        glm::vec4 p[3];
+        glm::vec3 p[3];
+        glm::vec3 normal;
         glm::vec3 emissive;
         float area;
     };
@@ -97,10 +98,9 @@ namespace vk2s
 
     struct Texture
     {
-        enum class TextureType
+        enum class Type
         {
             eAlbedo,
-            eMetalness,
             eRoughness,
             eNormal,
             eEnvmap
@@ -112,18 +112,28 @@ namespace vk2s
         int height       = 0;
         int bpp          = 0;
         std::string path;
-        TextureType type;
+        Type type;
     };
 
+    // std430
     struct Material
     {
-        std::string name;
-        std::variant<glm::vec4, uint32_t> diffuse;
-        std::optional<glm::vec4> specular;
-        std::optional<glm::vec4> emissive;
-        std::optional<glm::vec4> transparent;
-        std::optional<float> shininess;
-        std::optional<float> IOR;
+        enum class Type : uint32_t
+        {
+            eDiffuse = 0,
+            eConductor = 1,
+            eDielectric = 2,
+        };
+
+        Type type;
+        glm::vec4 albedo;
+        glm::vec3 eta; // Re(IOR)
+        glm::vec3 k; // Im(IOR)
+        glm::vec2 roughness;
+        glm::vec4 emissive; // cause problem with NEE
+        uint32_t albedoTex;
+        uint32_t rougnnessTex;
+        uint32_t normalMapTex;
     };
 
     struct Bone
@@ -162,7 +172,9 @@ namespace vk2s
         glm::mat4 defaultAxis;
 
     private:
+
         void traverseNode(const float timeInAnim, const size_t animationIndex, const aiNode* node, const glm::mat4 parentTransform);
+        
         const aiScene* pScene;
         glm::mat4 mGlobalInverse;
     };
@@ -181,6 +193,8 @@ namespace vk2s
 
         const std::vector<TriEmitter>& getTriEmitters() const;
 
+        const InfiniteEmitter& getInfiniteEmitter() const;
+
     private:
 
         void processNode(const aiScene* pScene, const aiNode* node);
@@ -189,9 +203,9 @@ namespace vk2s
 
         std::pair<uint32_t, bool> addMaterial(const aiScene* pScene, const aiMesh* pMesh);
 
-        void addEmitter();
+        void addEmitter(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const uint32_t matIdx);
 
-        std::vector<Texture> loadMaterialTextures(const aiScene* pScene, const aiMaterial* mat, const aiTextureType aiType, const Texture::TextureType type);
+        uint32_t loadMaterialTexture(const aiScene* pScene, const aiMaterial* mat, const aiTextureType aiType, const Texture::Type type);
 
     private:
 
@@ -206,6 +220,7 @@ namespace vk2s
         std::vector<PointEmitter> mPointEmitters;
         InfiniteEmitter mInfiniteEmitter;
 
+        // path to index
         std::unordered_map<std::string, uint32_t> mTextureMap;
 
         Assimp::Importer mImporter;

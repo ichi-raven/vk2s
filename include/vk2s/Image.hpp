@@ -31,6 +31,8 @@ namespace vk2s
 
         void write(const void* pSrc, const size_t size);
 
+        void loadFromFile(std::string_view path);
+
         const vk::UniqueImage& getVkImage();
 
         const vk::UniqueDeviceMemory& getVkDeviceMemory();

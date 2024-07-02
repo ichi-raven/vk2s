@@ -2,6 +2,8 @@
 
 #include "../include/vk2s/Device.hpp"
 
+#include <stb_image.h>
+
 namespace vk2s
 {
 
@@ -60,6 +62,15 @@ namespace vk2s
             mDevice.getVkDevice()->waitIdle();
         }
     }
+
+    void Image::loadFromFile(std::string_view path)
+    {
+        int width = 0, height = 0, bpp = 0;
+        void* pData = reinterpret_cast<void*>(stbi_load(path.data(), &width, &height, &bpp, STBI_rgb_alpha));
+        write(pData, static_cast<size_t>(width * height * bpp));
+        stbi_image_free(pData);
+    }
+
 
     const vk::UniqueImage& Image::getVkImage()
     {

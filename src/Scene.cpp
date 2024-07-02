@@ -243,6 +243,19 @@ namespace vk2s
             return;
         }
 
+        // before traversaling mesh nodes, search envmap first
+        for (unsigned int i = 0; i < pScene->mNumMaterials; i++)
+        {
+            aiMaterial* pMat = pScene->mMaterials[i];
+
+            aiString texturePath;
+            if (pMat->GetTexture(aiTextureType_AMBIENT, 0, &texturePath) == AI_SUCCESS)
+            {
+                loadMaterialTexture(pScene, pMat, aiTextureType::aiTextureType_AMBIENT, Texture::Type::eEnvmap);
+                // TODO: load pdf map?
+            }
+        }
+
         processNode(pScene, pScene->mRootNode);
     }
 
@@ -261,9 +274,19 @@ namespace vk2s
         return mTextures;
     }
 
+    const std::vector<TriEmitter>& Scene::getTriEmitters() const
+    {
+        return mTriEmitters;
+    }
+
+    const InfiniteEmitter& Scene::getInfiniteEmitter() const
+    {
+        return mInfiniteEmitter;
+    }
+
     void Scene::processNode(const aiScene* pScene, const aiNode* pNode)
     {
-        for (uint32_t i = 0; i < pNode->mNumMeshes; i++)
+        for (uint32_t i = 0; i < pNode->mNumMeshes; ++i)
         {
             aiMesh* pMesh = pScene->mMeshes[pNode->mMeshes[i]];
             if (pMesh)
@@ -276,7 +299,7 @@ namespace vk2s
             }
         }
 
-        for (uint32_t i = 0; i < pNode->mNumChildren; i++)
+        for (uint32_t i = 0; i < pNode->mNumChildren; ++i)
         {
             processNode(pScene, pNode->mChildren[i]);
         }
@@ -284,12 +307,11 @@ namespace vk2s
 
     bool Scene::processMesh(const aiScene* pScene, const aiNode* pNode, const aiMesh* pMesh)
     {
-        // Data to fill
         std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
 
-        // Walk through each of the mesh's vertices
-        for (uint32_t i = 0; i < pMesh->mNumVertices; i++)
+        // walk through each of the mesh's vertices
+        for (uint32_t i = 0; i < pMesh->mNumVertices; ++i)
         {
             Vertex vertex;
 
@@ -311,7 +333,6 @@ namespace vk2s
             }
             else
             {
-                //assert(!"texture coord nothing!");
                 vertex.uv.x = 0;
                 vertex.uv.y = 0;
             }
@@ -341,10 +362,10 @@ namespace vk2s
 
         if (pMesh->mFaces)
         {
-            for (uint32_t i = 0; i < pMesh->mNumFaces; i++)
+            for (uint32_t i = 0; i < pMesh->mNumFaces; ++i)
             {
                 aiFace face = pMesh->mFaces[i];
-                for (uint32_t j = 0; j < face.mNumIndices; j++)
+                for (uint32_t j = 0; j < face.mNumIndices; ++j)
                 {
                     indices.push_back(face.mIndices[j]);
                 }
@@ -357,10 +378,10 @@ namespace vk2s
         // if the material has emissive component, treat as emitter
         if (hasEmissive)
         {
-            
+            addEmitter(vertices, indices, matIdx);
         }
 
-        mMeshes.emplace_back(Mesh{ .vertices = vertices, .indices = indices, .nodeName = std::string(pNode->mName.C_Str()), .meshName = std::string(pMesh->mName.C_Str()), .materialIdx = matIdx });
+        mMeshes.emplace_back(Mesh{ .vertices = std::move(vertices), .indices = std::move(indices), .nodeName = std::string(pNode->mName.C_Str()), .meshName = std::string(pMesh->mName.C_Str()), .materialIdx = matIdx });
 
         return true;
     }
@@ -370,28 +391,22 @@ namespace vk2s
         Material& material = mMaterials.emplace_back();
         bool hasEmissive   = false;
 
-        std::vector<Texture> diffuseMaps;
+        material.type = Material::Type::eDiffuse;
+
         if (pMesh->mMaterialIndex >= 0 && pMesh->mMaterialIndex < pScene->mNumMaterials)
         {
             aiMaterial* pMat = pScene->mMaterials[pMesh->mMaterialIndex];
-            material.name    = pMat->GetName().C_Str();
 
-            diffuseMaps = loadMaterialTextures(pScene, pMat, aiTextureType_DIFFUSE, Texture::TextureType::eAlbedo);
-
-            if (!diffuseMaps.empty())
-            {
-                material.diffuse = diffuseMaps.front();
-            }
-
-            //std::cerr << "material index " << pMesh->mMaterialIndex << " : " << pMat->GetName().C_Str() << "\n";
-            //std::cerr << "material num " << pMat->mNumProperties << "\n";
+            material.albedoTex    = loadMaterialTexture(pScene, pMat, aiTextureType::aiTextureType_DIFFUSE, Texture::Type::eAlbedo);
+            material.rougnnessTex = loadMaterialTexture(pScene, pMat, aiTextureType::aiTextureType_DIFFUSE_ROUGHNESS, Texture::Type::eRoughness);
+            material.normalMapTex = loadMaterialTexture(pScene, pMat, aiTextureType::aiTextureType_NORMALS, Texture::Type::eNormal);
 
             {
                 aiColor4D color;
-                if (AI_SUCCESS == aiGetMaterialColor(pMat, AI_MATKEY_COLOR_DIFFUSE, &color) && diffuseMaps.empty())
+                if (AI_SUCCESS == aiGetMaterialColor(pMat, AI_MATKEY_COLOR_DIFFUSE, &color))
                 {
                     //std::cerr << "\tfound diffuse : " << showColor(color) << "\n";
-                    material.diffuse = convertVec4(color);
+                    material.albedo = convertVec4(color);
                 }
                 else
                 {
@@ -401,7 +416,8 @@ namespace vk2s
                 if (AI_SUCCESS == aiGetMaterialColor(pMat, AI_MATKEY_COLOR_SPECULAR, &color))
                 {
                     //std::cerr << "\tfound specular : " << showColor(color) << "\n";
-                    material.specular = convertVec4(color);
+                    material.k = convertVec4(color);
+                    material.type = Material::Type::eConductor;
                 }
                 else
                 {
@@ -421,8 +437,8 @@ namespace vk2s
 
                 if (AI_SUCCESS == aiGetMaterialColor(pMat, AI_MATKEY_COLOR_TRANSPARENT, &color))
                 {
-                    //std::cerr << "\tfound transparent : " << showColor(color) << "\n";
-                    material.transparent = convertVec4(color);
+                    material.eta = convertVec4(color);
+                    material.type = Material::Type::eDielectric;
                 }
                 else
                 {
@@ -432,15 +448,15 @@ namespace vk2s
                 float Ns = 0.f;
                 int iNs  = 0;
 
-                if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_SHININESS, &Ns))
+                if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_ROUGHNESS_FACTOR, &Ns))
                 {
                     //std::cerr << "\tfloat shininess factor : " << Ns << "\n";
-                    material.shininess = Ns;
+                    material.roughness = glm::vec2(Ns);
                 }
-                else if (AI_SUCCESS == aiGetMaterialInteger(pMat, AI_MATKEY_SHININESS, &iNs))
+                else if (AI_SUCCESS == aiGetMaterialInteger(pMat, AI_MATKEY_ROUGHNESS_FACTOR, &iNs))
                 {
                     //std::cerr << "\tint shininess factor : " << iNs << "\n";
-                    material.shininess = static_cast<float>(iNs);
+                    material.roughness = glm::vec2(1.f * Ns);
                 }
                 else
                 {
@@ -460,8 +476,7 @@ namespace vk2s
                 float IOR = 0.f;
                 if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_REFRACTI, &IOR))
                 {
-                    //std::cerr << "\tIOR : " << IOR << "\n";
-                    material.IOR = IOR;
+                    material.eta = glm::vec3(IOR);
                 }
                 else
                 {
@@ -475,7 +490,26 @@ namespace vk2s
         return { matIdx, hasEmissive };
     }
 
-    Texture loadTexture(const char* path, const Texture::TextureType type)
+    void Scene::addEmitter(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const uint32_t matIdx)
+    {
+        assert(indices.size() % 3 == 0 || !"invalid indices size! (not divisible by 3)");
+
+        for (size_t i = 0; i < indices.size(); i += 3)
+        {
+            auto& triEmitter = mTriEmitters.emplace_back();
+
+            triEmitter.p[0] = vertices[indices[i]].pos;
+            triEmitter.p[1] = vertices[indices[i + 1]].pos;
+            triEmitter.p[2] = vertices[indices[i + 2]].pos;
+
+            triEmitter.normal = glm::cross(triEmitter.p[1] - triEmitter.p[0], triEmitter.p[2] - triEmitter.p[0]);
+
+            triEmitter.emissive = mMaterials[matIdx].emissive;
+            triEmitter.area     = 0.5f * triEmitter.normal.length();
+        }
+    }
+
+    Texture loadTexture(const char* path, const Texture::Type type)
     {
         Texture texture;
         if (!path)
@@ -499,52 +533,48 @@ namespace vk2s
         return texture;
     }
 
-    std::vector<Texture> Scene::loadMaterialTextures(const aiScene* pScene, const aiMaterial* mat, const aiTextureType aiType, const Texture::TextureType type)
+    uint32_t Scene::loadMaterialTexture(const aiScene* pScene, const aiMaterial* mat, const aiTextureType aiType, const Texture::Type type)
     {
-        std::vector<Texture> textures;
-        for (uint32_t i = 0; i < mat->GetTextureCount(aiType); ++i)
+        aiString str;
+        mat->GetTexture(aiType, 0, &str);
+
+        const auto& itr = mTextureMap.find(std::string(str.C_Str()));
+        if (itr != mTextureMap.end())
         {
-            aiString str;
-            mat->GetTexture(aiType, i, &str);
-            bool skip = false;
-            for (uint32_t j = 0; j < mTextures.size(); ++j)
-            {
-                if (std::strcmp(mTextures[j].path.c_str(), str.C_Str()) == 0)
-                {
-                    textures.emplace_back(mTextures[j]);
-                    skip = true;  // A texture with the same filepath has already been loaded, continue to next one (optimization)
-                    break;
-                }
-            }
-            if (!skip)
-            {  // If texture hasn't been loaded already, load it
-                Texture texture;
-
-                const aiTexture* embeddedTexture = pScene->GetEmbeddedTexture(str.C_Str());
-
-                if (embeddedTexture != nullptr)
-                {
-                    texture.pData    = reinterpret_cast<std::byte*>(embeddedTexture->pcData);
-                    texture.width    = embeddedTexture->mWidth;
-                    texture.height   = embeddedTexture->mHeight;
-                    texture.bpp      = 4;  // RGBA8888
-                    texture.embedded = true;
-                }
-                else
-                {
-                    std::string filename = std::regex_replace(str.C_Str(), std::regex("\\\\"), "/");
-                    filename             = mDirectory + '/' + filename;
-
-                    texture = loadTexture(filename.c_str(), type);
-                }
-                texture.type = type;
-                texture.path = str.C_Str();
-                textures.push_back(texture);
-                mTextures.emplace_back(texture);  // Store it as texture loaded for entire model, to ensure we won't unnecesery load duplicate textures
-            }
+            return itr->second;
         }
 
-        return textures;
+        {  // If texture hasn't been loaded already, load it
+            Texture texture;
+
+            const aiTexture* embeddedTexture = pScene->GetEmbeddedTexture(str.C_Str());
+
+            if (embeddedTexture != nullptr)
+            {
+                texture.pData    = reinterpret_cast<std::byte*>(embeddedTexture->pcData);
+                texture.width    = embeddedTexture->mWidth;
+                texture.height   = embeddedTexture->mHeight;
+                texture.bpp      = 4;  // RGBA8888
+                texture.embedded = true;
+                texture.type     = type;
+            }
+            else
+            {
+                std::string filename = std::regex_replace(str.C_Str(), std::regex("\\\\"), "/");
+                filename             = mDirectory + '/' + filename;
+
+                texture = loadTexture(filename.c_str(), type);
+            }
+            texture.type = type;
+            texture.path = str.C_Str();
+
+            mTextures.emplace_back(texture);  // Store it as texture loaded for entire model, to ensure we won't unnecesery load duplicate textures
+            mTextureMap.emplace(std::string(str.C_Str()), mTextures.size() - 1);
+
+            return mTextures.size() - 1;
+        }
+
+        return -1;
     }
 
 }  // namespace vk2s

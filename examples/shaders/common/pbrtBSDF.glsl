@@ -271,8 +271,6 @@ vec3 sampleWmGGX(const vec3 w, const vec2 u, const float ax, const float ay)
     // find ONB for visible normal sampling
     vec3 T1, T2;
     basis(wh, T1, T2);
-    // const vec3 T1 = wh.z < (1. - EPS) ? normalize(cross(vec3(0., 0., 1.), wh)) : vec3(1., 0., 0.);
-    // const vec3 T2 = cross(wh, T1);
 
     //generate uniformly distributed points on the unit disk
     vec2 p = randomUniformDiskPolar(u);

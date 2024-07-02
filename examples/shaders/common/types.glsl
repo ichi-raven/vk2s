@@ -19,12 +19,15 @@ struct InstanceMapping
 
 struct Material
 {
+  uint32_t matType;
   vec4 albedo;
+  vec3 eta;
+  vec3 k;
+  vec2 roughness;
   vec4 emissive;
-  int32_t texIndex;
-  int32_t matType;
-  float alpha;
-  float IOR;
+  int32_t albedoTex;
+  int32_t roughnessTex;
+  int32_t normalTex;
 };
 
 struct DisneyMaterial

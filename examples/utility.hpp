@@ -9,24 +9,6 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
 
-enum class MaterialType : int32_t
-{
-    eLambert    = 0,
-    eConductor  = 1,
-    eDielectric = 2,
-    eMaterialNum
-};
-
-struct MaterialUB  // std430
-{
-    glm::vec4 albedo;
-    glm::vec4 emissive;
-    int32_t texIndex;
-    int32_t materialType;
-    float alpha;
-    float IOR;
-};
-
 struct InstanceMappingUB  // std430
 {
     uint64_t VBAddress;
@@ -54,7 +36,7 @@ inline void load(std::string_view path, vk2s::Device& device, std::vector<MeshIn
     vk2s::Scene scene(path);
 
     const std::vector<vk2s::Mesh>& hostMeshes = scene.getMeshes();
-    const std::vector<vk2s::Material>& hostMaterials = scene.getMaterials();
+    const std::vector<vk2s::Material>& materialData = scene.getMaterials();
 
     //hostMeshes.erase(hostMeshes.begin());
     //hostMeshes.erase(hostMeshes.begin());
@@ -93,7 +75,7 @@ inline void load(std::string_view path, vk2s::Device& device, std::vector<MeshIn
 
     // materials
     constexpr double threshold = 1.5;
-    std::vector<MaterialUB> materialData;
+    std::vector <vk2s::Material> materialData = scene.getMaterials();
     materialData.reserve(hostMaterials.size());
     for (const auto& hostMat : hostMaterials)
     {
@@ -159,7 +141,7 @@ inline void load(std::string_view path, vk2s::Device& device, std::vector<MeshIn
     }
 
     {
-        const auto ubSize = sizeof(MaterialUB) * materialData.size();
+        const auto ubSize = sizeof(vk2s::Material) * materialData.size();
         vk::BufferCreateInfo ci({}, ubSize, vk::BufferUsageFlagBits::eStorageBuffer);
         vk::MemoryPropertyFlags fb = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
 
