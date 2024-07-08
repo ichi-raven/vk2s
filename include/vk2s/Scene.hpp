@@ -74,10 +74,12 @@ namespace vk2s
     // std430
     struct TriEmitter
     {
-        glm::vec3 p[3];
+        glm::vec4 p[3];
+
         glm::vec3 normal;
-        glm::vec3 emissive;
         float area;
+
+        glm::vec4 emissive;
     };
 
     // std430

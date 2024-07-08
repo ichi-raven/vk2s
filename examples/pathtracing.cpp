@@ -41,11 +41,13 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
 
         std::vector<MeshInstance> meshInstances;
         Handle<vk2s::Buffer> materialBuffer;
+        Handle<vk2s::Buffer> emitterBuffer;
+        Handle<vk2s::Buffer> triEmitterBuffer;
         std::vector<Handle<vk2s::Image>> materialTextures;
         auto sampler = device.create<vk2s::Sampler>(vk::SamplerCreateInfo());
 
-        load("../../examples/resources/model/CornellBox/CornellBox-Sphere.obj", device, meshInstances, materialBuffer, materialTextures);
-        //load("../../examples/resources/model/fireplace-room/fireplace_room.obj", device, loader, meshInstances, materialBuffer, materialTextures);
+        //load("../../examples/resources/model/CornellBox/CornellBox-Sphere.obj", device, meshInstances, materialBuffer, materialTextures, emitterBuffer, triEmitterBuffer);
+        load("../../examples/resources/model/fireplace-room/fireplace_room.obj", device, meshInstances, materialBuffer, materialTextures, emitterBuffer, triEmitterBuffer);
 
         // create scene UB
         Handle<vk2s::DynamicBuffer> sceneBuffer;
@@ -170,8 +172,12 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
             vk::DescriptorSetLayoutBinding(4, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eAll),
             // 5 : material textures
             vk::DescriptorSetLayoutBinding(5, vk::DescriptorType::eCombinedImageSampler, std::max(1ull, materialTextures.size()), vk::ShaderStageFlagBits::eAll),
-            // 6: sampling pool image
-            vk::DescriptorSetLayoutBinding(6, vk::DescriptorType::eStorageImage, 1, vk::ShaderStageFlagBits::eAll),
+            // 6 : emitters information buffer
+            vk::DescriptorSetLayoutBinding(6, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eAll),
+            // 7 : triangle emitters buffer
+            vk::DescriptorSetLayoutBinding(7, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eAll),
+            // 8: sampling pool image
+            vk::DescriptorSetLayoutBinding(8, vk::DescriptorType::eStorageImage, 1, vk::ShaderStageFlagBits::eAll),
         };
 
         auto bindLayout = device.create<vk2s::BindLayout>(bindings);
@@ -228,7 +234,9 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
         {
             bindGroup->bind(5, vk::DescriptorType::eCombinedImageSampler, materialTextures, sampler);
         }
-        bindGroup->bind(6, vk::DescriptorType::eStorageImage, poolImage);
+        bindGroup->bind(6, vk::DescriptorType::eStorageBuffer, emitterBuffer.get());
+        bindGroup->bind(7, vk::DescriptorType::eStorageBuffer, triEmitterBuffer.get());
+        bindGroup->bind(8, vk::DescriptorType::eStorageImage, poolImage);
 
         auto computeBindGroup = device.create<vk2s::BindGroup>(computeBindLayout.get());
         computeBindGroup->bind(0, vk::DescriptorType::eStorageImage, resultImage);
@@ -354,7 +362,6 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
                 ImGui::SliderFloat("sigma", &inputSigma, 0.001f, 3.0f);
                 ImGui::InputInt("kernel size", &inputKernel);
                 ImGui::InputInt("window size", &inputWindow);
-                //ImGui::InputFloat("threshold", &inputThreshold, 0.05f);
 
                 if (ImGui::Button(applyFilter ? "remove filter" : "apply filter"))
                 {

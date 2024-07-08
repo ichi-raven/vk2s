@@ -14,8 +14,8 @@ hitAttributeEXT vec3 attribs;
 #include "../common/BSDFs.glsl"
 //#include "../common/DisneyBSDF.glsl"
 #include "../common/pbrtBSDF.glsl"
-#include "../common/lights.glsl"
 
+#include "lights.glsl"
 #include "bindings.glsl"
 
 
@@ -34,7 +34,8 @@ layout(buffer_reference, scalar) readonly buffer IndexBuffer
 Vertex FetchVertexInterleaved(
   vec3 barys,
   uint64_t vertexBuffer,
-  uint64_t indexBuffer)
+  uint64_t indexBuffer,
+  out vec3 tri[3])
 {
   IndexBuffer indices = IndexBuffer(indexBuffer);
   VertexBuffer verts = VertexBuffer(vertexBuffer);
@@ -43,6 +44,10 @@ Vertex FetchVertexInterleaved(
   Vertex v0 = verts.v[idx.x];
   Vertex v1 = verts.v[idx.y];
   Vertex v2 = verts.v[idx.z];
+
+  tri[0] = v0.position;
+  tri[1] = v1.position;
+  tri[2] = v2.position;
 
   Vertex v;
   v.position = v0.position * barys.x + v1.position * barys.y + v2.position * barys.z;
@@ -59,7 +64,8 @@ void main()
 
   const vec3 barys = vec3(1.0 - attribs.x - attribs.y, attribs.x, attribs.y);
   const InstanceMapping mapping = instanceMappings[gl_InstanceID];
-  const Vertex vtx = FetchVertexInterleaved(barys, mapping.vertexBuffer, mapping.indexBuffer);
+  vec3 tri[3];
+  const Vertex vtx = FetchVertexInterleaved(barys, mapping.vertexBuffer, mapping.indexBuffer, tri);
   const vec3 worldPos    = (gl_ObjectToWorldEXT * vec4(vtx.position, 1.0)).xyz;
   vec3 worldNormal = normalize(mat3(gl_ObjectToWorldEXT) * vtx.normal);
 
@@ -81,6 +87,7 @@ void main()
   payload.normal = worldNormal;//setFaceNormal(-gl_WorldRayDirectionEXT, worldNormal);
   payload.Le = material.emissive.xyz;
   payload.emissive = dot(payload.Le, payload.Le) > EPS;
+  payload.area = payload.emissive ? 0.5 * length(cross(tri[2] - tri[0], tri[1] - tri[0])) : 0;
   payload.intersected = true;
   payload.mat = material;
   // pbrt

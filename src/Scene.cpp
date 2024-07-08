@@ -408,10 +408,6 @@ namespace vk2s
                     //std::cerr << "\tfound diffuse : " << showColor(color) << "\n";
                     material.albedo = convertVec4(color);
                 }
-                else
-                {
-                    //std::cerr << "\tdiffuse not found...\n";
-                }
 
                 if (AI_SUCCESS == aiGetMaterialColor(pMat, AI_MATKEY_COLOR_SPECULAR, &color))
                 {
@@ -422,10 +418,6 @@ namespace vk2s
                     {
                         material.type = Material::Type::eConductor;
                     }
-                }
-                else
-                {
-                    //std::cerr << "\tspecular not found...\n";
                 }
 
                 float metallicFactor = 0.f;
@@ -439,13 +431,8 @@ namespace vk2s
 
                 if (AI_SUCCESS == aiGetMaterialColor(pMat, AI_MATKEY_COLOR_EMISSIVE, &color))
                 {
-                    //std::cerr << "\tfound emissive : " << showColor(color) << "\n";
                     material.emissive = convertVec4(color);
-                    hasEmissive       = true;
-                }
-                else
-                {
-                    //std::cerr << "\temissive not found...\n";
+                    hasEmissive       = !color.IsBlack();
                 }
 
                 float Ns = 0.f;
@@ -453,27 +440,17 @@ namespace vk2s
 
                 if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_ROUGHNESS_FACTOR, &Ns))
                 {
-                    //std::cerr << "\tfloat shininess factor : " << Ns << "\n";
                     material.roughness = glm::vec2(Ns);
                 }
                 else if (AI_SUCCESS == aiGetMaterialInteger(pMat, AI_MATKEY_ROUGHNESS_FACTOR, &iNs))
                 {
-                    //std::cerr << "\tint shininess factor : " << iNs << "\n";
                     material.roughness = glm::vec2(1.f * Ns);
-                }
-                else
-                {
-                    //std::cerr << "\tshininess not found...\n";
                 }
 
                 float reflect = 0.f;
                 if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_REFLECTIVITY, &reflect))
                 {
                     //std::cerr << "\treflectivity : " << reflect << "\n";
-                }
-                else
-                {
-                    //std::cerr << "\treflectivity not found...\n";
                 }
 
                 float IOR = 1.f;
@@ -485,7 +462,6 @@ namespace vk2s
                 else
                 {
                     material.eta = glm::vec3(1.0);
-                    //std::cerr << "\tIOR not found...\n";
                 }
             }
         }
@@ -503,14 +479,19 @@ namespace vk2s
         {
             auto& triEmitter = mTriEmitters.emplace_back();
 
-            triEmitter.p[0] = vertices[indices[i]].pos;
-            triEmitter.p[1] = vertices[indices[i + 1]].pos;
-            triEmitter.p[2] = vertices[indices[i + 2]].pos;
+            glm::vec3 p0 = vertices[indices[i]].pos;
+            glm::vec3 p1 = vertices[indices[i + 1]].pos;
+            glm::vec3 p2 = vertices[indices[i + 2]].pos;
 
-            triEmitter.normal = glm::cross(triEmitter.p[1] - triEmitter.p[0], triEmitter.p[2] - triEmitter.p[0]);
+            triEmitter.p[0] = glm::vec4(p0, 1.0);
+            triEmitter.p[1] = glm::vec4(p1, 1.0);
+            triEmitter.p[2] = glm::vec4(p2, 1.0);
+
+            triEmitter.normal = (vertices[indices[i]].normal + vertices[indices[i + 1]].normal + vertices[indices[i + 2]].normal) / 3.f;
 
             triEmitter.emissive = mMaterials[matIdx].emissive;
-            triEmitter.area     = 0.5f * triEmitter.normal.length();
+            triEmitter.area     = 0.5f * glm::length(glm::cross(p2 - p0, p1 - p0));
+            int debug           = 0;
         }
     }
 

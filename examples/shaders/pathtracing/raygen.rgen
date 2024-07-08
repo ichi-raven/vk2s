@@ -10,8 +10,8 @@
 #include "../common/randoms.glsl"
 #include "../common/BSDFs.glsl"
 #include "../common/pbrtBSDF.glsl"
-#include "../common/lights.glsl"
 
+#include "lights.glsl"
 #include "bindings.glsl"
 
 layout(location = 0) rayPayloadEXT Payload payload;
@@ -170,7 +170,7 @@ vec3 sampleLiMIS(const uint sampleIndex)
       if (payload.emissive && payload.intersected) // hit to emitter
       {
         float invG = 0.0;
-        float lightpdf = isSpecular(cache.bsdf.flags) ? 0. : calcLightPdf(cache.x, payload.x, invG);
+        float lightpdf = isSpecular(cache.bsdf.flags) ? 0. : calcLightPdf(cache.x, payload.x, payload.normal, payload.area, invG);
         lightpdf *= invG;
         const float cosine = abs(dot(cache.normal, cache.bsdf.wi));
         const float BSDFpdf = cache.bsdf.pdf; 
@@ -230,18 +230,17 @@ void main()
   const vec2 screenPos = pixelCenter / vec2(gl_LaunchSizeEXT.xy) - vec2(0.5);
 
   vec3 L = vec3(0.0);
-  //[[unroll]]
   for (int i = 0; i < sceneParams.spp; ++i)
   {
 #ifdef MIS
-      //if (screenPos.x <= screenPos.y)
-      //{
+      if (screenPos.x > screenPos.y)
+      {
         L += correct(sampleLiMIS(i + sceneParams.untilSPP));
-      //}
-      //else
-      //{
-        //L += correct(sampleLi(i + sceneParams.untilSPP));
-      //}
+      }
+      else
+      {
+        L += correct(sampleLi(i + sceneParams.untilSPP));
+      }
 #else
       L += correct(sampleLi(i + sceneParams.untilSPP));
 #endif

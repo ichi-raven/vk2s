@@ -215,7 +215,10 @@ namespace vk2s
                 outputVars.resize(count);
                 result = spvReflectEnumerateOutputVariables(&module, &count, outputVars.data());
                 assert(result == SPV_REFLECT_RESULT_SUCCESS);
-                if (!outputVars.empty()) std::sort(outputVars.begin(), outputVars.end(), lmdComp);
+                if (!outputVars.empty())
+                {
+                    std::sort(outputVars.begin(), outputVars.end(), lmdComp);
+                }
             }
 
             std::vector<vk::VertexInputAttributeDescription> inputAttributedDescs;

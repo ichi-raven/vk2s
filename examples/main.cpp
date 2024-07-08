@@ -10,8 +10,8 @@ void rasterize(const uint32_t windowWidth, const uint32_t windowHeight, const ui
 
 int main()
 {
-    constexpr uint32_t kWidth = 1000;
-    constexpr uint32_t kHeight = 1000;
+    constexpr uint32_t kWidth = 1920;
+    constexpr uint32_t kHeight = 1080;
     constexpr uint32_t kFrameCount = 3;
 
     //rasterize(kWidth, kHeight, kFrameCount);

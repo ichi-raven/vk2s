@@ -24,8 +24,6 @@ precision highp int;
 #define RED (vec3(0.8, 0.2, 0.2))
 #define GREEN (vec3(0.2, 0.8, 0.2))
 #define BLUE (vec3(0.2, 0.2, 0.8))
-#define MAGENTA (vec3(0.8, 0.2, 0.8))
-#define CYAN (vec3(0.2, 0.8, 0.8))
 #define YELLOW (vec3(0.8, 0.8, 0.2))
 #define BLACK (vec3(0.0))
 #define WHITE (vec3(1.0))

@@ -57,6 +57,16 @@ struct DisneyMaterial
   float clearcoatGloss;
 };
 
+struct TriEmitter
+{
+  vec4 p[3];
+
+  vec3 normal;
+  float area;
+
+  vec4 emissive;
+};
+
 struct DisneyBSDFState
 {
   bool isRefracted;
@@ -106,6 +116,7 @@ struct Payload
   uint prngState;
   bool intersected;
   bool emissive;
+  float area;
 
   Material mat;
   // for Disney BSDF

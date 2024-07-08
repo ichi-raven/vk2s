@@ -17,6 +17,13 @@ struct InstanceMappingUB  // std430
     uint32_t padding[3];
 };
 
+struct EmitterUB
+{
+    uint32_t triEmitterNum;
+    uint32_t pointEmitterNum;
+    uint32_t padding[2];
+};
+
 struct MeshInstance
 {
     vk2s::Mesh hostMesh;
@@ -26,8 +33,8 @@ struct MeshInstance
     Handle<vk2s::AccelerationStructure> blas;
 };
 
-inline void load(std::string_view path, vk2s::Device& device, std::vector<MeshInstance>& meshInstances, Handle<vk2s::Buffer>& materialUB,
-          std::vector<Handle<vk2s::Image>>& materialTextures)
+inline void load(std::string_view path, vk2s::Device& device, std::vector<MeshInstance>& meshInstances, Handle<vk2s::Buffer>& materialUB, std::vector<Handle<vk2s::Image>>& materialTextures, Handle<vk2s::Buffer>& emitterUB,
+                 Handle<vk2s::Buffer>& triEmitterUB)
 {
     //std::vector<vk2s::Mesh> hostMeshes;
     //std::vector<vk2s::Material> hostMaterials;
@@ -35,7 +42,7 @@ inline void load(std::string_view path, vk2s::Device& device, std::vector<MeshIn
 
     vk2s::Scene scene(path);
 
-    const std::vector<vk2s::Mesh>& hostMeshes = scene.getMeshes();
+    const std::vector<vk2s::Mesh>& hostMeshes       = scene.getMeshes();
     const std::vector<vk2s::Material>& materialData = scene.getMaterials();
 
     //hostMeshes.erase(hostMeshes.begin());
@@ -84,13 +91,34 @@ inline void load(std::string_view path, vk2s::Device& device, std::vector<MeshIn
         materialUB->write(materialData.data(), ubSize);
     }
 
+    std::vector<vk2s::Texture> textures = scene.getTextures();
+
+    for (const auto& hostTex : textures)
+    {
+        auto& tex = materialTextures.emplace_back();
+        const auto size = hostTex.width * hostTex.height * static_cast<uint32_t>(STBI_rgb_alpha);
+
+        vk::ImageCreateInfo ci;
+        ci.arrayLayers   = 1;
+        ci.extent        = vk::Extent3D(hostTex.width, hostTex.height, 1);
+        ci.format        = vk::Format::eR8G8B8A8Srgb;
+        ci.imageType     = vk::ImageType::e2D;
+        ci.mipLevels     = 1;
+        ci.usage         = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
+        ci.initialLayout = vk::ImageLayout::eUndefined;
+
+        tex = device.create<vk2s::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
+
+        tex->write(hostTex.pData, size);
+    }
+
     // if textures are empty, add dummy texture
     if (materialTextures.empty())
     {
-        auto& texture           = materialTextures.emplace_back();
-        const auto width        = 1;
-        const auto height       = 1;
-        const auto size         = width * height * static_cast<uint32_t>(STBI_rgb_alpha);
+        auto& dummyTex     = materialTextures.emplace_back();
+        const auto width  = 1;
+        const auto height = 1;
+        const auto size   = width * height * static_cast<uint32_t>(STBI_rgb_alpha);
 
         vk::ImageCreateInfo ci;
         ci.arrayLayers   = 1;
@@ -101,12 +129,35 @@ inline void load(std::string_view path, vk2s::Device& device, std::vector<MeshIn
         ci.usage         = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
         ci.initialLayout = vk::ImageLayout::eUndefined;
 
-        texture = device.create<vk2s::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
+        dummyTex = device.create<vk2s::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
 
         uint8_t dummyData[4] = { 255, 0, 255, 255 };
-        texture->write(dummyData, size);
+        dummyTex->write(dummyData, size);
     }
-    
+
+    // emitter
+    std::vector<vk2s::TriEmitter> triEmitters = scene.getTriEmitters();
+    EmitterUB emitter;
+    emitter.triEmitterNum = triEmitters.size();
+    emitter.pointEmitterNum = 0;// TODO:
+
+    {
+        const auto ubSize = sizeof(EmitterUB);
+        vk::BufferCreateInfo ci({}, ubSize, vk::BufferUsageFlagBits::eStorageBuffer);
+        vk::MemoryPropertyFlags fb = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+
+        emitterUB = device.create<vk2s::Buffer>(ci, fb);
+        emitterUB->write(&emitter, ubSize);
+    }
+
+    {
+        const auto ubSize = sizeof(vk2s::TriEmitter) * triEmitters.size();
+        vk::BufferCreateInfo ci({}, ubSize, vk::BufferUsageFlagBits::eStorageBuffer);
+        vk::MemoryPropertyFlags fb = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+
+        triEmitterUB = device.create<vk2s::Buffer>(ci, fb);
+        triEmitterUB->write(triEmitters.data(), ubSize);
+    }
 }
 
 inline vk::TransformMatrixKHR convert(const glm::mat4x3& m)

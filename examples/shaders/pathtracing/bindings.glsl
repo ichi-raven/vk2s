@@ -23,12 +23,19 @@ layout(binding=2, set=0) uniform SceneParameters
     uint frame;
     uint spp;
     uint untilSPP;
-    float padding;
+    uint emitterSize;
 } sceneParams;
 
 layout(binding=3, set=0) readonly buffer InstanceMappings { InstanceMapping instanceMappings[]; };
 layout(binding=4, set=0) readonly buffer Materials { Material materials[]; };
 layout(binding=5, set=0) uniform sampler2D texSamplers[];
-layout(binding=6, set=0, rgba32f) uniform image2D poolImage;
+layout(binding=6, set=0) readonly buffer EmitterInfo 
+{
+  uint32_t triEmitterNum;
+  uint32_t pointEmitterNum;
+  uint32_t padding[2];
+} emitterInfo;
+layout(binding=7, set=0) readonly buffer TriEmitters { TriEmitter triEmitters[]; };
+layout(binding=8, set=0, rgba32f) uniform image2D poolImage;
 
 #endif
