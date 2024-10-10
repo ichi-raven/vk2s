@@ -34,8 +34,8 @@
 # CMake
 build
 
-# ThirdParty
-ThirdParty
+# slang 
+ThirdParty/slang
 
 # Example resources
 examples/resources
