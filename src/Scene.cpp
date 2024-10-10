@@ -233,6 +233,9 @@ namespace vk2s
     Scene::Scene(std::string_view path)
         : mPath(path)
         , mDirectory(path.substr(0, path.find_last_of("/\\")))
+        , mTopLeftBack(-INFINITY, -INFINITY, -INFINITY)
+        , mBottomRightFront(INFINITY, INFINITY, INFINITY)
+
     {
         const aiScene* pScene = mImporter.ReadFile(path.data(), aiProcess_Triangulate | aiProcess_FlipUVs);
 
@@ -257,6 +260,14 @@ namespace vk2s
         }
 
         processNode(pScene, pScene->mRootNode);
+
+        mSceneBoundSphere.first  = 0.5f * glm::vec3(mTopLeftBack.x + mBottomRightFront.x, mTopLeftBack.y + mBottomRightFront.y, mTopLeftBack.z + mBottomRightFront.z);
+        mSceneBoundSphere.second = 10000.f * (mSceneBoundSphere.first.x - mBottomRightFront.x);
+    }
+
+    const std::pair<glm::vec3, float> Scene::getSceneBoundSphere() const
+    {
+        return mSceneBoundSphere;
     }
 
     const std::vector<Mesh>& Scene::getMeshes() const
@@ -337,6 +348,14 @@ namespace vk2s
                 vertex.uv.y = 0;
             }
 
+            mTopLeftBack.x = std::max(mTopLeftBack.x, vertex.pos.x);
+            mTopLeftBack.y = std::max(mTopLeftBack.y, vertex.pos.y);
+            mTopLeftBack.z = std::max(mTopLeftBack.z, vertex.pos.z);
+
+            mBottomRightFront.x = std::min(mBottomRightFront.x, vertex.pos.x);
+            mBottomRightFront.y = std::min(mBottomRightFront.y, vertex.pos.y);
+            mBottomRightFront.z = std::min(mBottomRightFront.z, vertex.pos.z);
+
             vertices.push_back(vertex);
         }
 
@@ -409,11 +428,22 @@ namespace vk2s
                     material.albedo = convertVec4(color);
                 }
 
+                float IOR = 1.f;
+                if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_REFRACTI, &IOR) && IOR != 1.f)
+                {
+                    material.eta  = glm::vec3(IOR);
+                    material.type = Material::Type::eDielectric;
+                }
+                else
+                {
+                    material.eta = glm::vec3(1.0);
+                }
+
                 if (AI_SUCCESS == aiGetMaterialColor(pMat, AI_MATKEY_COLOR_SPECULAR, &color))
                 {
                     //std::cerr << "\tfound specular : " << showColor(color) << "\n";
-                    material.eta  = glm::vec3(1.0);
-                    material.k = convertVec4(color) + glm::vec4(1.0);
+                    material.eta = glm::vec3(1.0);
+                    material.k   = convertVec4(color) + glm::vec4(1.0);
                     if (color.r > 0.5f && color.g > 0.5f && color.b > 0.5f)
                     {
                         material.type = Material::Type::eConductor;
@@ -438,30 +468,21 @@ namespace vk2s
                 float Ns = 0.f;
                 int iNs  = 0;
 
-                if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_ROUGHNESS_FACTOR, &Ns))
+                if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_SHININESS, &Ns))
                 {
-                    material.roughness = glm::vec2(Ns);
+                    material.roughness = glm::vec2((1000.f - Ns) / 1000.f);
+                    material.type      = Material::Type::eConductor;
                 }
-                else if (AI_SUCCESS == aiGetMaterialInteger(pMat, AI_MATKEY_ROUGHNESS_FACTOR, &iNs))
+                else if (AI_SUCCESS == aiGetMaterialInteger(pMat, AI_MATKEY_SHININESS, &iNs))
                 {
-                    material.roughness = glm::vec2(1.f * Ns);
+                    material.roughness = glm::vec2((1000.f - 1.f * iNs) / 1000.f);
+                    material.type      = Material::Type::eConductor;
                 }
 
                 float reflect = 0.f;
                 if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_REFLECTIVITY, &reflect))
                 {
                     //std::cerr << "\treflectivity : " << reflect << "\n";
-                }
-
-                float IOR = 1.f;
-                if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_REFRACTI, &IOR) && IOR != 1.f)
-                {
-                    material.eta = glm::vec3(IOR);
-                    material.type = Material::Type::eDielectric;
-                }
-                else
-                {
-                    material.eta = glm::vec3(1.0);
                 }
             }
         }
@@ -491,7 +512,6 @@ namespace vk2s
 
             triEmitter.emissive = mMaterials[matIdx].emissive;
             triEmitter.area     = 0.5f * glm::length(glm::cross(p2 - p0, p1 - p0));
-            int debug           = 0;
         }
     }
 

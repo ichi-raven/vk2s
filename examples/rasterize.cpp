@@ -53,10 +53,11 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
         Handle<vk2s::Buffer> materialBuffer;
         Handle<vk2s::Buffer> emitterBuffer;
         Handle<vk2s::Buffer> triEmitterBuffer;
+        Handle<vk2s::Buffer> infiniteEmitterBuffer;
         std::vector<Handle<vk2s::Image>> materialTextures;
         auto sampler = device.create<vk2s::Sampler>(vk::SamplerCreateInfo());
 
-        load("../../examples/resources/model/CornellBox/CornellBox-Sphere.obj", device, meshInstances, materialBuffer, materialTextures, emitterBuffer, triEmitterBuffer);
+        load("../../examples/resources/model/CornellBox/CornellBox-Sphere.obj", device, meshInstances, materialBuffer, materialTextures, emitterBuffer, triEmitterBuffer, infiniteEmitterBuffer);
 
         // craete shaders
         auto vertexShader   = device.create<vk2s::Shader>("../../examples/shaders/rasterize/vertex.vert", "main");

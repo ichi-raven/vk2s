@@ -22,9 +22,17 @@ void main()
   const float phi = sgn(y) * acos(x / sqrt(x * x + y * y));
   const float theta = acos(z / length(worldRayDirection));
 
-  payload.Le = vec3(0.0);
-  payload.intersected = false;
-  payload.emissive = true;
+  if (infiniteEmitter.envmapIdx == -1)
+  {
+    payload.Le = infiniteEmitter.constantEmissive.xyz;
+    payload.intersected = false;
+    payload.emissive = dot(payload.Le, payload.Le) > EPS * EPS;
+  }
+  else
+  {
+    // TODO!
+    payload.Le = RED;
+  }
 
   // account for infinite lights if ray has no intersection (missed)
   //payload.Le = texture(envmap, vec2(phi / M_PI2, theta / M_PI)).xyz;

@@ -3,6 +3,10 @@
 
 #include <spirv_reflect.h>
 
+#include <slang.h>
+#include <slang-com-ptr.h>
+#include <slang-com-helper.h>
+
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -98,8 +102,102 @@ namespace vk2s
             return shaderc_shader_kind::shaderc_vertex_shader;
         }
 
+        SPIRVCode compileSlang(std::string_view path)
+        {
+            Slang::ComPtr<slang::IGlobalSession> slangGlobalSession;
+            if (SLANG_FAILED(slang::createGlobalSession(slangGlobalSession.writeRef())))
+            {
+                assert(!"failed to create global session!");
+                return SPIRVCode();
+            }
+
+            // Next we create a compilation session to generate SPIRV code from Slang source.
+            slang::SessionDesc sessionDesc = {};
+            slang::TargetDesc targetDesc   = {};
+            targetDesc.format              = SLANG_SPIRV;
+            targetDesc.profile             = slangGlobalSession->findProfile("spirv_1_5");
+            targetDesc.flags               = SLANG_TARGET_FLAG_GENERATE_SPIRV_DIRECTLY;
+
+            sessionDesc.targets     = &targetDesc;
+            sessionDesc.targetCount = 1;
+
+            Slang::ComPtr<slang::ISession> session;
+            if (SLANG_FAILED(slangGlobalSession->createSession(sessionDesc, session.writeRef())))
+            {
+                assert(!"failed to create session!");
+                return SPIRVCode();
+            }
+
+            slang::IModule* slangModule = nullptr;
+            {
+                Slang::ComPtr<slang::IBlob> diagnosticBlob;
+                //resourceBase.resolveResource(path.data());
+                slangModule        = session->loadModule(path.data(), diagnosticBlob.writeRef());
+                if (!slangModule)
+                {
+                    return SPIRVCode();
+                }
+            }
+
+            Slang::ComPtr<slang::IEntryPoint> entryPoint;
+            slangModule->findEntryPointByName("computeMain", entryPoint.writeRef());
+
+            // At this point we have a few different Slang API objects that represent
+            // pieces of our code: `module`, `vertexEntryPoint`, and `fragmentEntryPoint`.
+            //
+            // A single Slang module could contain many different entry points (e.g.,
+            // four vertex entry points, three fragment entry points, and two compute
+            // shaders), and before we try to generate output code for our target API
+            // we need to identify which entry points we plan to use together.
+            //
+            // Modules and entry points are both examples of *component types* in the
+            // Slang API. The API also provides a way to build a *composite* out of
+            // other pieces, and that is what we are going to do with our module
+            // and entry points.
+            //
+            Slang::List<slang::IComponentType*> componentTypes;
+            componentTypes.add(slangModule);
+            componentTypes.add(entryPoint);
+
+            // Actually creating the composite component type is a single operation
+            // on the Slang session, but the operation could potentially fail if
+            // something about the composite was invalid (e.g., you are trying to
+            // combine multiple copies of the same module), so we need to deal
+            // with the possibility of diagnostic output.
+            //
+            Slang::ComPtr<slang::IComponentType> composedProgram;
+            {
+                ComPtr<slang::IBlob> diagnosticsBlob;
+                SlangResult result = session->createCompositeComponentType(componentTypes.getBuffer(), componentTypes.getCount(), composedProgram.writeRef(), diagnosticsBlob.writeRef());
+                diagnoseIfNeeded(diagnosticsBlob);
+                RETURN_ON_FAIL(result);
+            }
+
+            // Now we can call `composedProgram->getEntryPointCode()` to retrieve the
+            // compiled SPIRV code that we will use to create a vulkan compute pipeline.
+            // This will trigger the final Slang compilation and spirv code generation.
+            ComPtr<slang::IBlob> spirvCode;
+            {
+                ComPtr<slang::IBlob> diagnosticsBlob;
+                SlangResult result = composedProgram->getEntryPointCode(0, 0, spirvCode.writeRef(), diagnosticsBlob.writeRef());
+                diagnoseIfNeeded(diagnosticsBlob);
+                RETURN_ON_FAIL(result);
+
+                if (isTestMode())
+                {
+                    printEntrypointHashes(1, 1, composedProgram);
+                }
+            }
+
+        }
+
         SPIRVCode compileFile(std::string_view path, const bool optimize)
         {
+            if (path.ends_with("slang"))
+            {
+                return compileSlang(path);
+            }
+
 
             const auto shaderSource = readFile(path);
             const auto kind         = getShaderStage(path);

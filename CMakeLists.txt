@@ -77,6 +77,68 @@ set(GLFW_LIB_NAME glfw3)
 add_subdirectory(${ASSIMP_DIR})
 set(ASSIMP_LIB_NAME assimp-vc143-mt)
 
+# slang
+set(SLANG_VERSION "2024.13")
+# set install dir
+set(SLANG_INSTALL_DIR "./ThirdParty/slang")
+set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${SLANG_INSTALL_DIR}")
+
+find_package(slang QUIET)
+
+if (NOT slang_FOUND)
+
+    # Slangディレクトリが空でないかをチェック
+    file(GLOB SLANG_FILES "${SLANG_INSTALL_DIR}/*")
+    set(SLANG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/slang)
+
+    if (NOT SLANG_FILES)
+        message(STATUS "Slang not found. Downloading and installing it...")
+        
+        # OSごとのダウンロードURLを設定
+        if (WIN32)
+            set(SLANG_ZIP_URL "https://github.com/shader-slang/slang/releases/download/v2024.13/slang-2024.13-windows-x86_64.zip")
+        elseif (UNIX)
+            set(SLANG_ZIP_URL "https://github.com/shader-slang/slang/releases/download/v2024.13/slang-2024.13-linux-x86_64.zip")
+        else()
+            message(FATAL_ERROR "Unsupported OS.")
+        endif()
+
+      set(SLANG_ZIP_FILE ./ThirdParty/slang_tmp.zip)
+
+      # ZIPファイルをダウンロード
+      message("URL: ${SLANG_ZIP_URL}")
+      file(DOWNLOAD ${SLANG_ZIP_URL} ${SLANG_ZIP_FILE})
+      message("file: ${SLANG_ZIP_FILE}")
+
+      # 解凍するコマンドをOSによって変更
+      if (WIN32)
+          # Windowsの場合
+          execute_process(
+              COMMAND powershell -Command "Expand-Archive -Path '${SLANG_ZIP_FILE}' -DestinationPath '${SLANG_DIR}' -Force"
+          )
+
+      elseif (UNIX)
+          # Linuxの場合
+          execute_process(
+              COMMAND unzip ${SLANG_ZIP_FILE} -d ${SLANG_DIR}
+          )
+      endif()
+
+      file(REMOVE ${SLANG_ZIP_FILE})
+
+      message(STATUS "Downloaded and extracted Slang to: ${SLANG_DIR}")
+
+      if (result)
+          message(FATAL_ERROR "Failed to download and install Slang.")
+      endif()
+    endif()
+
+elseif(NOT slang_FOUND)
+    get_filename_component(SLANG_DIR ${Slang_INCLUDE_DIRS} DIRECTORY)
+endif()
+
+set(SLANG_LIB_NAME slang)
+
 add_subdirectory(src)
 
 # examples

@@ -19,9 +19,12 @@ struct InstanceMappingUB  // std430
 
 struct EmitterUB
 {
+    glm::vec3 sceneCenter;
+    float sceneRadius;
     uint32_t triEmitterNum;
     uint32_t pointEmitterNum;
-    uint32_t padding[2];
+    uint32_t infiniteEmitterExists;  // false if 0, otherwise true
+    uint32_t activeEmitterTypeNum;
 };
 
 struct MeshInstance
@@ -34,7 +37,7 @@ struct MeshInstance
 };
 
 inline void load(std::string_view path, vk2s::Device& device, std::vector<MeshInstance>& meshInstances, Handle<vk2s::Buffer>& materialUB, std::vector<Handle<vk2s::Image>>& materialTextures, Handle<vk2s::Buffer>& emitterUB,
-                 Handle<vk2s::Buffer>& triEmitterUB)
+                 Handle<vk2s::Buffer>& triEmitterUB, Handle<vk2s::Buffer>& infiniteEmitterUB)
 {
     //std::vector<vk2s::Mesh> hostMeshes;
     //std::vector<vk2s::Material> hostMaterials;
@@ -95,7 +98,7 @@ inline void load(std::string_view path, vk2s::Device& device, std::vector<MeshIn
 
     for (const auto& hostTex : textures)
     {
-        auto& tex = materialTextures.emplace_back();
+        auto& tex       = materialTextures.emplace_back();
         const auto size = hostTex.width * hostTex.height * static_cast<uint32_t>(STBI_rgb_alpha);
 
         vk::ImageCreateInfo ci;
@@ -115,7 +118,7 @@ inline void load(std::string_view path, vk2s::Device& device, std::vector<MeshIn
     // if textures are empty, add dummy texture
     if (materialTextures.empty())
     {
-        auto& dummyTex     = materialTextures.emplace_back();
+        auto& dummyTex    = materialTextures.emplace_back();
         const auto width  = 1;
         const auto height = 1;
         const auto size   = width * height * static_cast<uint32_t>(STBI_rgb_alpha);
@@ -137,9 +140,20 @@ inline void load(std::string_view path, vk2s::Device& device, std::vector<MeshIn
 
     // emitter
     std::vector<vk2s::TriEmitter> triEmitters = scene.getTriEmitters();
+
     EmitterUB emitter;
-    emitter.triEmitterNum = triEmitters.size();
-    emitter.pointEmitterNum = 0;// TODO:
+    emitter.triEmitterNum   = triEmitters.size();
+    emitter.pointEmitterNum = 0;  // TODO:
+    // testing
+    emitter.infiniteEmitterExists = 1;
+    vk2s::InfiniteEmitter infEmitter{
+        .constantEmissive = glm::vec4(1.0),
+        .envmapIdx        = 0xFFFFFFFF,
+        .pdfIdx           = 0xFFFFFFFF,
+        .padding          = { 0 },
+    };
+
+    emitter.activeEmitterTypeNum = 2;  // TODO for pointEmitter
 
     {
         const auto ubSize = sizeof(EmitterUB);
@@ -151,12 +165,24 @@ inline void load(std::string_view path, vk2s::Device& device, std::vector<MeshIn
     }
 
     {
-        const auto ubSize = sizeof(vk2s::TriEmitter) * triEmitters.size();
+        const auto ubSize = sizeof(vk2s::TriEmitter) * std::max((size_t)1, triEmitters.size());
         vk::BufferCreateInfo ci({}, ubSize, vk::BufferUsageFlagBits::eStorageBuffer);
         vk::MemoryPropertyFlags fb = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
 
         triEmitterUB = device.create<vk2s::Buffer>(ci, fb);
-        triEmitterUB->write(triEmitters.data(), ubSize);
+        if (!triEmitters.empty())
+        {
+            triEmitterUB->write(triEmitters.data(), ubSize);
+        }
+    }
+
+    {
+        const auto ubSize = sizeof(vk2s::InfiniteEmitter);
+        vk::BufferCreateInfo ci({}, ubSize, vk::BufferUsageFlagBits::eStorageBuffer);
+        vk::MemoryPropertyFlags fb = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+
+        infiniteEmitterUB = device.create<vk2s::Buffer>(ci, fb);
+        infiniteEmitterUB->write(&infEmitter, ubSize);
     }
 }
 

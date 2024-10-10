@@ -67,6 +67,14 @@ struct TriEmitter
   vec4 emissive;
 };
 
+struct InfiniteEmitter
+{
+  vec4 constantEmissive;
+  uint32_t envmapIdx;
+  uint32_t pdfIdx;
+  uint32_t padding[2];
+};
+
 struct DisneyBSDFState
 {
   bool isRefracted;

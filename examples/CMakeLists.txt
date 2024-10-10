@@ -10,6 +10,7 @@ include_directories(
   ${IMGUI_BACKEND_DIR}
   ${SPIRV_REFLECT_DIR}
   ${ASSIMP_INCLUDE_DIR}
+  ${SLANG_DIR}/include
   ${Vulkan_INCLUDE_DIRS})
 
 # imgui 
@@ -34,7 +35,7 @@ rasterize.cpp
 
 # link libraries
 get_filename_component(VULKAN_LIB_DIR ${Vulkan_LIBRARIES} DIRECTORY)
-target_link_directories(${APP_NAME} PRIVATE ${CMAKE_BINARY_DIR}/lib ${VULKAN_LIB_DIR})
+target_link_directories(${APP_NAME} PRIVATE ${CMAKE_BINARY_DIR}/lib ${VULKAN_LIB_DIR} ${SLANG_DIR}/lib)
 
 target_link_libraries(${APP_NAME} 
   PRIVATE
@@ -45,6 +46,7 @@ target_link_libraries(${APP_NAME}
   optimized ${GLFW_LIB_NAME} debug ${GLFW_LIB_NAME}${CMAKE_DEBUG_POSTFIX}
   optimized ${ASSIMP_LIB_NAME} debug ${ASSIMP_LIB_NAME}${CMAKE_DEBUG_POSTFIX}
   optimized zlibstatic.lib debug zlibstaticd.lib
+  ${SLANG_LIB_NAME}
   ${LIB_NAME}
 )
 

@@ -93,8 +93,9 @@ namespace vk2s
     // std430
     struct InfiniteEmitter
     {
-        uint32_t envmapIdx;
-        uint32_t pdfIdx;
+        glm::vec4 constantEmissive; // if constant
+        uint32_t envmapIdx; // 0xFFFFFFFF if constant (else valid texture index)
+        uint32_t pdfIdx;    // 0xFFFFFFFF if constant (else valid texture index)
         uint32_t padding[2];
     };
 
@@ -191,6 +192,8 @@ namespace vk2s
 
         Scene(std::string_view path);
 
+        const std::pair<glm::vec3, float> getSceneBoundSphere() const;
+
         const std::vector<Mesh>& getMeshes() const;
 
         const std::vector<Material>& getMaterials() const;
@@ -217,6 +220,11 @@ namespace vk2s
 
         std::string mDirectory;
         std::string mPath;
+
+        glm::vec3 mBottomRightFront; // min
+        glm::vec3 mTopLeftBack; // max
+
+        std::pair<glm::vec3, float> mSceneBoundSphere;
 
         std::vector<Mesh> mMeshes;
         std::vector<Material> mMaterials;
