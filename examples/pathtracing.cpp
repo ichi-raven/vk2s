@@ -47,9 +47,9 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
         std::vector<Handle<vk2s::Image>> materialTextures;
         auto sampler = device.create<vk2s::Sampler>(vk::SamplerCreateInfo());
 
-        //load("../../examples/resources/model/CornellBox/CornellBox-Sphere.obj", device, meshInstances, materialBuffer, materialTextures, emitterBuffer, triEmitterBuffer, infiniteEmitterBuffer);
+        load("../../examples/resources/model/CornellBox/CornellBox-Sphere.obj", device, meshInstances, materialBuffer, materialTextures, emitterBuffer, triEmitterBuffer, infiniteEmitterBuffer);
         //load("../../examples/resources/model/SanMiguel/san-miguel.obj", device, meshInstances, materialBuffer, materialTextures, emitterBuffer, triEmitterBuffer, infiniteEmitterBuffer);
-        load("../../examples/resources/model/WhiteFurneceTest/test.obj", device, meshInstances, materialBuffer, materialTextures, emitterBuffer, triEmitterBuffer, infiniteEmitterBuffer);
+        //load("../../examples/resources/model/WhiteFurneceTest/test.obj", device, meshInstances, materialBuffer, materialTextures, emitterBuffer, triEmitterBuffer, infiniteEmitterBuffer);
 
         // create scene UB
         Handle<vk2s::DynamicBuffer> sceneBuffer;

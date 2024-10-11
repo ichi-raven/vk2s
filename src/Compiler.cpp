@@ -5,7 +5,6 @@
 
 #include <slang.h>
 #include <slang-com-ptr.h>
-#include <slang-com-helper.h>
 
 #include <iostream>
 #include <sstream>
@@ -155,9 +154,9 @@ namespace vk2s
             // other pieces, and that is what we are going to do with our module
             // and entry points.
             //
-            Slang::List<slang::IComponentType*> componentTypes;
-            componentTypes.add(slangModule);
-            componentTypes.add(entryPoint);
+            std::vector<slang::IComponentType*> componentTypes;
+            componentTypes.emplace_back(slangModule);
+            componentTypes.emplace_back(entryPoint);
 
             // Actually creating the composite component type is a single operation
             // on the Slang session, but the operation could potentially fail if
@@ -167,25 +166,25 @@ namespace vk2s
             //
             Slang::ComPtr<slang::IComponentType> composedProgram;
             {
-                ComPtr<slang::IBlob> diagnosticsBlob;
-                SlangResult result = session->createCompositeComponentType(componentTypes.getBuffer(), componentTypes.getCount(), composedProgram.writeRef(), diagnosticsBlob.writeRef());
-                diagnoseIfNeeded(diagnosticsBlob);
-                RETURN_ON_FAIL(result);
+                SlangResult result = session->createCompositeComponentType(componentTypes.data(), componentTypes.size(), composedProgram.writeRef());
+                if (SLANG_FAILED(result))
+                {
+                    assert(!"failed to create composite component type!");
+                    return SPIRVCode();
+                }
             }
 
             // Now we can call `composedProgram->getEntryPointCode()` to retrieve the
             // compiled SPIRV code that we will use to create a vulkan compute pipeline.
             // This will trigger the final Slang compilation and spirv code generation.
-            ComPtr<slang::IBlob> spirvCode;
+            Slang::ComPtr<slang::IBlob> spirvCode;
             {
-                ComPtr<slang::IBlob> diagnosticsBlob;
-                SlangResult result = composedProgram->getEntryPointCode(0, 0, spirvCode.writeRef(), diagnosticsBlob.writeRef());
-                diagnoseIfNeeded(diagnosticsBlob);
-                RETURN_ON_FAIL(result);
+                SlangResult result = composedProgram->getEntryPointCode(0, 0, spirvCode.writeRef());
 
-                if (isTestMode())
+                if (SLANG_FAILED(result))
                 {
-                    printEntrypointHashes(1, 1, composedProgram);
+                    assert(!"failed to get entry point code!");
+                    return SPIRVCode();
                 }
             }
 

@@ -110,6 +110,7 @@ if (NOT slang_FOUND)
       file(DOWNLOAD ${SLANG_ZIP_URL} ${SLANG_ZIP_FILE})
       message("file: ${SLANG_ZIP_FILE}")
 
+      set (DLLEXT ".dll")
       # 解凍するコマンドをOSによって変更
       if (WIN32)
           # Windowsの場合
@@ -122,6 +123,7 @@ if (NOT slang_FOUND)
           execute_process(
               COMMAND unzip ${SLANG_ZIP_FILE} -d ${SLANG_DIR}
           )
+          set (DLLEXT ".so")
       endif()
 
       file(REMOVE ${SLANG_ZIP_FILE})
@@ -131,6 +133,16 @@ if (NOT slang_FOUND)
       if (result)
           message(FATAL_ERROR "Failed to download and install Slang.")
       endif()
+
+      # 指定したディレクトリ内のdllファイルをすべて取得
+      file(GLOB DLL_FILES "${SLANG_DIR}/bin/*${DLLEXT}")
+
+      # 各dllファイルをコピー先にコピー
+      foreach(DLL ${DLL_FILES})
+        file(COPY ${DLL} DESTINATION ${CMAKE_BINARY_DIR}/bin)
+        message("copied ${DLL} to ${CMAKE_BINARY_DIR}/bin")
+      endforeach()
+
     endif()
 
 elseif(NOT slang_FOUND)
