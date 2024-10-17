@@ -471,12 +471,12 @@ namespace vk2s
                 if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_SHININESS, &Ns))
                 {
                     material.roughness = glm::vec2((1000.f - Ns) / 1000.f);
-                    material.type      = Material::Type::eConductor;
+                    //material.type      = Material::Type::eConductor;
                 }
                 else if (AI_SUCCESS == aiGetMaterialInteger(pMat, AI_MATKEY_SHININESS, &iNs))
                 {
                     material.roughness = glm::vec2((1000.f - 1.f * iNs) / 1000.f);
-                    material.type      = Material::Type::eConductor;
+                    //material.type      = Material::Type::eConductor;
                 }
 
                 float reflect = 0.f;

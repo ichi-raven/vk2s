@@ -70,19 +70,19 @@ LightSample sampleLight(const vec3 pos, inout uint prngState)
     // sample one emitter (uniform)
     float emitterTypeRnd = stepAndOutputRNGFloat(prngState);
 
-    // if (emitterTypeRnd < 1. / float(emitterInfo.activeEmitterNum))
-    // {
-    //     const uint idx = uint(stepAndOutputRNGFloat(prngState) * emitterInfo.triEmitterNum);
-    //     LightSample ls = sampleTriLight(triEmitters[idx], pos, prngState);
-    //     ls.pdf /= float(emitterInfo.activeEmitterNum);
-    //     return ls;
-    // }
-    // else
-    // {
-        LightSample ls = sampleInfiniteLight(pos, prngState);
-        //ls.pdf /= float(emitterInfo.activeEmitterNum);
+    if (emitterTypeRnd < 1. / float(emitterInfo.activeEmitterNum))
+    {
+        const uint idx = uint(stepAndOutputRNGFloat(prngState) * emitterInfo.triEmitterNum);
+        LightSample ls = sampleTriLight(triEmitters[idx], pos, prngState);
+        ls.pdf /= float(emitterInfo.activeEmitterNum);
         return ls;
-    //}
+    }
+    else
+    {
+        LightSample ls = sampleInfiniteLight(pos, prngState);
+        ls.pdf /= float(emitterInfo.activeEmitterNum);
+        return ls;
+    }
 }
 
 float calcHitLightPdf(const vec3 x, const vec3 lightPos, const vec3 lightNormal, const float lightArea, out float invG)
@@ -93,13 +93,13 @@ float calcHitLightPdf(const vec3 x, const vec3 lightPos, const vec3 lightNormal,
     const float lightCos = abs(dot(normalize(to), lightNormal));
     
     invG = distSq / lightCos;
-    return 1. / lightArea / emitterInfo.triEmitterNum;// / float(emitterInfo.activeEmitterNum);
+    return 1. / lightArea / emitterInfo.triEmitterNum / float(emitterInfo.activeEmitterNum);
 }
 
 float calcInfiniteLightPdf(out float invG)
 {
     invG = 1.0;
-    return 0.25 * M_INVPI;// / float(emitterInfo.activeEmitterNum);
+    return 0.25 * M_INVPI / float(emitterInfo.activeEmitterNum);
 }
 
 #endif

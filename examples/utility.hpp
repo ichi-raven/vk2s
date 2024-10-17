@@ -147,11 +147,14 @@ inline void load(std::string_view path, vk2s::Device& device, std::vector<MeshIn
     // testing
     emitter.infiniteEmitterExists = 1;
     vk2s::InfiniteEmitter infEmitter{
-        .constantEmissive = glm::vec4(1.0),
+        .constantEmissive = glm::vec4(0.8, 0.2, 0.2, 1.0),
         .envmapIdx        = 0xFFFFFFFF,
         .pdfIdx           = 0xFFFFFFFF,
         .padding          = { 0 },
     };
+
+    emitter.sceneCenter = glm::vec3(0., 0., 0.);
+    emitter.sceneRadius = 100000.f;
 
     emitter.activeEmitterTypeNum = 2;  // TODO for pointEmitter
 

@@ -20,18 +20,17 @@ namespace vk2s
 {
     namespace Compiler
     {
-        using SPIRVCode = std::vector<std::uint32_t>;
-
-        constexpr auto kSpirvVersion = shaderc_spirv_version_1_6;
-        constexpr auto kVulkanEnvVersion = shaderc_env_version_vulkan_1_3;
+        using SPIRVCode = std::vector<uint32_t>;
 
         std::string readFile(std::string_view path);
 
         shaderc_shader_kind getShaderStage(std::string_view filepath);
 
-        SPIRVCode compileText(shaderc_shader_kind stage, const std::string& glslShader);
+        SPIRVCode compileText(shaderc_shader_kind stage, const std::string& shaderCode);
 
         SPIRVCode compileFile(std::string_view path, const bool optimize = false);
+
+        SPIRVCode compileFile(std::string_view path, std::string_view entrypoint, const bool optimize = false);
 
         // SPIRV-Reflect (vertex layout, descriptor set layout bindings)
         using VertexInputAttributes = std::vector<vk::VertexInputAttributeDescription>;

@@ -8,7 +8,7 @@ namespace vk2s
         : mDevice(device)
         , mEntryPoint(entryPoint)
     {
-        const auto code = Compiler::compileFile(path);
+        const auto code = Compiler::compileFile(path, entryPoint);
 
         vk::ShaderModuleCreateInfo createInfo({}, code.size() * sizeof(code[0]), reinterpret_cast<const uint32_t*>(code.data()));
 
