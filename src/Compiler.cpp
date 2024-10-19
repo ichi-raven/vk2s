@@ -166,7 +166,7 @@ namespace vk2s
 
             //std::cout << "Compiled to an binary module with " << spirv.size() << " words." << std::endl;
 
-            return { module.cbegin(), module.cend() };
+            return SPIRVCode(module.cbegin(), module.cend());
         }
 
         SPIRVCode compileSlangFile(std::string_view path, std::string_view entrypoint)
@@ -237,14 +237,13 @@ namespace vk2s
             const uint32_t* cbegin = reinterpret_cast<const uint32_t*>(spirvCode->getBufferPointer());
             const uint32_t* cend   = cbegin + (spirvCode->getBufferSize() / sizeof(SPIRVCode::value_type));
 
-            return { cbegin, cend };
+            return SPIRVCode(cbegin, cend);
         }
 
         SPIRVCode compileFile(std::string_view path, const bool optimize)
         {
             return compileFile(path, "", optimize);
         }
-
 
         SPIRVCode compileFile(std::string_view path, std::string_view entrypoint, const bool optimize)
         {

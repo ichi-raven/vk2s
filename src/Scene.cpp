@@ -18,6 +18,7 @@
 
 namespace
 {
+
     inline glm::mat4 convert4x4(const aiMatrix4x4& from)
     {
         glm::mat4 to{};

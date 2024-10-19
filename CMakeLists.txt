@@ -68,6 +68,7 @@ set(IMGUI_BACKEND_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/imgui/backends)
 set(SPIRV_REFLECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/SPIRV-Reflect)
 set(ASSIMP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/Assimp)
 set(ASSIMP_INCLUDE_DIR ${ASSIMP_DIR}/include ${CMAKE_CURRENT_BINARY_DIR}/ThirdParty/Assimp/include)
+set(TINYGLTF_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/tinygltf)
 
 # GLFW
 add_subdirectory(${GLFW_DIR})
@@ -87,14 +88,12 @@ find_package(slang QUIET)
 
 if (NOT slang_FOUND)
 
-    # Slangディレクトリが空でないかをチェック
     file(GLOB SLANG_FILES "${SLANG_INSTALL_DIR}/*")
     set(SLANG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/slang)
 
     if (NOT SLANG_FILES)
         message(STATUS "Slang not found. Downloading and installing it...")
         
-        # OSごとのダウンロードURLを設定
         if (WIN32)
             set(SLANG_ZIP_URL "https://github.com/shader-slang/slang/releases/download/v2024.13/slang-2024.13-windows-x86_64.zip")
         elseif (UNIX)
@@ -105,21 +104,17 @@ if (NOT slang_FOUND)
 
       set(SLANG_ZIP_FILE ./ThirdParty/slang_tmp.zip)
 
-      # ZIPファイルをダウンロード
       message("URL: ${SLANG_ZIP_URL}")
       file(DOWNLOAD ${SLANG_ZIP_URL} ${SLANG_ZIP_FILE})
       message("file: ${SLANG_ZIP_FILE}")
 
       set (DLLEXT ".dll")
-      # 解凍するコマンドをOSによって変更
       if (WIN32)
-          # Windowsの場合
           execute_process(
               COMMAND powershell -Command "Expand-Archive -Path '${SLANG_ZIP_FILE}' -DestinationPath '${SLANG_DIR}' -Force"
           )
 
       elseif (UNIX)
-          # Linuxの場合
           execute_process(
               COMMAND unzip ${SLANG_ZIP_FILE} -d ${SLANG_DIR}
           )
@@ -134,20 +129,26 @@ if (NOT slang_FOUND)
           message(FATAL_ERROR "Failed to download and install Slang.")
       endif()
 
-      # 指定したディレクトリ内のdllファイルをすべて取得
-      file(GLOB DLL_FILES "${SLANG_DIR}/bin/*${DLLEXT}")
-
-      # 各dllファイルをコピー先にコピー
-      foreach(DLL ${DLL_FILES})
-        file(COPY ${DLL} DESTINATION ${CMAKE_BINARY_DIR}/bin)
-        message("copied ${DLL} to ${CMAKE_BINARY_DIR}/bin")
-      endforeach()
-
     endif()
 
 elseif(NOT slang_FOUND)
     get_filename_component(SLANG_DIR ${Slang_INCLUDE_DIRS} DIRECTORY)
 endif()
+
+# set DLLs
+set (DLLEXT ".dll")
+if (UNIX)
+          execute_process(
+              COMMAND unzip ${SLANG_ZIP_FILE} -d ${SLANG_DIR}
+          )
+          set (DLLEXT ".so")
+      endif()
+file(GLOB DLL_FILES "${SLANG_DIR}/bin/*${DLLEXT}")
+
+foreach(DLL ${DLL_FILES})
+  file(COPY ${DLL} DESTINATION ${CMAKE_BINARY_DIR}/bin)
+  message("copied ${DLL} to ${CMAKE_BINARY_DIR}/bin")
+endforeach()
 
 set(SLANG_LIB_NAME slang)
 

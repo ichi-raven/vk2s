@@ -9,6 +9,7 @@ include_directories(
   ${SPIRV_REFLECT_DIR}
   ${ASSIMP_INCLUDE_DIR}
   ${SLANG_DIR}/include
+  ${TINYGLTF_DIR}
   ${Vulkan_INCLUDE_DIRS})
 
 # imgui 
