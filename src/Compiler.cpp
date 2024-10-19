@@ -269,7 +269,7 @@ namespace vk2s
                 return SPIRVCode();
             }
 
-            saveAssemblyToFile(std::string("./compiled_") + std::string(".spv"), spirvAssembly);
+            saveAssemblyToFile(std::string("./compiled_") + std::string(entrypoint) + std::string(".spv"), spirvAssembly);
 
             return code;
         }
