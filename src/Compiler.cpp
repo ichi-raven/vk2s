@@ -1,7 +1,8 @@
 #include "../include/vk2s/Compiler.hpp"
 
-
 #include <spirv_reflect.h>
+
+#include <spirv-tools/libspirv.hpp>
 
 #include <slang.h>
 #include <slang-com-ptr.h>
@@ -21,17 +22,14 @@ namespace vk2s
         class ShaderIncluder : public shaderc::CompileOptions::IncluderInterface
         {
         public:
-
             ShaderIncluder(std::string_view directory)
                 : mDirectory(std::filesystem::canonical(directory).string())
                 , shaderc::CompileOptions::IncluderInterface()
             {
-
             }
 
             shaderc_include_result* GetInclude(const char* requested_source, shaderc_include_type type, const char* requesting_source, size_t include_depth)
             {
-
                 // get the directory of included path
                 const std::filesystem::path requestingPath = std::filesystem::canonical(mDirectory / requesting_source);
                 const std::filesystem::path requestedPath  = std::filesystem::canonical(requestingPath.parent_path() / requested_source);
@@ -99,6 +97,19 @@ namespace vk2s
             assert(!"Unknown shader stage!");
 
             return shaderc_shader_kind::shaderc_vertex_shader;
+        }
+
+        bool saveAssemblyToFile(const std::string& filename, const std::string& assembly)
+        {
+            std::ofstream file(filename);
+            if (!file.is_open())
+            {
+                std::cerr << "Failed to open file for writing: " << filename << std::endl;
+                return false;
+            }
+
+            file << assembly;
+            return true;
         }
 
         SPIRVCode compileWithShaderC(std::string_view path, const bool optimize)
@@ -248,8 +259,19 @@ namespace vk2s
 
             const uint32_t* cbegin = reinterpret_cast<const uint32_t*>(spirvCode->getBufferPointer());
             const uint32_t* cend   = cbegin + (spirvCode->getBufferSize() / sizeof(SPIRVCode::value_type));
+            SPIRVCode code(cbegin, cend);
 
-            return SPIRVCode(cbegin, cend);
+            spvtools::SpirvTools spirvTools(SPV_ENV_VULKAN_1_3);
+            std::string spirvAssembly;
+            if (!spirvTools.Disassemble(code, &spirvAssembly, SPV_BINARY_TO_TEXT_OPTION_INDENT))
+            {
+                std::cerr << "Failed to disassemble SPIR-V binary" << std::endl;
+                return SPIRVCode();
+            }
+
+            saveAssemblyToFile(std::string("./compiled_") + std::string(".spv"), spirvAssembly);
+
+            return code;
         }
 
         SPIRVCode compileFile(std::string_view path, const bool optimize)
