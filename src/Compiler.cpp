@@ -171,6 +171,8 @@ namespace vk2s
 
         SPIRVCode compileSlangFile(std::string_view path, std::string_view entrypoint)
         {
+            Slang::ComPtr<slang::IBlob> diagnosticBlob;
+
             Slang::ComPtr<slang::IGlobalSession> slangGlobalSession;
             if (SLANG_FAILED(slang::createGlobalSession(slangGlobalSession.writeRef())))
             {
@@ -197,11 +199,13 @@ namespace vk2s
 
             slang::IModule* slangModule = nullptr;
             {
-                Slang::ComPtr<slang::IBlob> diagnosticBlob;
                 slangModule = session->loadModule(path.data(), diagnosticBlob.writeRef());
-                if (!slangModule)
+                if (diagnosticBlob)
                 {
                     std::cout << (const char*)diagnosticBlob->getBufferPointer() << "\n";
+                }
+                if (!slangModule)
+                {
                     assert(!"failed to load module!");
 
                     return SPIRVCode();
@@ -216,7 +220,11 @@ namespace vk2s
 
             Slang::ComPtr<slang::IComponentType> composedProgram;
             {
-                SlangResult result = session->createCompositeComponentType(componentTypes.data(), componentTypes.size(), composedProgram.writeRef());
+                SlangResult result = session->createCompositeComponentType(componentTypes.data(), componentTypes.size(), composedProgram.writeRef(), diagnosticBlob.writeRef());
+                if (diagnosticBlob)
+                {
+                    std::cout << (const char*)diagnosticBlob->getBufferPointer() << "\n";
+                }
                 if (SLANG_FAILED(result))
                 {
                     assert(!"failed to create composite component type!");
@@ -226,7 +234,11 @@ namespace vk2s
 
             Slang::ComPtr<slang::IBlob> spirvCode;
             {
-                SlangResult result = composedProgram->getEntryPointCode(0, 0, spirvCode.writeRef());
+                SlangResult result = composedProgram->getEntryPointCode(0, 0, spirvCode.writeRef(), diagnosticBlob.writeRef());
+                if (diagnosticBlob)
+                {
+                    std::cout << (const char*)diagnosticBlob->getBufferPointer() << "\n";
+                }
                 if (SLANG_FAILED(result))
                 {
                     assert(!"failed to get entry point code!");
