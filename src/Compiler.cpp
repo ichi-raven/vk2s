@@ -210,11 +210,10 @@ namespace vk2s
             targetDesc.profile             = slangGlobalSession->findProfile("spirv_1_6");
             targetDesc.flags               = SLANG_TARGET_FLAG_GENERATE_SPIRV_DIRECTLY;
 
-            targetDesc.compilerOptionEntryCount = compilerOptionEntries.size();
-            targetDesc.compilerOptionEntries    = compilerOptionEntries.data();
-
             sessionDesc.targets     = &targetDesc;
             sessionDesc.targetCount = 1;
+            sessionDesc.compilerOptionEntryCount = compilerOptionEntries.size();
+            sessionDesc.compilerOptionEntries   = compilerOptionEntries.data();
 
             Slang::ComPtr<slang::ISession> session;
             if (SLANG_FAILED(slangGlobalSession->createSession(sessionDesc, session.writeRef())))
