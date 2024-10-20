@@ -315,22 +315,25 @@ namespace vk2s
         enabledDescriptorIndexingFeatures.descriptorBindingVariableDescriptorCount   = VK_TRUE;
         enabledDescriptorIndexingFeatures.runtimeDescriptorArray                     = VK_TRUE;
 
+        vk::PhysicalDeviceRobustness2FeaturesEXT robustness2Features(VK_TRUE, VK_TRUE, VK_TRUE);
+
         vk::PhysicalDeviceFeatures features = mPhysicalDevice.getFeatures();
 
-        vk::PhysicalDeviceFeatures2 physicalDeviceFeatures2(features, &enabledDescriptorIndexingFeatures);
+        vk::PhysicalDeviceFeatures2 physicalDeviceFeatures2(features, &robustness2Features);
 
         vk::DeviceCreateInfo createInfo{};
         if (mRayTracingSupported)
         {
+            robustness2Features.pNext = &enabledDescriptorIndexingFeatures;
             createInfo = vk::DeviceCreateInfo({}, queueCreateInfos, {}, allExtensions, &deviceFeatures);
-
-            createInfo.pNext            = &physicalDeviceFeatures2;
-            createInfo.pEnabledFeatures = nullptr;
         }
         else
         {
             createInfo = vk::DeviceCreateInfo({}, queueCreateInfos, {}, deviceExtensions, &deviceFeatures);
         }
+
+        createInfo.pNext            = &physicalDeviceFeatures2;
+        createInfo.pEnabledFeatures = nullptr;
 
         if (enableValidationLayers)
         {
