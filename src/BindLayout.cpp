@@ -67,6 +67,12 @@ namespace vk2s
             case vk::DescriptorType::eCombinedImageSampler:
                 mInfo.combinedImageSamplerNum += 1;
                 break;
+            case vk::DescriptorType::eSampledImage:
+                mInfo.sampledImageNum += 1;
+                break;
+            case vk::DescriptorType::eSampler:
+                mInfo.samplerNum += 1;
+                break;
             case vk::DescriptorType::eStorageBuffer:
                 mInfo.storageBufferNum += 1;
                 break;

@@ -142,8 +142,9 @@ namespace vk2s
         size_t idx = 0;
         for (const auto& pool : mDescriptorPools)
         {
-            if (pool.now.accelerationStructureNum < allocInfo.accelerationStructureNum || pool.now.combinedImageSamplerNum < allocInfo.combinedImageSamplerNum || pool.now.storageBufferNum < allocInfo.storageBufferNum ||
-                pool.now.storageImageNum < allocInfo.storageImageNum || pool.now.uniformBufferNum < allocInfo.uniformBufferNum || pool.now.uniformBufferDynamicNum < allocInfo.uniformBufferDynamicNum)
+            if (pool.now.accelerationStructureNum < allocInfo.accelerationStructureNum || pool.now.combinedImageSamplerNum < allocInfo.combinedImageSamplerNum || pool.now.sampledImageNum < allocInfo.sampledImageNum ||
+                pool.now.samplerNum < allocInfo.samplerNum || pool.now.storageBufferNum < allocInfo.storageBufferNum || pool.now.storageImageNum < allocInfo.storageImageNum || pool.now.uniformBufferNum < allocInfo.uniformBufferNum ||
+                pool.now.uniformBufferDynamicNum < allocInfo.uniformBufferDynamicNum)
             {
                 break;
             }
@@ -158,6 +159,8 @@ namespace vk2s
         auto& allocatedPool = mDescriptorPools[idx];
         allocatedPool.now.accelerationStructureNum -= allocInfo.accelerationStructureNum;
         allocatedPool.now.combinedImageSamplerNum -= allocInfo.combinedImageSamplerNum;
+        allocatedPool.now.sampledImageNum -= allocInfo.sampledImageNum;
+        allocatedPool.now.samplerNum -= allocInfo.samplerNum;
         allocatedPool.now.storageBufferNum -= allocInfo.storageBufferNum;
         allocatedPool.now.storageImageNum -= allocInfo.storageImageNum;
         allocatedPool.now.uniformBufferNum -= allocInfo.uniformBufferNum;
@@ -174,6 +177,8 @@ namespace vk2s
 
         allocatedPool.now.accelerationStructureNum += allocInfo.accelerationStructureNum;
         allocatedPool.now.combinedImageSamplerNum += allocInfo.combinedImageSamplerNum;
+        allocatedPool.now.sampledImageNum += allocInfo.sampledImageNum;
+        allocatedPool.now.samplerNum += allocInfo.samplerNum;
         allocatedPool.now.storageBufferNum += allocInfo.storageBufferNum;
         allocatedPool.now.storageImageNum += allocInfo.storageImageNum;
         allocatedPool.now.uniformBufferNum += allocInfo.uniformBufferNum;

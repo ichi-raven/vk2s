@@ -191,12 +191,20 @@ namespace vk2s
                 return SPIRVCode();
             }
 
+            // use entrypoint name
+            slang::CompilerOptionEntry useEntryPointName{ .name = slang::CompilerOptionName::VulkanUseEntryPointName };
+            useEntryPointName.value.intValue0 = 1;
+            useEntryPointName.value.intValue1 = 1;
+
             // Next we create a compilation session to generate SPIRV code from Slang source.
             slang::SessionDesc sessionDesc = {};
             slang::TargetDesc targetDesc   = {};
             targetDesc.format              = SLANG_SPIRV;
             targetDesc.profile             = slangGlobalSession->findProfile("spirv_1_6");
             targetDesc.flags               = SLANG_TARGET_FLAG_GENERATE_SPIRV_DIRECTLY;
+
+            targetDesc.compilerOptionEntryCount = 1;
+            targetDesc.compilerOptionEntries    = &useEntryPointName;
 
             sessionDesc.targets     = &targetDesc;
             sessionDesc.targetCount = 1;
