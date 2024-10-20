@@ -196,6 +196,13 @@ namespace vk2s
             useEntryPointName.value.intValue0 = 1;
             useEntryPointName.value.intValue1 = 1;
 
+            // column major for glm
+            slang::CompilerOptionEntry setColumnMajor{ .name = slang::CompilerOptionName::MatrixLayoutColumn };
+            setColumnMajor.value.intValue0 = 1;
+            setColumnMajor.value.intValue1 = 1;
+
+            std::array compilerOptionEntries{ useEntryPointName, setColumnMajor };
+
             // Next we create a compilation session to generate SPIRV code from Slang source.
             slang::SessionDesc sessionDesc = {};
             slang::TargetDesc targetDesc   = {};
@@ -203,8 +210,8 @@ namespace vk2s
             targetDesc.profile             = slangGlobalSession->findProfile("spirv_1_6");
             targetDesc.flags               = SLANG_TARGET_FLAG_GENERATE_SPIRV_DIRECTLY;
 
-            targetDesc.compilerOptionEntryCount = 1;
-            targetDesc.compilerOptionEntries    = &useEntryPointName;
+            targetDesc.compilerOptionEntryCount = compilerOptionEntries.size();
+            targetDesc.compilerOptionEntries    = compilerOptionEntries.data();
 
             sessionDesc.targets     = &targetDesc;
             sessionDesc.targetCount = 1;
