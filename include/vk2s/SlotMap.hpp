@@ -295,7 +295,10 @@ private:
         const auto div      = maskedID / PageSize;
         const auto mod      = maskedID % PageSize;
 
-        assert(div < mPageTable.size() || !"invalid handle!");
+        if (div >= mPageTable.size()) // invalid handle
+        {
+            return false;
+        }
 
         // destruct
         {

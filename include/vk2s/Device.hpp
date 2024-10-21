@@ -89,10 +89,10 @@ namespace vk2s
 
         // TODO: BAD2
         template <typename T, size_t PageSize = kDefaultPageSize, typename Allocator = DefaultAllocator>
-        void destroy(Handle<T, PageSize, DefaultAllocator>& handle)
+        bool destroy(Handle<T, PageSize, DefaultAllocator>& handle)
         {
             static_assert(IsContainedIn<Pool<T, PageSize, DefaultAllocator>, decltype(mPools)>::value, "invalid type of pool!");
-            std::get<Pool<T, PageSize, DefaultAllocator>>(mPools).deallocate(handle);
+            return std::get<Pool<T, PageSize, DefaultAllocator>>(mPools).deallocate(handle);
         }
 
         void initImGui(const uint32_t frameBufferNum, Window& window, RenderPass& renderpass);
