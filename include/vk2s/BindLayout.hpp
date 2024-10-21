@@ -33,6 +33,8 @@ namespace vk2s
         DescriptorPoolAllocationInfo(const uint32_t init)
             : accelerationStructureNum(init)
             , combinedImageSamplerNum(init)
+            , sampledImageNum(init)
+            , samplerNum(init)
             , storageBufferNum(init)
             , storageImageNum(init)
             , uniformBufferNum(init)
@@ -42,11 +44,13 @@ namespace vk2s
 
         uint32_t sum() const
         {
-            return accelerationStructureNum + combinedImageSamplerNum + storageBufferNum + storageImageNum + uniformBufferNum + uniformBufferDynamicNum;
+            return accelerationStructureNum + combinedImageSamplerNum + sampledImageNum + samplerNum + storageBufferNum + storageImageNum + uniformBufferNum + uniformBufferDynamicNum;
         }
 
         uint32_t accelerationStructureNum = 0;
         uint32_t combinedImageSamplerNum  = 0;
+        uint32_t sampledImageNum          = 0;
+        uint32_t samplerNum               = 0;
         uint32_t storageBufferNum         = 0;
         uint32_t storageImageNum          = 0;
         uint32_t uniformBufferNum         = 0;

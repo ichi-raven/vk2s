@@ -10,7 +10,7 @@ namespace vk2s
     {
         const auto code = Compiler::compileFile(path, entryPoint);
 
-        vk::ShaderModuleCreateInfo createInfo({}, code.size() * sizeof(code[0]), reinterpret_cast<const uint32_t*>(code.data()));
+        vk::ShaderModuleCreateInfo createInfo({}, code.size() * sizeof(code[0]), code.data());
 
         mShaderModule = mDevice.getVkDevice()->createShaderModuleUnique(createInfo);
 

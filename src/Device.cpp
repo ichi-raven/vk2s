@@ -142,8 +142,9 @@ namespace vk2s
         size_t idx = 0;
         for (const auto& pool : mDescriptorPools)
         {
-            if (pool.now.accelerationStructureNum < allocInfo.accelerationStructureNum || pool.now.combinedImageSamplerNum < allocInfo.combinedImageSamplerNum || pool.now.storageBufferNum < allocInfo.storageBufferNum ||
-                pool.now.storageImageNum < allocInfo.storageImageNum || pool.now.uniformBufferNum < allocInfo.uniformBufferNum || pool.now.uniformBufferDynamicNum < allocInfo.uniformBufferDynamicNum)
+            if (pool.now.accelerationStructureNum < allocInfo.accelerationStructureNum || pool.now.combinedImageSamplerNum < allocInfo.combinedImageSamplerNum || pool.now.sampledImageNum < allocInfo.sampledImageNum ||
+                pool.now.samplerNum < allocInfo.samplerNum || pool.now.storageBufferNum < allocInfo.storageBufferNum || pool.now.storageImageNum < allocInfo.storageImageNum || pool.now.uniformBufferNum < allocInfo.uniformBufferNum ||
+                pool.now.uniformBufferDynamicNum < allocInfo.uniformBufferDynamicNum)
             {
                 break;
             }
@@ -158,6 +159,8 @@ namespace vk2s
         auto& allocatedPool = mDescriptorPools[idx];
         allocatedPool.now.accelerationStructureNum -= allocInfo.accelerationStructureNum;
         allocatedPool.now.combinedImageSamplerNum -= allocInfo.combinedImageSamplerNum;
+        allocatedPool.now.sampledImageNum -= allocInfo.sampledImageNum;
+        allocatedPool.now.samplerNum -= allocInfo.samplerNum;
         allocatedPool.now.storageBufferNum -= allocInfo.storageBufferNum;
         allocatedPool.now.storageImageNum -= allocInfo.storageImageNum;
         allocatedPool.now.uniformBufferNum -= allocInfo.uniformBufferNum;
@@ -174,6 +177,8 @@ namespace vk2s
 
         allocatedPool.now.accelerationStructureNum += allocInfo.accelerationStructureNum;
         allocatedPool.now.combinedImageSamplerNum += allocInfo.combinedImageSamplerNum;
+        allocatedPool.now.sampledImageNum += allocInfo.sampledImageNum;
+        allocatedPool.now.samplerNum += allocInfo.samplerNum;
         allocatedPool.now.storageBufferNum += allocInfo.storageBufferNum;
         allocatedPool.now.storageImageNum += allocInfo.storageImageNum;
         allocatedPool.now.uniformBufferNum += allocInfo.uniformBufferNum;
@@ -310,22 +315,25 @@ namespace vk2s
         enabledDescriptorIndexingFeatures.descriptorBindingVariableDescriptorCount   = VK_TRUE;
         enabledDescriptorIndexingFeatures.runtimeDescriptorArray                     = VK_TRUE;
 
+        vk::PhysicalDeviceRobustness2FeaturesEXT robustness2Features(VK_TRUE, VK_TRUE, VK_TRUE);
+
         vk::PhysicalDeviceFeatures features = mPhysicalDevice.getFeatures();
 
-        vk::PhysicalDeviceFeatures2 physicalDeviceFeatures2(features, &enabledDescriptorIndexingFeatures);
+        vk::PhysicalDeviceFeatures2 physicalDeviceFeatures2(features, &robustness2Features);
 
         vk::DeviceCreateInfo createInfo{};
         if (mRayTracingSupported)
         {
+            robustness2Features.pNext = &enabledDescriptorIndexingFeatures;
             createInfo = vk::DeviceCreateInfo({}, queueCreateInfos, {}, allExtensions, &deviceFeatures);
-
-            createInfo.pNext            = &physicalDeviceFeatures2;
-            createInfo.pEnabledFeatures = nullptr;
         }
         else
         {
             createInfo = vk::DeviceCreateInfo({}, queueCreateInfos, {}, deviceExtensions, &deviceFeatures);
         }
+
+        createInfo.pNext            = &physicalDeviceFeatures2;
+        createInfo.pEnabledFeatures = nullptr;
 
         if (enableValidationLayers)
         {

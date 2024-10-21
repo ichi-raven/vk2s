@@ -18,6 +18,7 @@
 
 namespace
 {
+
     inline glm::mat4 convert4x4(const aiMatrix4x4& from)
     {
         glm::mat4 to{};
@@ -242,7 +243,7 @@ namespace vk2s
         if (!pScene || pScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !pScene->mRootNode)
         {
             std::cerr << "ERROR::ASSIMP::" << mImporter.GetErrorString() << "\n";
-            throw std::runtime_error("failed to load asset with assimp!");
+            //throw std::runtime_error("failed to load asset with assimp!");
             return;
         }
 

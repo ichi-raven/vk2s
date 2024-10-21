@@ -1,7 +1,8 @@
 #include "../include/vk2s/Compiler.hpp"
 
-
 #include <spirv_reflect.h>
+
+#include <spirv-tools/libspirv.hpp>
 
 #include <slang.h>
 #include <slang-com-ptr.h>
@@ -21,17 +22,14 @@ namespace vk2s
         class ShaderIncluder : public shaderc::CompileOptions::IncluderInterface
         {
         public:
-
             ShaderIncluder(std::string_view directory)
                 : mDirectory(std::filesystem::canonical(directory).string())
                 , shaderc::CompileOptions::IncluderInterface()
             {
-
             }
 
             shaderc_include_result* GetInclude(const char* requested_source, shaderc_include_type type, const char* requesting_source, size_t include_depth)
             {
-
                 // get the directory of included path
                 const std::filesystem::path requestingPath = std::filesystem::canonical(mDirectory / requesting_source);
                 const std::filesystem::path requestedPath  = std::filesystem::canonical(requestingPath.parent_path() / requested_source);
@@ -101,6 +99,19 @@ namespace vk2s
             return shaderc_shader_kind::shaderc_vertex_shader;
         }
 
+        bool saveAssemblyToFile(const std::string& filename, const std::string& assembly)
+        {
+            std::ofstream file(filename);
+            if (!file.is_open())
+            {
+                std::cerr << "Failed to open file for writing: " << filename << std::endl;
+                return false;
+            }
+
+            file << assembly;
+            return true;
+        }
+
         SPIRVCode compileWithShaderC(std::string_view path, const bool optimize)
         {
             constexpr auto kSpirvVersion     = shaderc_spirv_version_1_6;
@@ -166,17 +177,31 @@ namespace vk2s
 
             //std::cout << "Compiled to an binary module with " << spirv.size() << " words." << std::endl;
 
-            return { module.cbegin(), module.cend() };
+            return SPIRVCode(module.cbegin(), module.cend());
         }
 
         SPIRVCode compileSlangFile(std::string_view path, std::string_view entrypoint)
         {
+            Slang::ComPtr<slang::IBlob> diagnosticBlob;
+
             Slang::ComPtr<slang::IGlobalSession> slangGlobalSession;
             if (SLANG_FAILED(slang::createGlobalSession(slangGlobalSession.writeRef())))
             {
                 assert(!"failed to create global session!");
                 return SPIRVCode();
             }
+
+            // use entrypoint name
+            slang::CompilerOptionEntry useEntryPointName{ .name = slang::CompilerOptionName::VulkanUseEntryPointName };
+            useEntryPointName.value.intValue0 = 1;
+            useEntryPointName.value.intValue1 = 1;
+
+            // column major for glm
+            slang::CompilerOptionEntry setColumnMajor{ .name = slang::CompilerOptionName::MatrixLayoutColumn };
+            setColumnMajor.value.intValue0 = 1;
+            setColumnMajor.value.intValue1 = 1;
+
+            std::array compilerOptionEntries{ useEntryPointName, setColumnMajor };
 
             // Next we create a compilation session to generate SPIRV code from Slang source.
             slang::SessionDesc sessionDesc = {};
@@ -187,6 +212,8 @@ namespace vk2s
 
             sessionDesc.targets     = &targetDesc;
             sessionDesc.targetCount = 1;
+            sessionDesc.compilerOptionEntryCount = compilerOptionEntries.size();
+            sessionDesc.compilerOptionEntries   = compilerOptionEntries.data();
 
             Slang::ComPtr<slang::ISession> session;
             if (SLANG_FAILED(slangGlobalSession->createSession(sessionDesc, session.writeRef())))
@@ -197,11 +224,13 @@ namespace vk2s
 
             slang::IModule* slangModule = nullptr;
             {
-                Slang::ComPtr<slang::IBlob> diagnosticBlob;
                 slangModule = session->loadModule(path.data(), diagnosticBlob.writeRef());
-                if (!slangModule)
+                if (diagnosticBlob)
                 {
                     std::cout << (const char*)diagnosticBlob->getBufferPointer() << "\n";
+                }
+                if (!slangModule)
+                {
                     assert(!"failed to load module!");
 
                     return SPIRVCode();
@@ -216,7 +245,11 @@ namespace vk2s
 
             Slang::ComPtr<slang::IComponentType> composedProgram;
             {
-                SlangResult result = session->createCompositeComponentType(componentTypes.data(), componentTypes.size(), composedProgram.writeRef());
+                SlangResult result = session->createCompositeComponentType(componentTypes.data(), componentTypes.size(), composedProgram.writeRef(), diagnosticBlob.writeRef());
+                if (diagnosticBlob)
+                {
+                    std::cout << (const char*)diagnosticBlob->getBufferPointer() << "\n";
+                }
                 if (SLANG_FAILED(result))
                 {
                     assert(!"failed to create composite component type!");
@@ -226,7 +259,11 @@ namespace vk2s
 
             Slang::ComPtr<slang::IBlob> spirvCode;
             {
-                SlangResult result = composedProgram->getEntryPointCode(0, 0, spirvCode.writeRef());
+                SlangResult result = composedProgram->getEntryPointCode(0, 0, spirvCode.writeRef(), diagnosticBlob.writeRef());
+                if (diagnosticBlob)
+                {
+                    std::cout << (const char*)diagnosticBlob->getBufferPointer() << "\n";
+                }
                 if (SLANG_FAILED(result))
                 {
                     assert(!"failed to get entry point code!");
@@ -236,15 +273,25 @@ namespace vk2s
 
             const uint32_t* cbegin = reinterpret_cast<const uint32_t*>(spirvCode->getBufferPointer());
             const uint32_t* cend   = cbegin + (spirvCode->getBufferSize() / sizeof(SPIRVCode::value_type));
+            SPIRVCode code(cbegin, cend);
 
-            return { cbegin, cend };
+            spvtools::SpirvTools spirvTools(SPV_ENV_VULKAN_1_3);
+            std::string spirvAssembly;
+            if (!spirvTools.Disassemble(code, &spirvAssembly, SPV_BINARY_TO_TEXT_OPTION_INDENT))
+            {
+                std::cerr << "Failed to disassemble SPIR-V binary" << std::endl;
+                return SPIRVCode();
+            }
+
+            saveAssemblyToFile(std::string("./compiled_") + std::string(entrypoint) + std::string(".spv"), spirvAssembly);
+
+            return code;
         }
 
         SPIRVCode compileFile(std::string_view path, const bool optimize)
         {
             return compileFile(path, "", optimize);
         }
-
 
         SPIRVCode compileFile(std::string_view path, std::string_view entrypoint, const bool optimize)
         {

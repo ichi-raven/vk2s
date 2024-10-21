@@ -66,6 +66,14 @@ namespace vk2s
         mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSet, binding, 0, type, std::get<1>(info)));
     }
 
+    void BindGroup::bind(const uint8_t binding, Sampler& sampler)
+    {
+        const auto& info = mInfoCaches[binding] = std::vector{ vk::DescriptorImageInfo(sampler.getVkSampler().get()) };
+
+        mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSet, binding, 0, vk::DescriptorType::eSampler, std::get<1>(info)));
+    }
+
+
     void BindGroup::bind(const uint8_t binding, AccelerationStructure& as)
     {
         const auto& info = mInfoCaches[binding] = vk::WriteDescriptorSetAccelerationStructureKHR(as.getVkAccelerationStructure().get());
