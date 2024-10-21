@@ -84,7 +84,6 @@ public:
 
     IDType getRawID() const
     {
-        assert(mID != kInvalidID || !"invalid handle!");
         return mID;
     }
 
