@@ -20,7 +20,7 @@ public:
    
     Camera(const double fov = 60., const double aspect = 16. / 9., const double near = 0.1, const double far = 1e4);
 
-    void update(GLFWwindow* pWindow, const double moveSpeed, const double mouseSpeed);
+    void update(GLFWwindow* pWindow, const double moveSpeed, const double mouseSpeed, const bool reset = false);
 
     void setPos(const glm::vec3& pos);
     const glm::vec3& getPos() const;

@@ -57,7 +57,7 @@ inline void load(std::string_view path, vk2s::Device& device, std::vector<MeshIn
     for (size_t i = 0; i < meshInstances.size(); ++i)
     {
         auto& mesh           = meshInstances[i];
-        mesh.hostMesh        = std::move(hostMeshes[i]);
+        mesh.hostMesh        = hostMeshes[i];
         const auto& hostMesh = meshInstances[i].hostMesh;
 
         {  // vertex buffer
@@ -84,7 +84,6 @@ inline void load(std::string_view path, vk2s::Device& device, std::vector<MeshIn
     }
 
     // materials
-
     {
         const auto ubSize = sizeof(vk2s::Material) * materialData.size();
         vk::BufferCreateInfo ci({}, ubSize, vk::BufferUsageFlagBits::eStorageBuffer);

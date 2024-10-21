@@ -26,7 +26,7 @@ namespace vk2s
         updateProjMat();
     }
 
-    void Camera::update(GLFWwindow* pWindow, const double moveSpeed, const double mouseSpeed)
+    void Camera::update(GLFWwindow* pWindow, const double moveSpeed, const double mouseSpeed, const bool reset)
     {
         mMoved = false;
 
@@ -50,7 +50,7 @@ namespace vk2s
         glm::vec3 right = glm::normalize(glm::cross(glm::vec3(0.f, 1.f, 0.f), direction));  //(sin(mPhi - kPI / 2.), 0, cos(mPhi - kPI / 2.));
         mUp             = glm::normalize(glm::cross(right, direction));
 
-        if (glfwGetKey(pWindow, GLFW_KEY_R))
+        if (reset)
         {
             mTheta = 0.;
             mPhi   = 0.;
