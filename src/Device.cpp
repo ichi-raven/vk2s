@@ -44,13 +44,7 @@ namespace vk2s
 
         iterateTuple(mPools);
 
-        if (mpImGuiContext)
-        {
-            //ImGui_ImplVulkan_DestroyFontsTexture();
-            ImGui_ImplVulkan_Shutdown();
-            ImGui_ImplGlfw_Shutdown();
-            ImGui::DestroyContext();
-        }
+        destroyImGui();
 
         glfwTerminate();
     }
@@ -89,6 +83,19 @@ namespace vk2s
         ImGui_ImplVulkan_Init(&init_info, renderpass.getVkRenderPass().get());
 
         uploadFontForImGui();
+    }
+
+    void Device::destroyImGui()
+    {
+        if (mpImGuiContext)
+        {
+            //ImGui_ImplVulkan_DestroyFontsTexture();
+            ImGui_ImplVulkan_Shutdown();
+            ImGui_ImplGlfw_Shutdown();
+            ImGui::DestroyContext();
+
+            mpImGuiContext = nullptr;
+        }
     }
 
     void Device::uploadFontForImGui()

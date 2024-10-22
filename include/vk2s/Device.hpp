@@ -97,6 +97,8 @@ namespace vk2s
 
         void initImGui(const uint32_t frameBufferNum, Window& window, RenderPass& renderpass);
 
+        void destroyImGui();
+
         void waitIdle();
 
         std::string_view getPhysicalDeviceName() const;

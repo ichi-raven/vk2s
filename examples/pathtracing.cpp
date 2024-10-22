@@ -155,8 +155,8 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
 
         // load shaders
         const auto raygenShader  = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/raygen.rgen", "main");
-        //const auto missShader    = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/miss.rmiss", "main");
-        const auto missShader    = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/miss.slang", "main");
+        const auto missShader    = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/miss.rmiss", "main");
+        //const auto missShader    = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/miss.slang", "main");
         const auto shadowShader  = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/shadow.rmiss", "main");
         const auto chitShader    = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/closesthit.rchit", "main");
         const auto computeShader = device.create<vk2s::Shader>("../../examples/shaders/pathtracing/compute.comp", "main");
