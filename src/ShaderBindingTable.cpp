@@ -122,10 +122,10 @@ namespace vk2s
 
         // calculate needed sizes for each shaders
         const auto baseAlign = rtPipelineProps.shaderGroupBaseAlignment;
-        auto regionRaygen    = mDevice.align(raygenShaderEntrySize * raygenShaderInfo.shaderNum, baseAlign);
-        auto regionMiss      = mDevice.align(missShaderEntrySize * missShaderInfo.shaderNum, baseAlign);
-        auto regionHit       = mDevice.align(hitShaderEntrySize * hitShaderInfo.shaderNum, baseAlign);
-        auto regionCallable  = mDevice.align(callableShaderEntrySize * callableShaderInfo.shaderNum, baseAlign);
+        auto regionRaygen    = mDevice.align(raygenShaderEntrySize * raygenShaderInfo.entryNum, baseAlign);
+        auto regionMiss      = mDevice.align(missShaderEntrySize * missShaderInfo.entryNum, baseAlign);
+        auto regionHit       = mDevice.align(hitShaderEntrySize * hitShaderInfo.entryNum, baseAlign);
+        auto regionCallable  = mDevice.align(callableShaderEntrySize * callableShaderInfo.entryNum, baseAlign);
 
         vk::BufferCreateInfo ci({}, regionRaygen + regionMiss + regionHit, usage);
         mShaderBindingTable = mDevice.create<Buffer>(ci, memProps);
@@ -133,8 +133,8 @@ namespace vk2s
         // get the shader groups handle of the pipeline
         const auto handleSizeAligned  = mDevice.align(handleSize, handleAlignment);
         const auto handleStorageSize  = shaderGroups.size() * handleSizeAligned;
-        const uint32_t allShaderCount = raygenShaderInfo.shaderNum + missShaderInfo.shaderNum + hitShaderInfo.shaderNum + callableShaderInfo.shaderNum;
-        std::vector<uint8_t> shaderHandleStorage(handleStorageSize);
+        const uint32_t allShaderCount = raygenShaderInfo.shaderTypeNum + missShaderInfo.shaderTypeNum + hitShaderInfo.shaderTypeNum + callableShaderInfo.shaderTypeNum;
+        std::vector<std::byte> shaderHandleStorage(handleStorageSize);
         const auto res = mDevice.getVkDevice()->getRayTracingShaderGroupHandlesKHR(raytracePipeline.getVkPipeline().get(), 0, allShaderCount, shaderHandleStorage.size(), shaderHandleStorage.data());
 
         if (res != vk::Result::eSuccess)
@@ -163,68 +163,44 @@ namespace vk2s
         std::byte* dst = static_cast<std::byte*>(vkDevice->mapMemory(mShaderBindingTable->getVkDeviceMemory().get(), 0, mShaderBindingTable->getSize()));
         {
             std::byte* pStart = dst;
-            
+
             // write entries of ray generation shader
             {
                 std::byte* pStartRaygen = dst;
-                for (int i = 0; i < raygenShaderInfo.shaderNum; ++i)
+                if (raygenShaderInfo.shaderTypeNum > 0)
                 {
-                    memcpy(dst, shaderHandleStorage.data(), handleSize);
-                    dst += handleSize;
-                    if (raygenShaderInfo.entryWriterPerShader)
-                    {
-                        (*raygenShaderInfo.entryWriterPerShader)(dst);
-                    }
+                    raygenShaderInfo.entryWriter(dst, shaderHandleStorage.data(), handleSize, handleSizeAligned);
                 }
-                assert(dst <= pStartRaygen + regionRaygen || !"invalid raygen shader entry writing!");
                 dst = pStartRaygen + regionRaygen;
             }
 
             // write entries of miss shader
             {
                 std::byte* pStartMiss = dst;
-                for (int i = 0; i < missShaderInfo.shaderNum; ++i)
+                if (missShaderInfo.shaderTypeNum > 0)
                 {
-                    memcpy(dst, shaderHandleStorage.data() + handleSizeAligned * (raygenShaderInfo.shaderNum + i), handleSize);
-                    dst += handleSize;
-                    if (missShaderInfo.entryWriterPerShader)
-                    {
-                        (*missShaderInfo.entryWriterPerShader)(dst);
-                    }
+                    missShaderInfo.entryWriter(dst, shaderHandleStorage.data() + handleSizeAligned * raygenShaderInfo.shaderTypeNum, handleSize, handleSizeAligned);
                 }
-                assert(dst <= pStartMiss + regionMiss || !"invalid miss shader entry writing!");
                 dst = pStartMiss + regionMiss;
             }
 
             // write entries of hit shader
             {
                 std::byte* pStartHit = dst;
-                for (int i = 0; i < hitShaderInfo.shaderNum; ++i)
+                if (hitShaderInfo.shaderTypeNum > 0)
                 {
-                    memcpy(dst, shaderHandleStorage.data() + handleSizeAligned * (raygenShaderInfo.shaderNum + missShaderInfo.shaderNum + i), handleSize);
-                    dst += handleSize;
-                    if (hitShaderInfo.entryWriterPerShader)
-                    {
-                        (*hitShaderInfo.entryWriterPerShader)(dst);
-                    }
+                    hitShaderInfo.entryWriter(dst, shaderHandleStorage.data() + handleSizeAligned * (raygenShaderInfo.shaderTypeNum + missShaderInfo.shaderTypeNum), handleSize, handleSizeAligned);
                 }
-                assert(dst <= pStartHit + regionHit || !"invalid hit shader entry writing!");
                 dst = pStartHit + regionHit;
             }
 
             // write entries of callable shader
             {
                 std::byte* pStartCallable = dst;
-                for (int i = 0; i < callableShaderInfo.shaderNum; ++i)
+                if (callableShaderInfo.shaderTypeNum > 0)
                 {
-                    memcpy(dst, shaderHandleStorage.data() + handleSizeAligned * (raygenShaderInfo.shaderNum + missShaderInfo.shaderNum + hitShaderInfo.shaderNum + i), handleSize);
-                    dst += handleSize;
-                    if (callableShaderInfo.entryWriterPerShader)
-                    {
-                        (*callableShaderInfo.entryWriterPerShader)(dst);
-                    }
+                    callableShaderInfo.entryWriter(dst, shaderHandleStorage.data() + handleSizeAligned * (raygenShaderInfo.shaderTypeNum + missShaderInfo.shaderTypeNum + hitShaderInfo.shaderTypeNum), handleSize, handleSizeAligned);
                 }
-                assert(dst <= pStartCallable + regionCallable || !"invalid hit shader entry writing!");
                 // No alignment correction (since it is the last shader group)
                 //dst = pStartCallable + regionCallable;
             }

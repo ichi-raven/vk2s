@@ -39,9 +39,11 @@ namespace vk2s
 
         struct RegionInfo
         {
-            uint32_t shaderNum;
+            uint32_t shaderTypeNum;
+            uint32_t entryNum;
             std::size_t additionalEntrySize; // size required in addition to normal shader entries
-            std::optional<std::function<void(void* dst)>> entryWriterPerShader; // Function to write additional entry information to the table (dst is a pointer to the destination)
+            std::function<void(std::byte* pDst, std::byte* pHandleStart, const uint32_t handleSize, const uint32_t alignedHandleSize)>
+                entryWriter;  // Function to write additional entry information to the table (dst is a pointer to the destination)
         };
 
     public:  // methods
