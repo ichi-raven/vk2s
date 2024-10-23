@@ -43,6 +43,7 @@ namespace vk2s
         NONMOVABLE(BindGroup);
 
         void bind(const uint8_t binding, const vk::DescriptorType type, Buffer& buffer);
+        void bind(const uint8_t binding, const vk::DescriptorType type, const vk::ArrayProxy<Handle<Buffer>>& buffers);
         void bind(const uint8_t binding, const vk::DescriptorType type, DynamicBuffer& buffer);
         void bind(const uint8_t binding, const vk::DescriptorType type, const vk::ArrayProxy<Handle<Image>>& image, const Handle<Sampler>& sampler = Handle<Sampler>());
 
@@ -52,7 +53,7 @@ namespace vk2s
         const vk::DescriptorSet& getVkDescriptorSet();
 
     private:  // types
-        using DescriptorInfo = std::variant<vk::DescriptorBufferInfo, std::vector<vk::DescriptorImageInfo>, vk::WriteDescriptorSetAccelerationStructureKHR>;
+        using DescriptorInfo = std::variant<std::vector<vk::DescriptorBufferInfo>, std::vector<vk::DescriptorImageInfo>, vk::WriteDescriptorSetAccelerationStructureKHR>;
 
         //struct HashPair
         //{

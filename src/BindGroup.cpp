@@ -26,14 +26,31 @@ namespace vk2s
 
     void BindGroup::bind(const uint8_t binding, const vk::DescriptorType type, Buffer& buffer)
     {
-        const auto& info = mInfoCaches[binding] = vk::DescriptorBufferInfo(buffer.getVkBuffer().get(), buffer.getOffset(), VK_WHOLE_SIZE);
+        std::vector<vk::DescriptorBufferInfo> infos = { vk::DescriptorBufferInfo(buffer.getVkBuffer().get(), buffer.getOffset(), VK_WHOLE_SIZE) };
+        const auto& info = mInfoCaches[binding] = infos;
+
+        mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSet, binding, 0, type, {}, std::get<0>(info)));
+    }
+
+    void BindGroup::bind(const uint8_t binding, const vk::DescriptorType type, const vk::ArrayProxy<Handle<Buffer>>& buffers)
+    {
+        std::vector<vk::DescriptorBufferInfo> infos;
+        infos.reserve(buffers.size());
+
+        for (const auto& buffer : buffers)
+        {
+            infos.emplace_back(vk::DescriptorBufferInfo(buffer->getVkBuffer().get(), buffer->getOffset(), VK_WHOLE_SIZE));
+        }
+
+        const auto& info = mInfoCaches[binding] = infos;
 
         mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSet, binding, 0, type, {}, std::get<0>(info)));
     }
 
     void BindGroup::bind(const uint8_t binding, const vk::DescriptorType type, DynamicBuffer& buffer)
     {
-        const auto& info = mInfoCaches[binding] = vk::DescriptorBufferInfo(buffer.getVkBuffer().get(), buffer.getOffset(), buffer.getBlockSize());
+        std::vector<vk::DescriptorBufferInfo> infos = { vk::DescriptorBufferInfo(buffer.getVkBuffer().get(), buffer.getOffset(), buffer.getBlockSize()) };
+        const auto& info = mInfoCaches[binding] = infos;
 
         mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSet, binding, 0, type, {}, std::get<0>(info)));
     }
@@ -72,7 +89,6 @@ namespace vk2s
 
         mWriteQueue.emplace_back(vk::WriteDescriptorSet(mDescriptorSet, binding, 0, vk::DescriptorType::eSampler, std::get<1>(info)));
     }
-
 
     void BindGroup::bind(const uint8_t binding, AccelerationStructure& as)
     {
