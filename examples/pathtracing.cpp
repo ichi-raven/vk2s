@@ -219,7 +219,12 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
         auto raytracePipeline = device.create<vk2s::Pipeline>(rpi);
 
         // create shader binding table
-        auto shaderBindingTable = device.create<vk2s::ShaderBindingTable>(raytracePipeline.get(), 1, 2, 1, 0, rpi.shaderGroups);
+        //auto shaderBindingTable = device.create<vk2s::ShaderBindingTable>(raytracePipeline.get(), 1, 2, 1, 0, rpi.shaderGroups);
+        vk2s::ShaderBindingTable::RegionInfo raygenInfo{ .shaderNum = 1, .additionalEntrySize = 0 };
+        vk2s::ShaderBindingTable::RegionInfo missInfo{ .shaderNum = 2, .additionalEntrySize = 0 };
+        vk2s::ShaderBindingTable::RegionInfo hitInfo{ .shaderNum = 1, .additionalEntrySize = 0 };
+        vk2s::ShaderBindingTable::RegionInfo callableInfo{ .shaderNum = 0, .additionalEntrySize = 0 };
+        auto shaderBindingTable = device.create<vk2s::ShaderBindingTable>(raytracePipeline.get(), raygenInfo, missInfo, hitInfo, callableInfo, rpi.shaderGroups);
 
         vk2s::Pipeline::ComputePipelineInfo cpi{
             .cs          = computeShader,

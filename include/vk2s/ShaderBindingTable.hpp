@@ -16,6 +16,9 @@
 #include "Macro.hpp"
 #include "SlotMap.hpp"
 
+#include <functional>
+#include <optional>
+
 namespace vk2s
 {
     class Device;
@@ -34,9 +37,19 @@ namespace vk2s
             vk::StridedDeviceAddressRegionKHR callable = {};
         };
 
+        struct RegionInfo
+        {
+            uint32_t shaderNum;
+            std::size_t additionalEntrySize; // size required in addition to normal shader entries
+            std::optional<std::function<void(void* dst)>> entryWriterPerShader; // Function to write additional entry information to the table (dst is a pointer to the destination)
+        };
+
     public:  // methods
 
         ShaderBindingTable(Device& device, Pipeline& rayTracePipeline, const uint32_t raygenNum, const uint32_t missNum, const uint32_t hitNum, const uint32_t callableNum, const vk::ArrayProxyNoTemporaries<vk::RayTracingShaderGroupCreateInfoKHR>& shaderGroups);
+
+        ShaderBindingTable(Device& device, Pipeline& rayTracePipeline, const RegionInfo& raygenShaderInfo, const RegionInfo& missShaderInfo, const RegionInfo& hitShaderInfo, const RegionInfo& callableShaderInfo,
+                           const vk::ArrayProxyNoTemporaries<vk::RayTracingShaderGroupCreateInfoKHR>& shaderGroups);
 
         ~ShaderBindingTable();
 
