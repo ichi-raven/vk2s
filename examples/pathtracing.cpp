@@ -2,7 +2,7 @@
 
 #include "utility.hpp"
 
-struct SceneUB  // std430
+struct SceneUB  // std140
 {
     glm::mat4 view;
     glm::mat4 proj;
@@ -14,7 +14,7 @@ struct SceneUB  // std430
     float padding;
 };
 
-struct FilterUB  // std430
+struct FilterUB  // std140
 {
     float sigma;
     float h;

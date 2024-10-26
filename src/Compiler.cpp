@@ -250,7 +250,6 @@ namespace vk2s
                         continue;
                     }
 
-                    std::cout << "dependent module : " << session->getLoadedModule(i)->getName() << "\n";
                     auto& m = slangModules.emplace_back(session->getLoadedModule(i));
 
                     if (diagnosticBlob)

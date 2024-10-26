@@ -9,7 +9,7 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
 
-struct InstanceMappingUB  // std430
+struct InstanceMappingUB  // std140
 {
     uint64_t VBAddress;
     uint64_t IBAddress;

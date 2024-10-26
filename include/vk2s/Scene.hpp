@@ -71,7 +71,7 @@ namespace vk2s
         eInfinite
     };
 
-    // std430
+    // std140
     struct TriEmitter
     {
         glm::vec4 p[3];
@@ -82,7 +82,7 @@ namespace vk2s
         glm::vec4 emissive;
     };
 
-    // std430
+    // std140
     struct PointEmitter
     {
         glm::vec4 p;
@@ -90,7 +90,7 @@ namespace vk2s
         float padding;
     };
 
-    // std430
+    // std140
     struct InfiniteEmitter
     {
         glm::vec4 constantEmissive; // if constant
@@ -118,7 +118,7 @@ namespace vk2s
         Type type;
     };
 
-    // std430
+    // std140
     struct Material
     {
         enum Type : uint32_t
