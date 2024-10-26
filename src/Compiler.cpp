@@ -229,24 +229,29 @@ namespace vk2s
                 return SPIRVCode();
             }
 
-            Slang::ComPtr<slang::IModule> slangModule = nullptr;
-            std::vector<slang::IModule*> dependentModules;
+            std::vector<Slang::ComPtr<slang::IModule>> slangModules;
             {
-                slangModule = session->loadModule(path.data(), diagnosticBlob.writeRef());
+                slangModules.emplace_back(session->loadModule(path.data(), diagnosticBlob.writeRef()));
                 if (diagnosticBlob)
                 {
                     std::cout << (const char*)diagnosticBlob->getBufferPointer() << "\n";
                 }
-                if (!slangModule)
+                if (!slangModules.front())
                 {
-                    assert(!"failed to load module!");
+                    assert(!"failed to load primary module!");
 
                     return SPIRVCode();
                 }
 
-                for (int i = 0; i < slangModule->getDependencyFileCount(); ++i)
+                for (int i = 0; i < session->getLoadedModuleCount(); ++i)
                 {
-                    auto& m = dependentModules.emplace_back(session->loadModule(slangModule->getDependencyFilePath(i), diagnosticBlob.writeRef()));
+                    if (session->getLoadedModule(i)->getName() == path)
+                    {
+                        continue;
+                    }
+
+                    std::cout << "dependent module : " << session->getLoadedModule(i)->getName() << "\n";
+                    auto& m = slangModules.emplace_back(session->getLoadedModule(i));
 
                     if (diagnosticBlob)
                     {
@@ -263,13 +268,13 @@ namespace vk2s
 
             Slang::ComPtr<slang::IEntryPoint> entryPoint;
             std::vector<slang::IComponentType*> componentTypes;
-            componentTypes.emplace_back(slangModule);
-            slangModule->findEntryPointByName(entrypoint.data(), entryPoint.writeRef());
-            componentTypes.emplace_back(entryPoint);
-            for (const auto& dependentModule : dependentModules)
+            for (const auto& m : slangModules)
             {
-                componentTypes.emplace_back(dependentModule);
+                componentTypes.emplace_back(m);
             }
+
+            slangModules.front()->findEntryPointByName(entrypoint.data(), entryPoint.writeRef());
+            componentTypes.emplace_back(entryPoint);
 
             Slang::ComPtr<slang::IComponentType> composedProgram;
             {
