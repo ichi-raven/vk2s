@@ -65,7 +65,7 @@ namespace vk2s
         mSBTInfo.hit.size          = regionHit;
         mSBTInfo.hit.stride        = hitShaderEntrySize;
 
-        uint8_t* dst = static_cast<uint8_t*>(vkDevice->mapMemory(mShaderBindingTable->getVkDeviceMemory().get(), 0, mShaderBindingTable->getSize()));
+        std::byte* dst = static_cast<std::byte*>(vkDevice->mapMemory(mShaderBindingTable->getVkDeviceMemory().get(), 0, mShaderBindingTable->getSize()));
         {
             // write the entry of ray generation shader
             memcpy(dst, shaderHandleStorage.data(), handleSize);

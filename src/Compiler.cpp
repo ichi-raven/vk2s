@@ -183,6 +183,8 @@ namespace vk2s
         SPIRVCode compileSlangFile(std::string_view path, std::string_view entrypoint)
         {
             Slang::ComPtr<slang::IBlob> diagnosticBlob;
+            const std::string directory = std::string(path).substr(0, path.find_last_of("/\\"));
+            const std::string fileName  = std::string(path).substr(path.find_last_of("/\\") + 1, path.size());
 
             Slang::ComPtr<slang::IGlobalSession> slangGlobalSession;
             if (SLANG_FAILED(slang::createGlobalSession(slangGlobalSession.writeRef())))
@@ -214,6 +216,11 @@ namespace vk2s
             sessionDesc.targetCount = 1;
             sessionDesc.compilerOptionEntryCount = compilerOptionEntries.size();
             sessionDesc.compilerOptionEntries   = compilerOptionEntries.data();
+
+            // include or import paths
+            std::array searchPaths{ directory.c_str() };
+            sessionDesc.searchPathCount = searchPaths.size();
+            sessionDesc.searchPaths     = searchPaths.data();
 
             Slang::ComPtr<slang::ISession> session;
             if (SLANG_FAILED(slangGlobalSession->createSession(sessionDesc, session.writeRef())))

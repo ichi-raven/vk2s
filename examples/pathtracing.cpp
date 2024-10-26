@@ -221,43 +221,43 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
         // create shader binding table
 
         // If you want to create a simple shader with no additional entries and a one-to-one correspondence between entries and SBT, use this one
-        //auto shaderBindingTable = device.create<vk2s::ShaderBindingTable>(raytracePipeline.get(), 1, 2, 1, 0, rpi.shaderGroups);
+        auto shaderBindingTable = device.create<vk2s::ShaderBindingTable>(raytracePipeline.get(), 1, 2, 1, 0, rpi.shaderGroups);
 
         // Otherwise...
-        auto shaderBindingTable = [&]()
-        {
-            vk2s::ShaderBindingTable::RegionInfo raygenInfo{
-                .shaderTypeNum       = 1,
-                .entryNum            = 1,
-                .additionalEntrySize = 0,
-                .entryWriter         = [](std::byte* pDst, std::byte* pSrc, const uint32_t handleSize, const uint32_t alignedHandleSize) { std::memcpy(pDst, pSrc, handleSize); },
-            };
-            vk2s::ShaderBindingTable::RegionInfo missInfo{
-                .shaderTypeNum       = 2,
-                .entryNum            = 2,
-                .additionalEntrySize = 0,
-                .entryWriter =
-                    [](std::byte* pDst, std::byte* pSrc, const uint32_t handleSize, const uint32_t alignedHandleSize)
-                {
-                    for (int i = 0; i < 2; ++i)
-                    {
-                        std::memcpy(pDst, pSrc, handleSize);
-                        pDst += handleSize;
-                        // Since each shader uses a different shader, the address on the handle side is also advanced simply
-                        pSrc += alignedHandleSize;
-                    }
-                },
-            };
-            vk2s::ShaderBindingTable::RegionInfo hitInfo{
-                .shaderTypeNum       = 1,
-                .entryNum            = 1,
-                .additionalEntrySize = 0,
-                .entryWriter         = [](std::byte* pDst, std::byte* pSrc, const uint32_t handleSize, const uint32_t alignedHandleSize) { std::memcpy(pDst, pSrc, handleSize); },
-            };
-            vk2s::ShaderBindingTable::RegionInfo callableInfo{ .shaderTypeNum = 0, .additionalEntrySize = 0 };
-            
-            return device.create<vk2s::ShaderBindingTable>(raytracePipeline.get(), raygenInfo, missInfo, hitInfo, callableInfo, rpi.shaderGroups);
-        }();
+        //auto shaderBindingTable = [&]()
+        //{
+        //    vk2s::ShaderBindingTable::RegionInfo raygenInfo{
+        //        .shaderTypeNum       = 1,
+        //        .entryNum            = 1,
+        //        .additionalEntrySize = 0,
+        //        .entryWriter         = [](std::byte* pDst, std::byte* pSrc, const uint32_t handleSize, const uint32_t alignedHandleSize) { std::memcpy(pDst, pSrc, handleSize); },
+        //    };
+        //    vk2s::ShaderBindingTable::RegionInfo missInfo{
+        //        .shaderTypeNum       = 2,
+        //        .entryNum            = 2,
+        //        .additionalEntrySize = 0,
+        //        .entryWriter =
+        //            [](std::byte* pDst, std::byte* pSrc, const uint32_t handleSize, const uint32_t alignedHandleSize)
+        //        {
+        //            for (int i = 0; i < 2; ++i)
+        //            {
+        //                std::memcpy(pDst, pSrc, handleSize);
+        //                pDst += handleSize;
+        //                // Since each shader uses a different shader, the address on the handle side is also advanced simply
+        //                pSrc += alignedHandleSize;
+        //            }
+        //        },
+        //    };
+        //    vk2s::ShaderBindingTable::RegionInfo hitInfo{
+        //        .shaderTypeNum       = 1,
+        //        .entryNum            = 1,
+        //        .additionalEntrySize = 0,
+        //        .entryWriter         = [](std::byte* pDst, std::byte* pSrc, const uint32_t handleSize, const uint32_t alignedHandleSize) { std::memcpy(pDst, pSrc, handleSize); },
+        //    };
+        //    vk2s::ShaderBindingTable::RegionInfo callableInfo{ .shaderTypeNum = 0, .additionalEntrySize = 0 };
+        //    
+        //    return device.create<vk2s::ShaderBindingTable>(raytracePipeline.get(), raygenInfo, missInfo, hitInfo, callableInfo, rpi.shaderGroups);
+        //}();
 
         vk2s::Pipeline::ComputePipelineInfo cpi{
             .cs          = computeShader,
