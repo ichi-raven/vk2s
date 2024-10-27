@@ -222,6 +222,9 @@ namespace vk2s
             sessionDesc.searchPathCount = searchPaths.size();
             sessionDesc.searchPaths     = searchPaths.data();
 
+            // set column major
+            sessionDesc.defaultMatrixLayoutMode = SlangMatrixLayoutMode::SLANG_MATRIX_LAYOUT_COLUMN_MAJOR;
+
             Slang::ComPtr<slang::ISession> session;
             if (SLANG_FAILED(slangGlobalSession->createSession(sessionDesc, session.writeRef())))
             {

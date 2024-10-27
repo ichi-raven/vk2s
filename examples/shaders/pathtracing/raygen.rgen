@@ -80,7 +80,7 @@ vec3 sampleLi(const uint sampleIndex)
 
     if (payload.bsdf.flags == BSDF_FLAGS_FAILED)
     {
-      L = payload.bsdf.f;
+      //L = payload.bsdf.f; //DEBUG
       break;
     }
 
