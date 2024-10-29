@@ -198,12 +198,16 @@ namespace vk2s
             useEntryPointName.value.intValue0 = 1;
             useEntryPointName.value.intValue1 = 1;
 
+            slang::CompilerOptionEntry invertYName{ .name = slang::CompilerOptionName::VulkanInvertY };
+            invertYName.value.intValue0 = 1;
+            invertYName.value.intValue1 = 1;
+
             // column major for glm
             slang::CompilerOptionEntry setColumnMajor{ .name = slang::CompilerOptionName::MatrixLayoutColumn };
             setColumnMajor.value.intValue0 = 1;
             setColumnMajor.value.intValue1 = 1;
 
-            std::array compilerOptionEntries{ useEntryPointName, setColumnMajor };
+            std::array compilerOptionEntries{ useEntryPointName, invertYName, setColumnMajor };
 
             // Next we create a compilation session to generate SPIRV code from Slang source.
             slang::SessionDesc sessionDesc = {};
