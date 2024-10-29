@@ -324,9 +324,13 @@ namespace vk2s
 
         vk::PhysicalDeviceRobustness2FeaturesEXT robustness2Features(VK_TRUE, VK_TRUE, VK_TRUE);
 
+        vk::PhysicalDeviceVulkan13Features vk1_3features;
+        vk1_3features.maintenance4 = VK_TRUE;
+        vk1_3features.pNext        = &robustness2Features;
+
         vk::PhysicalDeviceFeatures features = mPhysicalDevice.getFeatures();
 
-        vk::PhysicalDeviceFeatures2 physicalDeviceFeatures2(features, &robustness2Features);
+        vk::PhysicalDeviceFeatures2 physicalDeviceFeatures2(features, &vk1_3features);
 
         vk::DeviceCreateInfo createInfo{};
         if (mRayTracingSupported)

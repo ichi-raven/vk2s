@@ -310,15 +310,15 @@ namespace vk2s
             const uint32_t* cend   = cbegin + (spirvCode->getBufferSize() / sizeof(SPIRVCode::value_type));
             SPIRVCode code(cbegin, cend);
 
-            spvtools::SpirvTools spirvTools(SPV_ENV_VULKAN_1_3);
+            /*spvtools::SpirvTools spirvTools(SPV_ENV_VULKAN_1_3);
             std::string spirvAssembly;
             if (!spirvTools.Disassemble(code, &spirvAssembly, SPV_BINARY_TO_TEXT_OPTION_INDENT))
             {
-                std::cerr << "Failed to disassemble SPIR-V binary" << std::endl;
+                std::cerr << "Failed to disassemble SPIR-V binary!" << std::endl;
                 return SPIRVCode();
             }
 
-            saveAssemblyToFile(std::string("./compiled_") + std::string(entrypoint) + std::string(".spv"), spirvAssembly);
+            saveAssemblyToFile(std::string("./compiled_") + std::string(entrypoint) + std::string(".spv"), spirvAssembly);*/
 
             return code;
         }
