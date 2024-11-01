@@ -162,6 +162,18 @@ namespace vk2s
         mCommandBuffer->copyImage(src.getVkImage().get(), vk::ImageLayout::eTransferSrcOptimal, swapchainImage, vk::ImageLayout::eTransferDstOptimal, region);
     }
 
+    void Command::clearImage(Image& target, const vk::ImageLayout layout, const vk::ClearValue& clearValue, const vk::ArrayProxy<vk::ImageSubresourceRange>& ranges)
+    {
+        if (target.getVkAspectFlag() | vk::ImageAspectFlagBits::eColor)
+        {
+            mCommandBuffer->clearColorImage(target.getVkImage().get(), layout, clearValue.color, ranges);
+        }
+        else// depth
+        {
+            mCommandBuffer->clearDepthStencilImage(target.getVkImage().get(), layout, clearValue.depthStencil, ranges);
+        }
+    }
+
     void Command::drawImGui()
     {
         // ImGui command write
@@ -282,6 +294,14 @@ namespace vk2s
             sourceStage      = vk::PipelineStageFlagBits::eAllCommands;
             destinationStage = vk::PipelineStageFlagBits::eTransfer;
         }
+        else if (from == vk::ImageLayout::eGeneral && to == vk::ImageLayout::eTransferDstOptimal)
+        {
+            barrier.srcAccessMask = vk::AccessFlagBits::eNone;
+            barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+
+            sourceStage      = vk::PipelineStageFlagBits::eAllCommands;
+            destinationStage = vk::PipelineStageFlagBits::eTransfer;
+        }
         else if (from == vk::ImageLayout::ePresentSrcKHR && to == vk::ImageLayout::eTransferDstOptimal)
         {
             barrier.srcAccessMask = vk::AccessFlagBits::eNone;
@@ -293,6 +313,14 @@ namespace vk2s
         else if (from == vk::ImageLayout::eTransferSrcOptimal && to == vk::ImageLayout::eGeneral)
         {
             barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
+            barrier.dstAccessMask = vk::AccessFlagBits::eNone;
+
+            sourceStage      = vk::PipelineStageFlagBits::eTransfer;
+            destinationStage = vk::PipelineStageFlagBits::eAllCommands;
+        }
+        else if (from == vk::ImageLayout::eTransferDstOptimal && to == vk::ImageLayout::eGeneral)
+        {
+            barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
             barrier.dstAccessMask = vk::AccessFlagBits::eNone;
 
             sourceStage      = vk::PipelineStageFlagBits::eTransfer;

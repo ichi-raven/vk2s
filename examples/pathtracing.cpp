@@ -103,7 +103,7 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
             ci.format        = format;
             ci.imageType     = vk::ImageType::e2D;
             ci.mipLevels     = 1;
-            ci.usage         = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eStorage;
+            ci.usage         = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eStorage;
             ci.initialLayout = vk::ImageLayout::eUndefined;
 
             resultImage        = device.create<vk2s::Image>(ci, vk::MemoryPropertyFlagBits::eDeviceLocal, size, vk::ImageAspectFlagBits::eColor);
@@ -472,6 +472,12 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
             auto& command = commands[now];
             // start writing command
             command->begin();
+
+            {// clear result image
+                command->transitionImageLayout(resultImage.get(), vk::ImageLayout::eGeneral, vk::ImageLayout::eTransferDstOptimal);
+                command->clearImage(resultImage.get(), vk::ImageLayout::eTransferDstOptimal, clearValue, vk::ImageSubresourceRange(resultImage->getVkAspectFlag(), 0, 1, 0, 1));
+                command->transitionImageLayout(resultImage.get(), vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eGeneral);
+            }
 
             {  // trace ray
                 command->setPipeline(raytracePipeline);
