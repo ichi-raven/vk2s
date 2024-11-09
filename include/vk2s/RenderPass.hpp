@@ -40,6 +40,8 @@ namespace vk2s
 
         void recreateFrameBuffers(Window& window, const Handle<Image> depthTarget = Handle<Image>());
 
+        void recreateFrameBuffers(const vk::ArrayProxy<Handle<Image>>& colorTargets, const Handle<Image> depthTarget = Handle<Image>());
+
         const vk::UniqueRenderPass& getVkRenderPass();
 
         const std::vector<vk::UniqueFramebuffer>& getVkFrameBuffers();

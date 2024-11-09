@@ -63,20 +63,8 @@ namespace vk2s
             mRenderPass = vkDevice->createRenderPassUnique(renderPassInfo);
         }
 
-        const auto extent = colorTargets.front()->getVkExtent();
-        std::vector<vk::ImageView> views;
-        views.reserve(colorTargets.size() + 1);
-        for (const auto& ct : colorTargets)
-        {
-            views.emplace_back(ct->getVkImageView().get());
-        }
-        if (depthTarget)
-        {
-            views.emplace_back(depthTarget->getVkImageView().get());
-        }
-
-        vk::FramebufferCreateInfo framebufferInfo({}, mRenderPass.get(), views, extent.width, extent.height, 1);
-        mFrameBuffers.push_back(vkDevice->createFramebufferUnique(framebufferInfo));
+        // share implements
+        recreateFrameBuffers(colorTargets, depthTarget);
     }
 
     RenderPass::RenderPass(Device& device, Window& window, const vk::AttachmentLoadOp colorLoadOp, const Handle<Image>& depthTarget, const vk::AttachmentLoadOp depthLoadOp)
@@ -115,22 +103,7 @@ namespace vk2s
             mRenderPass = vkDevice->createRenderPassUnique(renderPassInfo);
         }
 
-        const auto& swapchainImageViews = window.getVkImageViews();
-        const auto extent               = window.getVkSwapchainExtent();
-
-        mFrameBuffers.reserve(swapchainImageViews.size());
-
-        for (const auto& view : swapchainImageViews)
-        {
-            std::vector attachments = { view.get() };
-            if (depthTarget)
-            {
-                attachments.emplace_back(depthTarget->getVkImageView().get());
-            }
-
-            vk::FramebufferCreateInfo framebufferInfo({}, mRenderPass.get(), attachments, extent.width, extent.height, 1);
-            mFrameBuffers.emplace_back(vkDevice->createFramebufferUnique(framebufferInfo));
-        }
+        recreateFrameBuffers(window, depthTarget);
     }
 
     RenderPass::~RenderPass()
@@ -157,6 +130,26 @@ namespace vk2s
             vk::FramebufferCreateInfo framebufferInfo({}, mRenderPass.get(), attachments, extent.width, extent.height, 1);
             mFrameBuffers.emplace_back(vkDevice->createFramebufferUnique(framebufferInfo));
         }
+    }
+
+    void RenderPass::recreateFrameBuffers(const vk::ArrayProxy<Handle<Image>>& colorTargets, const Handle<Image> depthTarget)
+    {
+        const auto extent = colorTargets.front()->getVkExtent();
+        const auto& vkDevice = mDevice.getVkDevice();
+
+        std::vector<vk::ImageView> views;
+        views.reserve(colorTargets.size() + 1);
+        for (const auto& ct : colorTargets)
+        {
+            views.emplace_back(ct->getVkImageView().get());
+        }
+        if (depthTarget)
+        {
+            views.emplace_back(depthTarget->getVkImageView().get());
+        }
+
+        vk::FramebufferCreateInfo framebufferInfo({}, mRenderPass.get(), views, extent.width, extent.height, 1);
+        mFrameBuffers.push_back(vkDevice->createFramebufferUnique(framebufferInfo));
     }
 
     const vk::UniqueRenderPass& RenderPass::getVkRenderPass()
