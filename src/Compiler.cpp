@@ -198,12 +198,16 @@ namespace vk2s
             useEntryPointName.value.intValue0 = 1;
             useEntryPointName.value.intValue1 = 1;
 
+            slang::CompilerOptionEntry invertYName{ .name = slang::CompilerOptionName::VulkanInvertY };
+            invertYName.value.intValue0 = 1;
+            invertYName.value.intValue1 = 1;
+
             // column major for glm
             slang::CompilerOptionEntry setColumnMajor{ .name = slang::CompilerOptionName::MatrixLayoutColumn };
             setColumnMajor.value.intValue0 = 1;
             setColumnMajor.value.intValue1 = 1;
 
-            std::array compilerOptionEntries{ useEntryPointName, setColumnMajor };
+            std::array compilerOptionEntries{ useEntryPointName, invertYName, setColumnMajor };
 
             // Next we create a compilation session to generate SPIRV code from Slang source.
             slang::SessionDesc sessionDesc = {};
@@ -310,15 +314,15 @@ namespace vk2s
             const uint32_t* cend   = cbegin + (spirvCode->getBufferSize() / sizeof(SPIRVCode::value_type));
             SPIRVCode code(cbegin, cend);
 
-            spvtools::SpirvTools spirvTools(SPV_ENV_VULKAN_1_3);
+            /*spvtools::SpirvTools spirvTools(SPV_ENV_VULKAN_1_3);
             std::string spirvAssembly;
             if (!spirvTools.Disassemble(code, &spirvAssembly, SPV_BINARY_TO_TEXT_OPTION_INDENT))
             {
-                std::cerr << "Failed to disassemble SPIR-V binary" << std::endl;
+                std::cerr << "Failed to disassemble SPIR-V binary!" << std::endl;
                 return SPIRVCode();
             }
 
-            saveAssemblyToFile(std::string("./compiled_") + std::string(entrypoint) + std::string(".spv"), spirvAssembly);
+            saveAssemblyToFile(std::string("./compiled_") + std::string(entrypoint) + std::string(".spv"), spirvAssembly);*/
 
             return code;
         }

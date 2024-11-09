@@ -78,6 +78,8 @@ namespace vk2s
 
         void copyImageToSwapchain(Image& src, Window& window, const vk::ImageCopy& region, const uint32_t frameBufferIndex);
 
+        void clearImage(Image& target, const vk::ImageLayout layout, const vk::ClearValue& clearValue, const vk::ArrayProxy<vk::ImageSubresourceRange>& ranges);
+
         void drawImGui();
 
         void execute(const Handle<Fence>& signalFence = Handle<Fence>(), const Handle<Semaphore>& waitSem = Handle<Semaphore>(), const Handle<Semaphore>& signalSem = Handle<Semaphore>());
