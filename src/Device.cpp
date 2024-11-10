@@ -44,6 +44,10 @@ namespace vk2s
         iterateTuple(mPools);
 
         destroyImGui();
+        if (ImGui::GetCurrentContext())
+        {
+            ImGui::DestroyContext();
+        }
 
         glfwTerminate();
     }
@@ -67,7 +71,7 @@ namespace vk2s
         // if the context is not set, create a new one
         if (!ImGui::GetCurrentContext())
         {
-            ImGui::SetCurrentContext(ImGui::CreateContext());
+            ImGui::CreateContext();
         }
 
         ImGui_ImplGlfw_InitForVulkan(window.getpGLFWWindow(), true);
@@ -95,7 +99,6 @@ namespace vk2s
             //ImGui_ImplVulkan_DestroyFontsTexture();
             ImGui_ImplVulkan_Shutdown();
             ImGui_ImplGlfw_Shutdown();
-            ImGui::DestroyContext();
         }
     }
 
