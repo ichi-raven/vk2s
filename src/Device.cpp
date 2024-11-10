@@ -12,8 +12,7 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 namespace vk2s
 {
     Device::Device(const bool supportRayTracing)
-        : mpImGuiContext(nullptr)
-        , mRayTracingSupported(supportRayTracing)
+        : mRayTracingSupported(supportRayTracing)
     {
         glfwInit();
 
@@ -65,8 +64,12 @@ namespace vk2s
 
     void Device::initImGui(const uint32_t frameBufferNum, Window& window, RenderPass& renderpass)
     {
-        mpImGuiContext = ImGui::CreateContext();
-        ImGui::SetCurrentContext(mpImGuiContext);
+        // if the context is not set, create a new one
+        if (!ImGui::GetCurrentContext())
+        {
+            ImGui::SetCurrentContext(ImGui::CreateContext());
+        }
+
         ImGui_ImplGlfw_InitForVulkan(window.getpGLFWWindow(), true);
         ImGui_ImplVulkan_InitInfo init_info = {};
         init_info.Instance                  = mInstance.get();
@@ -87,14 +90,12 @@ namespace vk2s
 
     void Device::destroyImGui()
     {
-        if (mpImGuiContext)
+        if (ImGui::GetCurrentContext())
         {
             //ImGui_ImplVulkan_DestroyFontsTexture();
             ImGui_ImplVulkan_Shutdown();
             ImGui_ImplGlfw_Shutdown();
             ImGui::DestroyContext();
-
-            mpImGuiContext = nullptr;
         }
     }
 
