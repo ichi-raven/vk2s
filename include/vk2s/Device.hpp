@@ -204,6 +204,7 @@ namespace vk2s
 
         // imgui--------------
         vk::UniqueDescriptorPool mDescriptorPoolForImGui;
+        bool mImGuiActive;
 
     private:  // pools
         std::tuple<Pool<Window>, Pool<Buffer>, Pool<Image>, Pool<Sampler>, Pool<RenderPass>, Pool<Shader>, Pool<BindLayout>, Pool<BindGroup>, Pool<Pipeline>, Pool<Semaphore>, Pool<Fence>, Pool<Command>, Pool<AccelerationStructure>,

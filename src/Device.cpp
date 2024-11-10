@@ -13,6 +13,7 @@ namespace vk2s
 {
     Device::Device(const bool supportRayTracing)
         : mRayTracingSupported(supportRayTracing)
+        , mImGuiActive(false)
     {
         glfwInit();
 
@@ -90,15 +91,18 @@ namespace vk2s
         ImGui_ImplVulkan_Init(&init_info, renderpass.getVkRenderPass().get());
 
         uploadFontForImGui();
+
+        mImGuiActive = true;
     }
 
     void Device::destroyImGui()
     {
-        if (ImGui::GetCurrentContext())
+        if (mImGuiActive)
         {
             //ImGui_ImplVulkan_DestroyFontsTexture();
             ImGui_ImplVulkan_Shutdown();
             ImGui_ImplGlfw_Shutdown();
+            mImGuiActive = false;
         }
     }
 
