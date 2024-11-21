@@ -69,6 +69,11 @@ namespace vk2s
         return glfwGetKey(mpWindow, key);
     }
 
+    int Window::getMouseKey(const GLFWMouseKeyCode mouseKey) const
+    {
+        return glfwGetMouseButton(mpWindow, mouseKey);
+    }
+
     std::pair<double, double> Window::getMousePos() const
     {
         static double x, y;

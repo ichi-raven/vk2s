@@ -28,6 +28,7 @@ namespace vk2s
     public:
         using ResizeFlag = bool;
         using GLFWKeyCode = int;
+        using GLFWMouseKeyCode = int;
 
     public:
         Window(Device& device, const uint32_t width, const uint32_t height, const uint32_t frameNum, std::string_view windowName, bool fullScreen = false);
@@ -40,6 +41,8 @@ namespace vk2s
         bool update();
 
         int getKey(const GLFWKeyCode key) const;
+        
+        int getMouseKey(const GLFWMouseKeyCode mouseKey) const;
 
         std::pair<double, double> getMousePos() const;
 
