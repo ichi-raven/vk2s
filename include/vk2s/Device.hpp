@@ -111,7 +111,7 @@ namespace vk2s
 
         const vk::UniqueDevice& getVkDevice();
 
-        const QueueFamilyIndices getVkQueueFamilyIndices();
+        const QueueFamilyIndices getVkQueueFamilyIndices() const;
 
         const vk::Queue& getVkGraphicsQueue();
 

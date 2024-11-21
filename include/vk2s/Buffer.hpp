@@ -15,6 +15,8 @@
 
 #include "Macro.hpp"
 
+#include <functional>
+
 namespace vk2s
 {
     class Device;
@@ -30,6 +32,9 @@ namespace vk2s
         NONMOVABLE(Buffer);
 
         void write(const void* pSrc, const size_t size, const size_t offset = 0);
+
+        // TODO: std::function is slow
+        void read(const std::function<void(const void*)>& readFunc, const size_t size, const size_t offset = 0);
 
         const vk::UniqueBuffer& getVkBuffer();
 

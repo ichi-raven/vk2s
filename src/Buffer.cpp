@@ -42,6 +42,22 @@ namespace vk2s
         vkDevice->unmapMemory(mMemory.get());
     }
 
+    void Buffer::read(const std::function<void(const void*)>& readFunc, const size_t size, const size_t offset)
+    {
+        if (!mBuffer || !mMemory)
+        {
+            assert(!"invalid buffer access!");
+            return;
+        }
+
+        const auto& vkDevice = mDevice.getVkDevice();
+
+        void* p = vkDevice->mapMemory(mMemory.get(), offset, size);
+        assert(p || !"failed to map memory!");
+        readFunc(p);
+        vkDevice->unmapMemory(mMemory.get());
+    }
+
     const vk::UniqueBuffer& Buffer::getVkBuffer()
     {
         return mBuffer;
