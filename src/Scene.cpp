@@ -419,7 +419,7 @@ namespace vk2s
 
             material.albedoTex    = loadMaterialTexture(pScene, pMat, aiTextureType::aiTextureType_DIFFUSE, Texture::Type::eAlbedo);
             material.rougnnessTex = loadMaterialTexture(pScene, pMat, aiTextureType::aiTextureType_DIFFUSE_ROUGHNESS, Texture::Type::eRoughness);
-            material.rougnnessTex = loadMaterialTexture(pScene, pMat, aiTextureType::aiTextureType_METALNESS, Texture::Type::eMetalness);
+            material.metalnessTex = loadMaterialTexture(pScene, pMat, aiTextureType::aiTextureType_METALNESS, Texture::Type::eMetalness);
             material.normalMapTex = loadMaterialTexture(pScene, pMat, aiTextureType::aiTextureType_NORMALS, Texture::Type::eNormal);
             {
                 aiColor4D color;
