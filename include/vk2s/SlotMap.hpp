@@ -64,7 +64,7 @@ public:
         return *this;
     }
 
-    Handle(Handle&& other)
+    Handle(Handle&& other) noexcept
     {
         this->mID    = other.mID;
         this->mpPool = other.mpPool;
@@ -72,7 +72,7 @@ public:
         other.mID = kInvalidID;
     }
 
-    Handle& operator=(Handle&& other)
+    Handle& operator=(Handle&& other) noexcept
     {
         this->mID    = other.mID;
         this->mpPool = other.mpPool;
