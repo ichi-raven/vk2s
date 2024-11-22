@@ -130,7 +130,7 @@ namespace vk2s
         };
 
         uint32_t type;
-        int32_t rougnnessTex;
+        int32_t roughnessTex;
         glm::vec2 roughness;
 
         glm::vec3 albedo;
