@@ -23,10 +23,11 @@ struct Material
   int32_t roughnessTex;
   vec2 roughness;
 
-  vec4 albedo;
+  vec3 albedo;
+  int32_t albedoTex;
 
   vec3 eta;
-  int32_t albedoTex;
+  int32_t metalnessTex;
 
   vec3 k;
   int32_t normalTex;

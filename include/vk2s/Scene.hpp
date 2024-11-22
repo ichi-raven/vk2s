@@ -105,6 +105,7 @@ namespace vk2s
         {
             eAlbedo,
             eRoughness,
+            eMetalness,
             eNormal,
             eEnvmap
         };
@@ -132,10 +133,11 @@ namespace vk2s
         int32_t rougnnessTex;
         glm::vec2 roughness;
 
-        glm::vec4 albedo;
+        glm::vec3 albedo;
+        int32_t albedoTex;
 
         glm::vec3 eta; // Re(IOR)
-        int32_t albedoTex;
+        int32_t metalnessTex;
 
         glm::vec3 k; // Im(IOR)
         int32_t normalMapTex;

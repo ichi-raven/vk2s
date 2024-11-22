@@ -419,14 +419,15 @@ namespace vk2s
 
             material.albedoTex    = loadMaterialTexture(pScene, pMat, aiTextureType::aiTextureType_DIFFUSE, Texture::Type::eAlbedo);
             material.rougnnessTex = loadMaterialTexture(pScene, pMat, aiTextureType::aiTextureType_DIFFUSE_ROUGHNESS, Texture::Type::eRoughness);
+            material.rougnnessTex = loadMaterialTexture(pScene, pMat, aiTextureType::aiTextureType_METALNESS, Texture::Type::eMetalness);
             material.normalMapTex = loadMaterialTexture(pScene, pMat, aiTextureType::aiTextureType_NORMALS, Texture::Type::eNormal);
-
             {
                 aiColor4D color;
                 if (AI_SUCCESS == aiGetMaterialColor(pMat, AI_MATKEY_COLOR_DIFFUSE, &color))
                 {
                     //std::cerr << "\tfound diffuse : " << showColor(color) << "\n";
-                    material.albedo = convertVec4(color);
+                    const auto color3D = aiVector3D(color.r, color.g, color.b);
+                    material.albedo = convertVec3(color3D);
                 }
 
                 float IOR = 1.f;
