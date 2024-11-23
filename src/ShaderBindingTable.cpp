@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * @file   ShaderBindingTable.cpp
+ * @brief  source file of ShaderBindingTable class
+ * 
+ * @author ichi-raven
+ * @date   November 2023
+ *********************************************************************/
 #include "../include/vk2s/ShaderBindingTable.hpp"
 
 #include "../include/vk2s/Device.hpp"

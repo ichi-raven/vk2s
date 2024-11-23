@@ -69,10 +69,18 @@ namespace
 
     inline size_t findScale(float time, aiNodeAnim* pAnimationNode)
     {
-        if (pAnimationNode->mNumScalingKeys == 1) return 0;
+        if (pAnimationNode->mNumScalingKeys == 1)
+        {
+            return 0;
+        }
 
         for (size_t i = 0; i < pAnimationNode->mNumScalingKeys - 1; ++i)
-            if (time < static_cast<float>(pAnimationNode->mScalingKeys[i + 1].mTime)) return i;
+        {
+            if (time < static_cast<float>(pAnimationNode->mScalingKeys[i + 1].mTime))
+            {
+                return i;
+            }
+        }
 
         assert(!"failed to find scale index!");
         return 0;
@@ -80,10 +88,18 @@ namespace
 
     inline size_t findRotation(float time, aiNodeAnim* pAnimationNode)
     {
-        if (pAnimationNode->mNumRotationKeys == 1) return 0;
+        if (pAnimationNode->mNumRotationKeys == 1)
+        {
+            return 0;
+        }
 
         for (size_t i = 0; i < pAnimationNode->mNumRotationKeys - 1; ++i)
-            if (time < static_cast<float>(pAnimationNode->mRotationKeys[i + 1].mTime)) return i;
+        {
+            if (time < static_cast<float>(pAnimationNode->mRotationKeys[i + 1].mTime))
+            {
+                return i;
+            }
+        }
 
         assert(!"failed to find rotation index!");
         return 0;
@@ -91,10 +107,18 @@ namespace
 
     inline size_t findPosition(float time, aiNodeAnim* pAnimationNode)
     {
-        if (pAnimationNode->mNumPositionKeys == 1) return 0;
+        if (pAnimationNode->mNumPositionKeys == 1)
+        {
+            return 0;
+        }
 
         for (size_t i = 0; i < pAnimationNode->mNumPositionKeys - 1; ++i)
-            if (time < static_cast<float>(pAnimationNode->mPositionKeys[i + 1].mTime)) return i;
+        {
+            if (time < static_cast<float>(pAnimationNode->mPositionKeys[i + 1].mTime))
+            {
+                return i;
+            }
+        }
 
         assert(!"failed to find position index!");
         return 0;
@@ -123,20 +147,12 @@ namespace vk2s
 
     void Skeleton::traverseNode(const float timeInAnim, const size_t animationIndex, const aiNode* node, const glm::mat4 parentTransform)
     {
-        //std::cerr << "\n\n\nprev parentTransform\n" << glm::to_string(parentTransform) << "\n";
-
         std::string nodeName = std::string(node->mName.C_Str());
 
         const aiAnimation* pAnimation = pScene->mAnimations[animationIndex];
 
         glm::mat4 transform = convert4x4(node->mTransformation);
 
-        // if(nodeName == "Z_UP")
-        // {
-        //     transform = glm::mat4(1.f);
-        // }
-
-        //std::cerr << "original transform\n" << glm::to_string(transform) << "\n";
 
         aiNodeAnim* pAnimationNode = nullptr;
 
@@ -152,10 +168,6 @@ namespace vk2s
 
         if (pAnimationNode)
         {
-            //check
-            //std::cerr << pAnimationNode->mNumScalingKeys << "\n";
-            //std::cerr << pAnimationNode->mNumRotationKeys << "\n";
-            //std::cerr << pAnimationNode->mNumPositionKeys << "\n";
             assert(pAnimationNode->mNumScalingKeys >= 1);
             assert(pAnimationNode->mNumRotationKeys >= 1);
             assert(pAnimationNode->mNumPositionKeys >= 1);
@@ -164,11 +176,6 @@ namespace vk2s
             size_t scaleIndex    = findScale(timeInAnim, pAnimationNode);
             size_t rotationIndex = findRotation(timeInAnim, pAnimationNode);
             size_t positionIndex = findPosition(timeInAnim, pAnimationNode);
-
-            //std::cerr << "keys : \n";
-            // std::cerr << scaleIndex << "\n";
-            // std::cerr << rotationIndex << "\n";
-            // std::cerr << positionIndex << "\n\n";
 
             glm::mat4 scale, rotation, translate;
 
@@ -183,7 +190,6 @@ namespace vk2s
 
                 glm::vec3&& lerped = glm::mix(start, end, (timeInAnim - static_cast<float>(pAnimationNode->mScalingKeys[scaleIndex].mTime)) / dt);
                 scale              = glm::scale(glm::mat4(1.f), lerped);
-                //std::cerr << "scale\n" << glm::to_string(scale) << "\n";
             }
 
             //rotation
@@ -194,7 +200,6 @@ namespace vk2s
 
                 glm::quat&& slerped = glm::mix(start, end, (timeInAnim - static_cast<float>(pAnimationNode->mRotationKeys[rotationIndex].mTime)) / dt);
                 rotation            = glm::toMat4(glm::normalize(slerped));
-                //std::cerr << "rotation\n" << glm::to_string(rotation) << "\n";
             }
 
             //position(translate)
@@ -216,13 +221,8 @@ namespace vk2s
         if (boneMap.count(nodeName) > 0)
         {
             size_t boneIndex = boneMap[nodeName];
-            // std::cerr << "boneIndex " << boneIndex << "\n";
-            // std::cerr << "transform\n" << glm::to_string(transform) << "\n";
-            // std::cerr << "parentTransform\n" << glm::to_string(parentTransform) << "\n";
-            // std::cerr << "globalTransform\n" << glm::to_string(globalTransform) << "\n";
-            // std::cerr << "boneOffset\n" << glm::to_string(bones[boneIndex].offset) << "\n";
+
             bones[boneIndex].transform = defaultAxis * mGlobalInverse * globalTransform * bones[boneIndex].offset;
-            //std::cerr << "boneTransform\n" << glm::to_string(bones[boneIndex].transform) << "\n";
         }
 
         for (size_t i = 0; i < node->mNumChildren; ++i)
@@ -243,7 +243,6 @@ namespace vk2s
         if (!pScene || pScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !pScene->mRootNode)
         {
             std::cerr << "ERROR::ASSIMP::" << mImporter.GetErrorString() << "\n";
-            //throw std::runtime_error("failed to load asset with assimp!");
             return;
         }
 
@@ -256,7 +255,7 @@ namespace vk2s
             if (pMat->GetTexture(aiTextureType_AMBIENT, 0, &texturePath) == AI_SUCCESS)
             {
                 loadMaterialTexture(pScene, pMat, aiTextureType::aiTextureType_AMBIENT, Texture::Type::eEnvmap);
-                // TODO: load pdf map?
+                // TODO: create pdf map?
             }
         }
 

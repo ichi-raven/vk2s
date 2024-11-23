@@ -1,4 +1,11 @@
 
+/*****************************************************************//**
+ * @file   Window.cpp
+ * @brief  source file of Window class
+ * 
+ * @author ichi-raven
+ * @date   November 2023
+ *********************************************************************/
 #include "../include/vk2s/Window.hpp"
 
 #include "../include/vk2s/Device.hpp"

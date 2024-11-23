@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * @file   Compiler.cpp
+ * @brief  source files of Compiler functions 
+ * 
+ * @author ichi-raven
+ * @date   November 2024
+ *********************************************************************/
 #include "../include/vk2s/Compiler.hpp"
 
 #include <spirv_reflect.h>

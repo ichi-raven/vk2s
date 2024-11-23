@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * @file   Shader.cpp
+ * @brief  source file of Shader class
+ * 
+ * @author ichi-raven
+ * @date   November 2023
+ *********************************************************************/
 #include "../include/vk2s/Shader.hpp"
 
 #include "../include/vk2s/Device.hpp"

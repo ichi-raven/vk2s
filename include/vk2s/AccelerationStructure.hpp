@@ -18,45 +18,80 @@
 
 namespace vk2s
 {
+    //! forward declarations
     class Device;
     class Buffer;
     class Command;
 
+    /**
+     * @brief  Acceleration Structure class
+     */
     class AccelerationStructure
     {
     public:  // methods
-        // BLAS
+        
+        /**
+         * @brief  create as BLAS
+         */
         AccelerationStructure(Device& device, const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, const Handle<Command>& buildCommand = Handle<Command>());
 
-        // TLAS
+        /**
+         * @brief  create as TLAS
+         */
         AccelerationStructure(Device& device, const vk::ArrayProxy<vk::AccelerationStructureInstanceKHR>& instances, const Handle<Command>& buildCommand = Handle<Command>());
 
+        /**
+         * @brief  destructor
+         */
         ~AccelerationStructure();
 
+        /**
+         * @brief  build this AS as BLAS
+         */
         void build(const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, const Handle<Command>& buildCommand = Handle<Command>());
 
+        /**
+         * @brief  build this AS as TLAS
+         */
         void build(const vk::ArrayProxy<vk::AccelerationStructureInstanceKHR>& instances, const Handle<Command>& buildCommand = Handle<Command>());
 
+        //! noncopyable, nonmovable
         NONCOPYABLE(AccelerationStructure);
         NONMOVABLE(AccelerationStructure);
 
+        /**
+         * @brief  get vulkan internal handle
+         */
         const vk::UniqueAccelerationStructureKHR& getVkAccelerationStructure();
 
+        /**
+         * @brief  get vulkan device address
+         */
         const vk::DeviceAddress getVkDeviceAddress() const;
 
     private:  // methods
+        /**
+         * @brief  internal function for building AS
+         */
         void buildInternal(const vk::AccelerationStructureTypeKHR type, const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureGeometryKHR>& asGeometry,
                    const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureBuildRangeInfoKHR>& asBuildRangeInfo, vk::BuildAccelerationStructureFlagsKHR flags, const Handle<Command>& buildCommand = Handle<Command>());
 
     private:  // member variables
+        //! reference to device
         Device& mDevice;
 
+        //! vulkan acceleration structure
         vk::UniqueAccelerationStructureKHR mAccelerationStructure;
+        //! vulkan device address
         vk::DeviceAddress mDeviceAddress;
+        //! vulkan device memory size
         vk::DeviceSize mSize;
 
+        //! buffer to allocating AS
         Handle<Buffer> mBuffer;
+        //! buffer to create AS
         Handle<Buffer> mScratchBuffer;
+        //! buffer to update AS
         Handle<Buffer> mUpdateBuffer;
     };
 }  // namespace vk2s

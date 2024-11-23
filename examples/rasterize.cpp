@@ -46,7 +46,7 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
 
         auto renderpass = device.create<vk2s::RenderPass>(window.get(), vk::AttachmentLoadOp::eClear, depthBuffer);
 
-        device.initImGui(frameCount, window.get(), renderpass.get());
+        device.initImGui( window.get(), renderpass.get());
 
         // load meshes and materials
         std::vector<MeshInstance> meshInstances;

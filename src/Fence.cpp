@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * @file   Fence.cpp
+ * @brief  source file of Fence class
+ * 
+ * @author ichi-raven
+ * @date   November 2023
+ *********************************************************************/
 #include "../include/vk2s/Fence.hpp"
 
 #include "../include/vk2s/Device.hpp"
