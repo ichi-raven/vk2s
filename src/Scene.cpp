@@ -153,7 +153,6 @@ namespace vk2s
 
         glm::mat4 transform = convert4x4(node->mTransformation);
 
-
         aiNodeAnim* pAnimationNode = nullptr;
 
         //find animation node
@@ -426,7 +425,7 @@ namespace vk2s
                 {
                     //std::cerr << "\tfound diffuse : " << showColor(color) << "\n";
                     const auto color3D = aiVector3D(color.r, color.g, color.b);
-                    material.albedo = convertVec3(color3D);
+                    material.albedo    = convertVec3(color3D);
                 }
 
                 float IOR = 1.f;
@@ -563,10 +562,16 @@ namespace vk2s
 
             if (embeddedTexture != nullptr)
             {
-                texture.pData    = reinterpret_cast<std::byte*>(embeddedTexture->pcData);
-                texture.width    = embeddedTexture->mWidth;
-                texture.height   = embeddedTexture->mHeight;
-                texture.bpp      = 4;  // RGBA8888
+                texture.pData = reinterpret_cast<std::byte*>(embeddedTexture->pcData);
+
+                if (embeddedTexture->mHeight == 0)
+                {
+                    return -1;  // TODO: how to decompress these texture...?
+                }
+
+                texture.width  = embeddedTexture->mWidth;
+                texture.height = embeddedTexture->mHeight;
+                texture.bpp    = 4;  // RGBA8888
                 texture.embedded = true;
                 texture.type     = type;
             }
