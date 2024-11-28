@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * @file   Sampler.cpp
+ * @brief  source file of Sampler class
+ * 
+ * @author ichi-raven
+ * @date   November 2023
+ *********************************************************************/
 #include "../include/vk2s/Sampler.hpp"
 
 #include "../include/vk2s/Device.hpp"

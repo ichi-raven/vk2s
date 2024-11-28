@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * @file   Semaphore.cpp
+ * @brief  source file of Semaphore class
+ * 
+ * @author ichi-raven
+ * @date   November 2023
+ *********************************************************************/
 #include "../include/vk2s/Semaphore.hpp"
 
 #include "../include/vk2s/Device.hpp"

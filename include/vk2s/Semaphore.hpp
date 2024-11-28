@@ -17,23 +17,38 @@
 
 namespace vk2s
 {
+    //! forward declaration
     class Device;
 
+    /**
+     * @brief  class representing the GPU-GPU synchronization mechanism (Semaphore)
+     */
     class Semaphore
     {
     public:  // methods
+        /**
+         * @brief  constructor
+         */
         Semaphore(Device& device);
 
+        /**
+         * @brief  destructor
+         */
         ~Semaphore();
 
         NONCOPYABLE(Semaphore);
         NONMOVABLE(Semaphore);
 
-         const vk::UniqueSemaphore& getVkSemaphore();
+        /**
+         * @brief  get vulkan handle 
+         */
+        const vk::UniqueSemaphore& getVkSemaphore();
 
     private:  // member variables
-         Device& mDevice;
+        //! reference to device
+        Device& mDevice;
 
+        //! vulkan handle
         vk::UniqueSemaphore mSemaphore;
     };
 }

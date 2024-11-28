@@ -17,23 +17,38 @@
 
 namespace vk2s
 {
+    //! forward declaration
     class Device;
 
+    /**
+     * @brief  class that determines how to sample textures on the shader
+     */
     class Sampler
     {
     public:  // methods
+        /**
+         * @brief  constructor
+         */
         Sampler(Device& device, const vk::SamplerCreateInfo& ci);
 
+        /**
+         * @brief  destructor
+         */
         ~Sampler();
 
         NONCOPYABLE(Sampler);
         NONMOVABLE(Sampler);
 
-         const vk::UniqueSampler& getVkSampler();
+        /**
+         * @brief  get vulkan handle
+         */
+        const vk::UniqueSampler& getVkSampler();
 
     private:  // member variables
-         Device& mDevice;
+        //! reference to device
+        Device& mDevice;
 
+        //! vulkan handle
         vk::UniqueSampler mSampler;
     };
 }

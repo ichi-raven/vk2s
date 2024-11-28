@@ -1,6 +1,6 @@
 /*****************************************************************/ /**
  * @file   Camera.hpp
- * @brief  Camera utility class
+ * @brief  header file of Camera utility class
  * 
  * @author ichi-raven
  * @date   October 2023
@@ -14,53 +14,107 @@
 
 namespace vk2s
 {
-class Camera
-{
-public:
-   
-    Camera(const double fov = 60., const double aspect = 16. / 9., const double near = 0.1, const double far = 1e4);
+    /**
+     * @brief  utility class that provide basic camera operation
+     */
+    class Camera
+    {
+    public:
+        /**
+         * @brief  constructor
+         */
+        Camera(const double fov = 60., const double aspect = 16. / 9., const double near = 0.1, const double far = 1e4);
 
-    void update(GLFWwindow* pWindow, const double moveSpeed, const double mouseSpeed, const bool reset = false);
+        /**
+         * @brief  update camera from mouse and key inputs
+         */
+        void update(GLFWwindow* pWindow, const double moveSpeed, const double mouseSpeed, const bool reset = false);
 
-    void setPos(const glm::vec3& pos);
-    const glm::vec3& getPos() const;
+        /**
+         * @brief setter and getter of camera's point
+         */
+        void setPos(const glm::vec3& pos);
+        const glm::vec3& getPos() const;
 
-    void setLookAt(const glm::vec3& lookAt);
-    const glm::vec3 getLookAt() const;
+        /**
+         * @brief  setter and getter of camera's lookat point
+         */
+        void setLookAt(const glm::vec3& lookAt);
+        const glm::vec3 getLookAt() const;
 
-    void setFOV(const double FOV);
-    double getFOV() const;
+        /**
+         * @brief  setter and getter of camera's field of view
+         */
+        void setFOV(const double FOV);
+        double getFOV() const;
 
-    void setAspect(const double aspect);
-    double getAspect() const;
+        /**
+         * @brief  setter and getter of camera's aspect ratio
+         */
+        void setAspect(const double aspect);
+        double getAspect() const;
 
-    void setNear(const double near);
-    double getNear() const;
+        /**
+         * @brief  setter and getter of distance to camera's near plane
+         */
+        void setNear(const double near);
+        double getNear() const;
 
-    void setFar(const double far);
-    double getFar() const;
+        /**
+         * @brief  setter and getter of distance to camera's far plane
+         */
+        void setFar(const double far);
+        double getFar() const;
 
-    bool moved() const;
+        /**
+         * @brief  whether the camera has moved since the last update
+         */
+        bool moved() const;
 
-    const glm::mat4& getViewMatrix() const;
-    const glm::mat4& getProjectionMatrix() const;
+        /**
+         * @brief  compute and obtain the view matrix for this camera
+         */
+        const glm::mat4& getViewMatrix() const;
 
-private:
-    void updateViewMat();
-    void updateProjMat();
+        /**
+         * @brief  compute and obtain the projection matrix for this camera
+         */
+        const glm::mat4& getProjectionMatrix() const;
 
-    double mFOV;
-    double mAspect;
-    double mNear;
-    double mFar;
-    double mTheta;
-    double mPhi;
-    glm::vec3 mPos;
-    glm::vec3 mUp;
-    glm::mat4 mViewMat;
-    glm::mat4 mProjectionMat;
+    private:
+        /**
+         * @brief  compute the view matrix for this camera
+         */
+        void updateViewMat();
 
-    bool mMoved;
-};
-}
+        /**
+         * @brief  compute the projection matrix for this camera
+         */
+        void updateProjMat();
+
+        //! field of view
+        double mFOV;
+        //! aspect ratio
+        double mAspect;
+        //! distance to the near plane
+        double mNear;
+        //! distance to the far plane
+        double mFar;
+        //! looking elevation angle
+        double mTheta;
+        //! looking azimuth angle
+        double mPhi;
+        //! position
+        glm::vec3 mPos;
+        //! up vector
+        glm::vec3 mUp;
+        //! view matrix
+        glm::mat4 mViewMat;
+        //! projection matrix
+        glm::mat4 mProjectionMat;
+
+        //! flag whether the camera has moved
+        bool mMoved;
+    };
+}  // namespace vk2s
 #endif

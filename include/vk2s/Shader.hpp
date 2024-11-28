@@ -21,29 +21,52 @@
 
 namespace vk2s
 {
+    //! forward declaration
     class Device;
 
+    /**
+     * @brief class representing a shader (compiled SPIR-V) 
+     */
     class Shader
     {
     public:  // methods
+        /**
+         * @brief  constructor
+         */
         Shader(Device& device, std::string_view path, std::string_view entryPoint);
 
+        /**
+         * @brief  destructor
+         */
         ~Shader();
 
         NONCOPYABLE(Shader);
         NONMOVABLE(Shader);
 
+        /**
+         * @brief  get vulkan shader module handle
+         */
         const vk::UniqueShaderModule& getVkShaderModule();
 
+        /**
+         * @brief  get entry point string
+         */
         const std::string& getEntryPoint() const;
 
+        /**
+         * @brief  get shader reflection
+         */
         const Compiler::ReflectionResult& getReflection();
 
     private:  // member variables
+        //! reference to device
         Device& mDevice;
 
+        //! vulkan shader module handle 
         vk::UniqueShaderModule mShaderModule;
+        //! entry point string
         std::string mEntryPoint;
+        //! shader reflection
         std::optional<Compiler::ReflectionResult> mReflection;
     };
 }  // namespace vk2s

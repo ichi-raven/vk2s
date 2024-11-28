@@ -72,7 +72,7 @@ void main()
   Material material = materials[nonuniformEXT(mapping.materialIndex)];
   if (material.albedoTex != -1)
   {
-    material.albedo = texture(texSamplers[nonuniformEXT(material.albedoTex)], vtx.texCoord);
+    material.albedo = texture(texSamplers[nonuniformEXT(material.albedoTex)], vtx.texCoord).xyz;
   }
   if (material.roughnessTex != -1)
   {

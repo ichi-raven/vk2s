@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * @file   Pipeline.cpp
+ * @brief  
+ * 
+ * @author ichi-raven
+ * @date   November 2023
+ *********************************************************************/
 #include "../include/vk2s/Pipeline.hpp"
 
 #include "../include/vk2s/Device.hpp"

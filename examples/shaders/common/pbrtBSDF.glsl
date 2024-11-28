@@ -303,7 +303,7 @@ BSDFSample sampleDiffuse(const vec3 albedo, const vec3 wo, inout uint prngState)
     BSDFSample ret;
     ret.flags = BSDF_FLAGS_DIFFUSE_REFLECTION;
     
-    ret.f = albedo.xyz * M_INVPI;
+    ret.f = albedo * M_INVPI;
     ret.wi = randomCosDirection(prngState);
     if (wo.z < 0.0)
     {
@@ -638,10 +638,10 @@ vec3 evalPBRTBSDF(const Material mat, vec3 wo, vec3 wi, const vec3 normal)
     switch(mat.matType)
     {
         case MAT_LAMBERT:
-            return evalDiffuse(mat.albedo.xyz, wo, wi);
+            return evalDiffuse(mat.albedo, wo, wi);
         break;
         case MAT_CONDUCTOR:
-            return evalConductor(mat.albedo.xyz, ax, ay, mat.eta, mat.k, wo, wi); 
+            return evalConductor(mat.albedo, ax, ay, mat.eta, mat.k, wo, wi); 
         break;
         case MAT_DIELECTRIC:
             return evalDielectric(ax, ay, mat.eta.r, wo, wi);
@@ -658,7 +658,7 @@ vec3 evalPBRTBSDF(const Material mat, vec3 wo, vec3 wi, const vec3 normal)
 BSDFSample samplePBRTBSDF(const Material mat, vec3 wo, const vec3 normal, inout uint prngState)
 {
     BSDFSample ret;
-    ret.f = mat.albedo.xyz;
+    ret.f = mat.albedo;
     ret.pdf = 1.0;
     ret.flags = 0;
 
@@ -683,10 +683,10 @@ BSDFSample samplePBRTBSDF(const Material mat, vec3 wo, const vec3 normal, inout 
     switch(mat.matType)
     {
         case MAT_LAMBERT:
-            ret = sampleDiffuse(mat.albedo.xyz, wo, prngState);
+            ret = sampleDiffuse(mat.albedo, wo, prngState);
         break;
         case MAT_CONDUCTOR:
-            ret = sampleConductor(mat.albedo.xyz, ax, ay, mat.eta, mat.k, wo, u); 
+            ret = sampleConductor(mat.albedo, ax, ay, mat.eta, mat.k, wo, u); 
         break;
         case MAT_DIELECTRIC:
             ret = sampleDielectric(ax, ay, mat.eta.r, wo, uc, u);

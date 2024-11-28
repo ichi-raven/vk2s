@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * @file   RenderPass.cpp
+ * @brief  source file of RenderPass class
+ * 
+ * @author ichi-raven
+ * @date   November 2023
+ *********************************************************************/
 #include "../include/vk2s/RenderPass.hpp"
 
 #include "../include/vk2s/Device.hpp"

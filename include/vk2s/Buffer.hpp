@@ -15,38 +15,87 @@
 
 #include "Macro.hpp"
 
+#include <functional>
+
 namespace vk2s
 {
+    //! forward declaration
     class Device;
 
+    /**
+     * @brief  Buffer class
+     */
     class Buffer
     {
     public:  // methods
+        /**
+         * @brief  constructor
+         */
         Buffer(Device& device, const vk::BufferCreateInfo& bi, vk::MemoryPropertyFlags pbs);
 
+        /**
+         * @brief  destructor
+         */
         ~Buffer();
 
         NONCOPYABLE(Buffer);
         NONMOVABLE(Buffer);
 
+        /**
+         * @brief  writes data to buffer
+         * 
+         * @param pSrc pointer to copy source memory area
+         * @param size size of copy source memory area
+         * @offset offset of copy source memory area
+         */
         void write(const void* pSrc, const size_t size, const size_t offset = 0);
 
+        /**
+         * @brief  maps buffer information to CPU for reading
+         * @detail TODO: std::function is slow
+         * 
+         * @param readFunc function object to process from mapped memory
+         * @param size size of memory area to be mapped
+         * @param offset offset of memory area to be mapped
+         */
+        void read(const std::function<void(const void*)>& readFunc, const size_t size, const size_t offset = 0);
+
+        /**
+         * @brief  get vulkan internal handle
+         */
         const vk::UniqueBuffer& getVkBuffer();
 
+        /**
+         * @brief  get vulkan device memory
+         */
         const vk::UniqueDeviceMemory& getVkDeviceMemory();
 
+        /**
+         * @brief  get size of vulkan device memory
+         */
         const vk::DeviceSize getSize() const;
 
+        /**
+         * @brief  get offset of vulkan device memory
+         */
         const vk::DeviceSize getOffset() const;
 
+        /**
+         * @brief  get vulkan device address
+         */
         const vk::DeviceAddress getVkDeviceAddress() const;
 
     private:  // member variables
+        //! reference to device
         Device& mDevice;
 
+        //! vulkan buffer handle
         vk::UniqueBuffer mBuffer;
+        //! vulkan device memory 
         vk::UniqueDeviceMemory mMemory;
+        //! size of vulkan device memory
         vk::DeviceSize mSize;
+        //! offset of vulkan device memory
         vk::DeviceSize mOffset;
     };
 }  // namespace vk2s

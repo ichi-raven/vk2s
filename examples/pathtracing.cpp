@@ -37,7 +37,7 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
 
         auto renderpass = device.create<vk2s::RenderPass>(window.get(), vk::AttachmentLoadOp::eLoad);
 
-        device.initImGui(frameCount, window.get(), renderpass.get());
+        device.initImGui(window.get(), renderpass.get());
 
         std::vector<MeshInstance> meshInstances;
         Handle<vk2s::Buffer> materialBuffer;

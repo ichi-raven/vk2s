@@ -1,4 +1,11 @@
 
+/*****************************************************************//**
+ * @file   Window.cpp
+ * @brief  source file of Window class
+ * 
+ * @author ichi-raven
+ * @date   November 2023
+ *********************************************************************/
 #include "../include/vk2s/Window.hpp"
 
 #include "../include/vk2s/Device.hpp"
@@ -67,6 +74,11 @@ namespace vk2s
     int Window::getKey(const int key) const
     {
         return glfwGetKey(mpWindow, key);
+    }
+
+    int Window::getMouseKey(const GLFWMouseKeyCode mouseKey) const
+    {
+        return glfwGetMouseButton(mpWindow, mouseKey);
     }
 
     std::pair<double, double> Window::getMousePos() const

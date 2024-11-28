@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * @file   Camera.cpp
+ * @brief  source file of Camera class
+ * 
+ * @author ichi-raven
+ * @date   November 2024
+ *********************************************************************/
 #include "../include/vk2s/Camera.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>

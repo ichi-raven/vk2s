@@ -67,7 +67,7 @@ namespace vk2s
         mDescriptorPoolForImGui = mDevice->createDescriptorPoolUnique(ci);
     }
 
-    void Device::initImGui(const uint32_t frameBufferNum, Window& window, RenderPass& renderpass)
+    void Device::initImGui(Window& window, RenderPass& renderpass)
     {
         // if the context is not set, create a new one
         if (!ImGui::GetCurrentContext())
@@ -86,11 +86,9 @@ namespace vk2s
         init_info.DescriptorPool            = mDescriptorPoolForImGui.get();
         init_info.Allocator                 = VK_NULL_HANDLE;
         init_info.MinImageCount             = 2;
-        init_info.ImageCount                = frameBufferNum;
+        init_info.ImageCount                = window.getFrameCount();
         init_info.CheckVkResultFn           = nullptr;
         ImGui_ImplVulkan_Init(&init_info, renderpass.getVkRenderPass().get());
-
-        uploadFontForImGui();
 
         mImGuiActive = true;
     }
@@ -104,12 +102,6 @@ namespace vk2s
             ImGui_ImplGlfw_Shutdown();
             mImGuiActive = false;
         }
-    }
-
-    void Device::uploadFontForImGui()
-    {
-        //impl fonts
-        //ImGui_ImplVulkan_CreateFontsTexture();
     }
 
     std::string_view Device::getPhysicalDeviceName() const

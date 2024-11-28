@@ -1,4 +1,4 @@
-/*****************************************************************//**
+/*****************************************************************/ /**
  * @file   Fence.hpp
  * @brief  header file of Fence class
  * 
@@ -17,31 +17,55 @@
 
 namespace vk2s
 {
+    //! forward declaration
     class Device;
 
+    /**
+     * @brief  class representing the GPU-CPU synchronization mechanism (Fence)
+     */
     class Fence
     {
     public:  // methods
+        /**
+         * @brief  construction
+         */
         Fence(Device& device, const bool signaled = true);
 
+        /**
+         * @brief  destruction
+         */
         ~Fence();
 
         NONCOPYABLE(Fence);
         NONMOVABLE(Fence);
 
+        /**
+         * @brief  wait until this fence is signaled by GPU
+         */
         bool wait();
 
+        /**
+         * @brief  reset this fences state
+         */
         void reset();
 
+        /**
+         * @brief  check this fence is signaled
+         */
         bool signaled();
 
+        /**
+         * @brief  get vulkan handle
+         */
         const vk::UniqueFence& getVkFence();
 
     private:  // member variables
-         Device& mDevice;
+        //! reference to device
+        Device& mDevice;
 
+        // vulkan fence handle
         vk::UniqueFence mFence;
     };
-}
+}  // namespace vk2s
 
 #endif
