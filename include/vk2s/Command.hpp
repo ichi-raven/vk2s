@@ -1,9 +1,9 @@
 /*****************************************************************/ /**
- * \file   Command.hpp
- * \brief  header file of Command class
+ * @file   Command.hpp
+ * @brief  header file of Command class
  * 
- * \author ichi-raven
- * \date   November 2023
+ * @author ichi-raven
+ * @date   November 2023
  *********************************************************************/
 #ifndef VK2S_INCLUDE_COMMAND_HPP_
 #define VK2S_INCLUDE_COMMAND_HPP_
@@ -85,6 +85,16 @@ namespace vk2s
          * @brief  set BindGroup
          */
         void setBindGroup(const uint8_t set, BindGroup& bindGroup, vk::ArrayProxy<const uint32_t> const& dynamicOffsets = {});
+
+        /**
+         * @brief set Viewport (only for pipeline DynamicState)
+         */
+        void setViewport(const uint32_t firstViewport, const vk::ArrayProxy<vk::Viewport> viewports);
+
+        /**
+         * @brief set Scissor (only for pipeline DynamicState)
+         */
+        void setScissor(const uint32_t firstScissor, const vk::ArrayProxy<vk::Rect2D> scissors);
 
         /**
          * @brief  set VertexBuffer

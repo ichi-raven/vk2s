@@ -1,3 +1,11 @@
+/*****************************************************************//**
+ * @file   Command.cpp
+ * @brief  source file of Command class
+ * 
+ * @author ichi-raven
+ * @date   November 2023
+ *********************************************************************/
+
 #include "../include/vk2s/Command.hpp"
 
 #include "../include/vk2s/Device.hpp"
@@ -71,6 +79,18 @@ namespace vk2s
     {
         assert(mNowPipeline || !"pipeline isn't set yet!");
         mCommandBuffer->bindDescriptorSets(mNowPipeline->getVkPipelineBindPoint(), mNowPipeline->getVkPipelineLayout().get(), set, bindGroup.getVkDescriptorSet(), dynamicOffsets);
+    }
+
+    void Command::setViewport(const uint32_t firstViewport, const vk::ArrayProxy<vk::Viewport> viewports)
+    {
+        assert(mNowPipeline || !"pipeline isn't set yet!");
+        mCommandBuffer->setViewport(firstViewport, viewports);
+    }
+
+    void Command::setScissor(const uint32_t firstScissor, const vk::ArrayProxy<vk::Rect2D> scissors)
+    {
+        assert(mNowPipeline || !"pipeline isn't set yet!");
+        mCommandBuffer->setScissor(firstScissor, scissors);
     }
 
     void Command::bindVertexBuffer(Buffer& vertexBuffer)
