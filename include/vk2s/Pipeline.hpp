@@ -61,7 +61,7 @@ namespace vk2s
             //! specifies how to blend the original colors in the frame buffer with the new colors to be written
             vk::PipelineColorBlendStateCreateInfo colorBlending;
             //! specify states that are dynamically determined at runtime, optional
-            vk::ArrayProxy<vk::PipelineDynamicStateCreateInfo> dynamicStates;
+            vk::PipelineDynamicStateCreateInfo dynamicStates;
         };
 
         /**

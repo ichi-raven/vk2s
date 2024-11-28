@@ -34,7 +34,7 @@ namespace vk2s
 
         std::array shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
 
-        vk::GraphicsPipelineCreateInfo pipelineInfo({}, shaderStages, &info.inputState, &info.inputAssembly, {}, &info.viewportState, &info.rasterizer, &info.multiSampling, &info.depthStencil, &info.colorBlending, info.dynamicStates.data(),
+        vk::GraphicsPipelineCreateInfo pipelineInfo({}, shaderStages, &info.inputState, &info.inputAssembly, {}, &info.viewportState, &info.rasterizer, &info.multiSampling, &info.depthStencil, &info.colorBlending, &info.dynamicStates,
                                                     mLayout.get(), info.renderPass->getVkRenderPass().get(), 0, {}, {});
 
         vk::ResultValue<vk::UniquePipeline> result = vkDevice->createGraphicsPipelineUnique({}, pipelineInfo);
