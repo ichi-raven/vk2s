@@ -46,7 +46,7 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
 
         auto renderpass = device.create<vk2s::RenderPass>(window.get(), vk::AttachmentLoadOp::eClear, depthBuffer);
 
-        device.initImGui( window.get(), renderpass.get());
+        device.initImGui(window.get(), renderpass.get());
 
         // load meshes and materials
         std::vector<MeshInstance> meshInstances;
@@ -65,15 +65,14 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
 
         std::vector bindings0 = { vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBufferDynamic, 1, vk::ShaderStageFlagBits::eAll),
                                   vk::DescriptorSetLayoutBinding(1, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eAll),
-                                  vk::DescriptorSetLayoutBinding(2, vk::DescriptorType::eCombinedImageSampler, std::max(1ull, materialTextures.size()), vk::ShaderStageFlagBits::eAll) 
-        };
+                                  vk::DescriptorSetLayoutBinding(2, vk::DescriptorType::eCombinedImageSampler, std::max(1ull, materialTextures.size()), vk::ShaderStageFlagBits::eAll) };
 
         std::vector bindings1 = {
             vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAll),
         };
 
-        UniqueHandle<vk2s::BindLayout> sceneBindLayout    = device.create<vk2s::BindLayout>(bindings0);
-        UniqueHandle<vk2s::BindLayout> materialBindLayout = device.create<vk2s::BindLayout>(bindings1);
+        UniqueHandle<vk2s::BindLayout> sceneBindLayout     = device.create<vk2s::BindLayout>(bindings0);
+        UniqueHandle<vk2s::BindLayout> materialBindLayout  = device.create<vk2s::BindLayout>(bindings1);
         std::array<Handle<vk2s::BindLayout>, 2> allLayouts = { sceneBindLayout, materialBindLayout };
 
         vk::VertexInputBindingDescription inputBinding(0, sizeof(vk2s::Vertex));
@@ -82,6 +81,8 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
         vk::PipelineColorBlendAttachmentState colorBlendAttachment(VK_FALSE);
         colorBlendAttachment.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
 
+        const auto dynamicStates = std::array{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
+
         vk2s::Pipeline::GraphicsPipelineInfo gpi{
             .vs            = vertexShader,
             .fs            = fragmentShader,
@@ -89,12 +90,14 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
             .renderPass    = renderpass,
             .inputState    = vk::PipelineVertexInputStateCreateInfo({}, inputBinding, std::get<0>(vertexShader->getReflection())),
             .inputAssembly = vk::PipelineInputAssemblyStateCreateInfo({}, vk::PrimitiveTopology::eTriangleList),
-            .viewportState = vk::PipelineViewportStateCreateInfo({}, 1, &viewport, 1, &scissor),
+            .viewportState = vk::PipelineViewportStateCreateInfo({}, 1, {}, 1, {}),
             .rasterizer    = vk::PipelineRasterizationStateCreateInfo({}, VK_FALSE, VK_FALSE, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eClockwise, VK_FALSE, 0.0f, 0.0f, 0.0f, 1.0f),
             .multiSampling = vk::PipelineMultisampleStateCreateInfo({}, vk::SampleCountFlagBits::e1, VK_FALSE),
             .depthStencil  = vk::PipelineDepthStencilStateCreateInfo({}, VK_TRUE, VK_TRUE, vk::CompareOp::eLess, VK_FALSE),
             .colorBlending = vk::PipelineColorBlendStateCreateInfo({}, VK_FALSE, vk::LogicOp::eCopy, 1, &colorBlendAttachment),
+            .dynamicStates = vk::PipelineDynamicStateCreateInfo({}, dynamicStates),
         };
+
         auto graphicsPipeline = device.create<vk2s::Pipeline>(gpi);
 
         // uniform buffer
@@ -127,7 +130,6 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
         sceneBindGroup->bind(0, vk::DescriptorType::eUniformBufferDynamic, sceneBuffer.get());
         sceneBindGroup->bind(1, vk::DescriptorType::eStorageBuffer, materialBuffer.get());
         sceneBindGroup->bind(2, vk::DescriptorType::eCombinedImageSampler, materialTextures, sampler);
-        
 
         std::vector<Handle<vk2s::BindGroup>> materialBindGroups;
         materialBindGroups.resize(instanceBuffers.size());
