@@ -12,7 +12,12 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 namespace vk2s
 {
     Device::Device(const bool supportRayTracing)
-        : mRayTracingSupported(supportRayTracing)
+        : Device(Extensions{ supportRayTracing, false })
+    {
+    }
+
+    Device::Device(const Extensions extensions)
+        : mQueriedExtensions(extensions)
         , mImGuiActive(false)
     {
         glfwInit();
@@ -322,6 +327,9 @@ namespace vk2s
         enabledDescriptorIndexingFeatures.descriptorBindingVariableDescriptorCount   = VK_TRUE;
         enabledDescriptorIndexingFeatures.runtimeDescriptorArray                     = VK_TRUE;
 
+        // for NV motion blur extension
+        vk::PhysicalDeviceRayTracingMotionBlurFeaturesNV enabledRTMotionBlurFeatures(VK_TRUE);
+
         vk::PhysicalDeviceRobustness2FeaturesEXT robustness2Features(VK_TRUE, VK_TRUE, VK_TRUE);
 
         vk::PhysicalDeviceVulkan13Features vk1_3features;
@@ -332,19 +340,31 @@ namespace vk2s
 
         vk::PhysicalDeviceFeatures2 physicalDeviceFeatures2(features, &vk1_3features);
 
-        vk::DeviceCreateInfo createInfo{};
-        if (mRayTracingSupported)
+        vk::DeviceCreateInfo createInfo({}, queueCreateInfos, {}, {}, &deviceFeatures);
+
+        std::vector<const char*> extensionNames;
+        extensionNames.reserve(allExtensions.size());
+        extensionNames.resize(deviceExtensions.size());
+        std::copy(deviceExtensions.begin(), deviceExtensions.end(), extensionNames.begin());
+
+        if (mQueriedExtensions.useRayTracingExt)
         {
             robustness2Features.pNext = &enabledDescriptorIndexingFeatures;
-            createInfo = vk::DeviceCreateInfo({}, queueCreateInfos, {}, allExtensions, &deviceFeatures);
-        }
-        else
-        {
-            createInfo = vk::DeviceCreateInfo({}, queueCreateInfos, {}, deviceExtensions, &deviceFeatures);
+
+            extensionNames.resize(extensionNames.size() + rayTracingDeviceExtensions.size());
+            std::copy(rayTracingDeviceExtensions.begin(), rayTracingDeviceExtensions.end(), extensionNames.end() - rayTracingDeviceExtensions.size());
+
+            if (mQueriedExtensions.useNVMotionBlurExt)
+            {
+                enabledBufferDeviceAddressFeatures.pNext = &enabledRTMotionBlurFeatures;
+                extensionNames.emplace_back(nvRayTracingMotionBlurExtension);
+            }
         }
 
-        createInfo.pNext            = &physicalDeviceFeatures2;
-        createInfo.pEnabledFeatures = nullptr;
+        createInfo.pNext                   = &physicalDeviceFeatures2;
+        createInfo.pEnabledFeatures        = nullptr;
+        createInfo.enabledExtensionCount   = extensionNames.size();
+        createInfo.ppEnabledExtensionNames = extensionNames.data();
 
         if (enableValidationLayers)
         {
@@ -374,7 +394,7 @@ namespace vk2s
             vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, kMaxDescriptorNum),        vk::DescriptorPoolSize(vk::DescriptorType::eAccelerationStructureKHR, kMaxDescriptorNum),
         };
 
-        if (!mRayTracingSupported)
+        if (!mQueriedExtensions.useRayTracingExt)
         {
             poolSize.pop_back();
         }
@@ -461,7 +481,7 @@ namespace vk2s
                 indices.graphicsFamily = i;
             }
 
-            VkBool32 presentSupport = physDev.getSurfaceSupportKHR(i, testSurface.get());
+            const auto presentSupport = physDev.getSurfaceSupportKHR(i, testSurface.get());
             if (presentSupport)
             {
                 indices.presentFamily = i;
@@ -500,7 +520,7 @@ namespace vk2s
             requiredExtensions.erase(extension.extensionName);
         }
 
-        if (mRayTracingSupported)
+        if (mQueriedExtensions.useRayTracingExt)
         {
             std::set<std::string> requiredRTExtensions(rayTracingDeviceExtensions.begin(), rayTracingDeviceExtensions.end());
             for (const auto& extension : availableExtensions)

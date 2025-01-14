@@ -87,12 +87,33 @@ namespace vk2s
             SwapChainSupportDetails static querySwapChainSupport(vk::PhysicalDevice device, const vk::UniqueSurfaceKHR& testSurface);
         };
 
+        /**
+         * @brief  Vulkan Extensions available in this library
+         */
+        struct Extensions
+        {
+            static Extensions useAll()
+            {
+                Extensions ext;
+                ext.useRayTracingExt = true;
+                ext.useNVMotionBlurExt = true;
+            }
+
+            bool useRayTracingExt = false;
+            bool useNVMotionBlurExt = false;
+        };
+
     public:  // methods
         /**
          * @brief  constructor
          * @detail if your environment does not support hardware accelerated ray tracing, pass false as an argument
          */
         Device(const bool supportRayTracing = true);
+
+        /**
+         * @brief constructor (with minor extension)
+         */
+        Device(const Extensions extensions);
 
         /**
          * @brief  destructor
@@ -227,13 +248,16 @@ namespace vk2s
         constexpr static std::array deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_ROBUSTNESS_2_EXTENSION_NAME };
         //! device extensions required for hardware accelerated ray tracing
         constexpr static std::array rayTracingDeviceExtensions = { VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, VK_KHR_RAY_QUERY_EXTENSION_NAME, VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME };
+        //! NV_Motion_blur extension
+        constexpr static const char* nvRayTracingMotionBlurExtension = VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME;
         //! all device extensions
         constexpr static std::array allExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME,
                                                       VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
                                                       VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
                                                       VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
                                                       VK_KHR_RAY_QUERY_EXTENSION_NAME,
-                                                      VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME };
+                                                      VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+                                                      VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME };
 
         //! maximum number of descriptors allocated by one DescriptorPool (adhoc)
         constexpr static uint32_t kMaxDescriptorNum = 256;
@@ -316,7 +340,11 @@ namespace vk2s
         vk::UniqueDebugUtilsMessengerEXT mDebugUtilsMessenger;
 
         //! whether hardware accelerated ray tracing is supported
-        const bool mRayTracingSupported;
+        //const bool mRayTracingSupported;
+
+        //! whether various extensions are requested (synonymous with available extensions if created on device success)
+        const Extensions mQueriedExtensions;
+
         //! vulkan physical device
         vk::PhysicalDevice mPhysicalDevice;
         //! vulkan memory properties of the selected physical device
