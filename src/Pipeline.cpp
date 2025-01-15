@@ -132,6 +132,10 @@ namespace vk2s
         rtPipelineCI.pGroups                      = info.shaderGroups.data();
         rtPipelineCI.maxPipelineRayRecursionDepth = 2;  // HACK:
         rtPipelineCI.layout                       = mLayout.get();
+        if (mDevice.getVkAvailableExtensions().useNVMotionBlurExt)
+        {
+            rtPipelineCI.flags = vk::PipelineCreateFlagBits::eRayTracingAllowMotionNV;
+        }
 
         vk::ResultValue<vk::UniquePipeline> result = vkDevice->createRayTracingPipelineKHRUnique({}, {}, rtPipelineCI);
         if (result.result == vk::Result::eSuccess)

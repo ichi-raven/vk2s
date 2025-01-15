@@ -6,12 +6,13 @@
  * @date   June 2024
  *********************************************************************/
 
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include "../include/vk2s/Scene.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
-#include <glm/gtx/string_cast.hpp>
 
 #include <iostream>
 #include <regex>
@@ -428,17 +429,6 @@ namespace vk2s
                     material.albedo    = convertVec3(color3D);
                 }
 
-                float IOR = 1.f;
-                if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_REFRACTI, &IOR) && IOR != 1.f)
-                {
-                    material.eta  = glm::vec3(IOR);
-                    material.type = Material::Type::eDielectric;
-                }
-                else
-                {
-                    material.eta = glm::vec3(1.0);
-                }
-
                 if (AI_SUCCESS == aiGetMaterialColor(pMat, AI_MATKEY_COLOR_SPECULAR, &color))
                 {
                     //std::cerr << "\tfound specular : " << showColor(color) << "\n";
@@ -483,6 +473,17 @@ namespace vk2s
                 if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_REFLECTIVITY, &reflect))
                 {
                     //std::cerr << "\treflectivity : " << reflect << "\n";
+                }
+
+                float IOR = 1.f;
+                if (AI_SUCCESS == aiGetMaterialFloat(pMat, AI_MATKEY_REFRACTI, &IOR) && IOR != 1.f)
+                {
+                    material.eta  = glm::vec3(IOR);
+                    material.type = Material::Type::eDielectric;
+                }
+                else
+                {
+                    material.eta = glm::vec3(1.0);
                 }
             }
         }

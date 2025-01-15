@@ -93,8 +93,9 @@ namespace vk2s
         init_info.MinImageCount             = 2;
         init_info.ImageCount                = window.getFrameCount();
         init_info.CheckVkResultFn           = nullptr;
-        ImGui_ImplVulkan_Init(&init_info, renderpass.getVkRenderPass().get());
-
+        init_info.RenderPass                = renderpass.getVkRenderPass().get();
+        ImGui_ImplVulkan_Init(&init_info);
+        
         mImGuiActive = true;
     }
 
@@ -129,7 +130,7 @@ namespace vk2s
         return mDevice;
     }
 
-    const QueueFamilyIndices Device::getVkQueueFamilyIndices()
+    const QueueFamilyIndices Device::getVkQueueFamilyIndices() const
     {
         return mQueueFamilyIndices;
     }
@@ -551,6 +552,11 @@ namespace vk2s
             requestBits >>= 1;
         }
         return result;
+    }
+
+    Device::Extensions Device::getVkAvailableExtensions() const
+    {
+        return mQueriedExtensions;
     }
 
     VKAPI_ATTR VkBool32 VKAPI_CALL Device::debugUtilsMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes, VkDebugUtilsMessengerCallbackDataEXT const* pCallbackData,

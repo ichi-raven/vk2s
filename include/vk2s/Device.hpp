@@ -170,6 +170,11 @@ namespace vk2s
         uint32_t getVkMemoryTypeIndex(uint32_t requestBits, vk::MemoryPropertyFlags requestProps) const;
 
         /**
+         * @brief  get the status of the active extension
+         */
+        Extensions getVkAvailableExtensions() const;
+
+        /**
          * @brief get vulkan instance handle
          */
         const vk::UniqueInstance& getVkInstance();
@@ -187,7 +192,7 @@ namespace vk2s
         /**
          * @brief  get index of each vulkan command queue
          */
-        const QueueFamilyIndices getVkQueueFamilyIndices();
+        const QueueFamilyIndices getVkQueueFamilyIndices() const;
 
         /**
          * @brief  get vulkan queue to submit graphics commands

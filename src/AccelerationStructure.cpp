@@ -1,3 +1,10 @@
+/*****************************************************************/ /**
+ * @file   AccelerationStructure.cpp
+ * @brief  source file of AccelerationStructure class
+ * 
+ * @author ichi-raven
+ * @date   November 2023
+ *********************************************************************/
 #include "../include/vk2s/AccelerationStructure.hpp"
 
 #include "../include/vk2s/Device.hpp"
@@ -5,10 +12,10 @@
 namespace vk2s
 {
     // BLAS
-    AccelerationStructure::AccelerationStructure(Device& device, const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, const Handle<Command>& buildCommand)
+    AccelerationStructure::AccelerationStructure(Device& device, const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, const bool motion, const Handle<Command>& buildCommand)
         : mDevice(device)
     {
-        build(vertexNum, vertexStride, vertexBuffer, faceNum, indexBuffer, buildCommand);
+        build(vertexNum, vertexStride, vertexBuffer, faceNum, indexBuffer, motion, buildCommand);
     }
 
     // TLAS
@@ -16,6 +23,13 @@ namespace vk2s
         : mDevice(device)
     {
         build(instances, buildCommand);
+    }
+
+    // TLAS (NV_Motion_blur)
+    AccelerationStructure::AccelerationStructure(Device& device, const vk::ArrayProxy<MotionInstancePadNV>& motionInstances, const Handle<Command>& buildCommand)
+        : mDevice(device)
+    {
+        build(motionInstances, buildCommand);
     }
 
     AccelerationStructure ::~AccelerationStructure()
@@ -32,13 +46,19 @@ namespace vk2s
         return mDeviceAddress;
     }
 
-    void AccelerationStructure::build(const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, const Handle<Command>& buildCommand)
+    void AccelerationStructure::build(const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, const bool motion, const Handle<Command>& buildCommand)
     {
         const auto& vkDevice = mDevice.getVkDevice();
 
         vk::AccelerationStructureGeometryKHR geometryInfo;
         geometryInfo.flags        = vk::GeometryFlagBitsKHR::eOpaque;
         geometryInfo.geometryType = vk::GeometryTypeKHR::eTriangles;
+            
+        vk::AccelerationStructureGeometryMotionTrianglesDataNV motionTriangles;
+        if (motion && mDevice.getVkAvailableExtensions().useNVMotionBlurExt)
+        {
+            geometryInfo.geometry.triangles.pNext = &motionTriangles;
+        }
 
         {
             vk::BufferDeviceAddressInfo VBdeviceAddressInfo(vertexBuffer.getVkBuffer().get());
@@ -58,7 +78,7 @@ namespace vk2s
         std::array geometries = { geometryInfo };
         std::array ranges     = { asBuildRangeInfo };
 
-        buildInternal(vk::AccelerationStructureTypeKHR::eBottomLevel, geometries, ranges, {}, buildCommand);
+        buildInternal(vk::AccelerationStructureTypeKHR::eBottomLevel, geometries, ranges, {}, motion, buildCommand);
 
         mDevice.destroy(mScratchBuffer);
     }
@@ -89,13 +109,44 @@ namespace vk2s
         std::array geometries = { asGeometry };
         std::array ranges     = { asBuildRangeInfo };
 
-        buildInternal(vk::AccelerationStructureTypeKHR::eTopLevel, geometries, ranges, {});
+        buildInternal(vk::AccelerationStructureTypeKHR::eTopLevel, geometries, ranges, {}, false);
+
+        mDevice.destroy(mScratchBuffer);
+    }
+
+    void AccelerationStructure::build(const vk::ArrayProxy<MotionInstancePadNV>& motionInstances, const Handle<Command>& buildCommand)
+    {
+        const auto& vkDevice = mDevice.getVkDevice();
+
+        const auto instancesBufferSize   = sizeof(MotionInstancePadNV) * motionInstances.size();
+        const vk::BufferUsageFlags usage = vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress;
+        const auto hostMemProps          = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+        vk::BufferCreateInfo ci({}, instancesBufferSize, usage);
+
+        UniqueHandle<Buffer> instanceBuffer = mDevice.create<Buffer>(ci, hostMemProps);
+        instanceBuffer->write(motionInstances.data(), instancesBufferSize);
+
+        vk::BufferDeviceAddressInfo instanceBufferDeviceAddressInfo(instanceBuffer->getVkBuffer().get());
+        const auto address = vkDevice->getBufferAddress(instanceBufferDeviceAddressInfo);
+        vk::DeviceOrHostAddressConstKHR instanceDataDeviceAddress(address);
+
+        vk::AccelerationStructureGeometryKHR asGeometry;
+        asGeometry.geometryType       = vk::GeometryTypeKHR::eInstances;
+        asGeometry.flags              = vk::GeometryFlagBitsKHR::eOpaque;
+        asGeometry.geometry.instances = vk::AccelerationStructureGeometryInstancesDataKHR(VK_FALSE, instanceDataDeviceAddress);
+
+        vk::AccelerationStructureBuildRangeInfoKHR asBuildRangeInfo(static_cast<uint32_t>(motionInstances.size()), 0, 0, 0);
+        std::array geometries = { asGeometry };
+        std::array ranges     = { asBuildRangeInfo };
+
+        buildInternal(vk::AccelerationStructureTypeKHR::eTopLevel, geometries, ranges, vk::BuildAccelerationStructureFlagBitsKHR::eMotionNV, true);
 
         mDevice.destroy(mScratchBuffer);
     }
 
     void AccelerationStructure::buildInternal(const vk::AccelerationStructureTypeKHR type, const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureGeometryKHR>& asGeometry,
-                                      const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureBuildRangeInfoKHR>& asBuildRangeInfo, vk::BuildAccelerationStructureFlagsKHR flags, const Handle<Command>& buildCommand)
+                                              const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureBuildRangeInfoKHR>& asBuildRangeInfo, vk::BuildAccelerationStructureFlagsKHR flags, const bool motion,
+                                              const Handle<Command>& buildCommand)
     {
         const auto& vkDevice = mDevice.getVkDevice();
 
@@ -128,6 +179,15 @@ namespace vk2s
         asCreateInfo.buffer = mBuffer->getVkBuffer().get();
         asCreateInfo.size   = mSize;
         asCreateInfo.type   = asBuildGeometryInfo.type;
+
+        // for NV_Motion_blur
+        vk::AccelerationStructureMotionInfoNV motionInfo(asBuildRangeInfo.back().primitiveCount);
+        
+        if (motion)
+        {
+            asCreateInfo.createFlags = vk::AccelerationStructureCreateFlagBitsKHR::eMotionNV;
+            asCreateInfo.pNext       = &motionInfo;
+        }
 
         // create
         mAccelerationStructure = vkDevice->createAccelerationStructureKHRUnique(asCreateInfo);

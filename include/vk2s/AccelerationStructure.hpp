@@ -28,17 +28,32 @@ namespace vk2s
      */
     class AccelerationStructure
     {
+    public: // types
+        struct MotionInstancePadNV : vk::AccelerationStructureMotionInstanceNV
+        {
+            uint64_t _pad{ 0 };
+        };
+
+        //AccelerationStructureSRTMotionInstanceNV must have a stride of 160 bytes
+        static_assert(sizeof(MotionInstancePadNV) == 160);
+
     public:  // methods
         
         /**
          * @brief  create as BLAS
          */
-        AccelerationStructure(Device& device, const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, const Handle<Command>& buildCommand = Handle<Command>());
+        AccelerationStructure(Device& device, const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, const bool motion = false, const Handle<Command>& buildCommand = Handle<Command>());
 
         /**
          * @brief  create as TLAS
          */
         AccelerationStructure(Device& device, const vk::ArrayProxy<vk::AccelerationStructureInstanceKHR>& instances, const Handle<Command>& buildCommand = Handle<Command>());
+
+        /**
+         * @brief  create as TLAS (for NV_Motion_Blur)
+         * @warn  note that this function cannot be used if the NV-motion_blur extension is not enabled
+         */
+        AccelerationStructure(Device& device, const vk::ArrayProxy<MotionInstancePadNV>& motionInstances, const Handle<Command>& buildCommand = Handle<Command>());
 
         /**
          * @brief  destructor
@@ -48,12 +63,19 @@ namespace vk2s
         /**
          * @brief  build this AS as BLAS
          */
-        void build(const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, const Handle<Command>& buildCommand = Handle<Command>());
+        void build(const uint32_t vertexNum, const uint32_t vertexStride, Buffer& vertexBuffer, const uint32_t faceNum, Buffer& indexBuffer, const bool motion = false, const Handle<Command>& buildCommand = Handle<Command>());
 
         /**
          * @brief  build this AS as TLAS
          */
         void build(const vk::ArrayProxy<vk::AccelerationStructureInstanceKHR>& instances, const Handle<Command>& buildCommand = Handle<Command>());
+
+        /**
+         * @brief  build this AS as TLAS with motion (NV_Motion_Blur)
+         * @warn  note that this function cannot be used if the NV-motion_blur extension is not enabled
+         * @warn  AccelerationStructureSRTMotionInstanceNV must have a stride of 160 bytes
+         */
+        void build(const vk::ArrayProxy<MotionInstancePadNV>& instances, const Handle<Command>& buildCommand = Handle<Command>());
 
         //! noncopyable, nonmovable
         NONCOPYABLE(AccelerationStructure);
@@ -74,7 +96,7 @@ namespace vk2s
          * @brief  internal function for building AS
          */
         void buildInternal(const vk::AccelerationStructureTypeKHR type, const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureGeometryKHR>& asGeometry,
-                   const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureBuildRangeInfoKHR>& asBuildRangeInfo, vk::BuildAccelerationStructureFlagsKHR flags, const Handle<Command>& buildCommand = Handle<Command>());
+                   const vk::ArrayProxyNoTemporaries<vk::AccelerationStructureBuildRangeInfoKHR>& asBuildRangeInfo, vk::BuildAccelerationStructureFlagsKHR flags, const bool motion, const Handle<Command>& buildCommand = Handle<Command>());
 
     private:  // member variables
         //! reference to device

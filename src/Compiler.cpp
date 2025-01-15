@@ -156,7 +156,6 @@ namespace vk2s
             std::string preprocessed = { result.cbegin(), result.cend() };
 
             // Compiling
-
             if (optimize)
             {
                 options.SetOptimizationLevel(shaderc_optimization_level_performance);
