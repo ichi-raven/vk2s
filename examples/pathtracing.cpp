@@ -31,7 +31,12 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
 
     try
     {
-        vk2s::Device::Extensions ext{ true, true };
+        vk2s::Device::Extensions ext
+        { 
+            .useRayTracingExt = true,
+            .useNVMotionBlurExt = false
+        };
+
         vk2s::Device device(ext);
 
         auto window = device.create<vk2s::Window>(windowWidth, windowHeight, frameCount, "path tracer");
@@ -134,77 +139,81 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
         templateDesc.flags = 0;
         templateDesc.mask  = 0xFF;
 
-        std::vector<vk2s::AccelerationStructure::MotionInstancePadNV> asInstances;
+        std::vector<vk::AccelerationStructureInstanceKHR> asInstances;
         asInstances.reserve(meshInstances.size());
-        //for (size_t i = 0; i < meshInstances.size(); ++i)
-        //{
-        //    const auto& mesh = meshInstances[i];
-
-        //    const auto& blas                                  = mesh.blas;
-        //    const auto transform                              = glm::mat4(1.f);
-        //    vk::TransformMatrixKHR mtxTransform               = convert(transform);
-        //    vk::AccelerationStructureInstanceKHR asInstance   = templateDesc;
-        //    asInstance.transform                              = mtxTransform;
-        //    asInstance.accelerationStructureReference         = blas->getVkDeviceAddress();
-        //    asInstance.instanceShaderBindingTableRecordOffset = 0;
-        //    asInstances.emplace_back(asInstance);
-        //}
-
         for (size_t i = 0; i < meshInstances.size(); ++i)
         {
             const auto& mesh = meshInstances[i];
-            const auto& blas = mesh.blas;
 
-            if (i == 0 || i == 1)
-            {
-                glm::quat rot = { 1, 0, 0, 0 };
-                VkSRTDataNV matT0{ 0.0 };
-                matT0.sx = 1.0f;
-                matT0.sy = 1.0f;
-                matT0.sz = 1.0f;
-                matT0.qx = rot.x;
-                matT0.qy = rot.y;
-                matT0.qz = rot.z;
-                matT0.qw = rot.w;
-                matT0.tx = 0.0f;
-                matT0.ty = 0.f;
-                matT0.tz = 0.f;
-
-                VkSRTDataNV matT1 = matT0;  // Setting a rotation
-                matT1.tx          = -0.1f;
-
-                vk::AccelerationStructureSRTMotionInstanceNV asInstance;
-                asInstance.transformT0                            = matT0;
-                asInstance.transformT1                            = matT1;
-                asInstance.accelerationStructureReference         = blas->getVkDeviceAddress();
-                asInstance.instanceShaderBindingTableRecordOffset = 0;
-                asInstance.flags                                  = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-                asInstance.instanceCustomIndex                    = i;
-                asInstance.mask                                   = templateDesc.mask;
-                vk2s::AccelerationStructure::MotionInstancePadNV padInst;
-                padInst.type                   = vk::AccelerationStructureMotionInstanceTypeNV::eSrtMotion;
-                padInst.data.srtMotionInstance = asInstance;
-                asInstances.emplace_back(padInst);
-            }
-            else
-            {
-                const auto transform                = glm::mat4(1.f);
-                vk::TransformMatrixKHR mtxTransform = convert(transform);
-                //vk::AccelerationStructureInstanceKHR asInstance   = templateDesc;
-                vk::AccelerationStructureMatrixMotionInstanceNV asInstance;
-                asInstance.mask                                   = templateDesc.mask;
-                asInstance.instanceCustomIndex                    = i;
-                asInstance.flags                                  = templateDesc.flags;
-                asInstance.transformT0                            = mtxTransform;
-                asInstance.transformT1                            = mtxTransform;
-                asInstance.accelerationStructureReference         = blas->getVkDeviceAddress();
-                asInstance.instanceShaderBindingTableRecordOffset = 0;
-                vk2s::AccelerationStructure::MotionInstancePadNV padInst;
-                padInst.type                = vk::AccelerationStructureMotionInstanceTypeNV::eMatrixMotion;
-                padInst.data.matrixMotionInstance = asInstance;
-                asInstances.emplace_back(padInst);
-            }
+            const auto& blas                                  = mesh.blas;
+            const auto transform                              = glm::mat4(1.f);
+            vk::TransformMatrixKHR mtxTransform               = convert(transform);
+            vk::AccelerationStructureInstanceKHR asInstance   = templateDesc;
+            asInstance.transform                              = mtxTransform;
+            asInstance.accelerationStructureReference         = blas->getVkDeviceAddress();
+            asInstance.instanceShaderBindingTableRecordOffset = 0;
+            asInstances.emplace_back(asInstance);
         }
+
+        // for motion blur
+        //std::vector<vk2s::AccelerationStructure::MotionInstancePadNV> asInstances;
+        //asInstances.reserve(meshInstances.size());
+        //for (size_t i = 0; i < meshInstances.size(); ++i)
+        //{
+        //    const auto& mesh = meshInstances[i];
+        //    const auto& blas = mesh.blas;
+
+        //    // motion blur test
+        //    if (i == 0 || i == 1)
+        //    {
+        //        glm::quat rot = { 1, 0, 0, 0 };
+        //        VkSRTDataNV matT0{ 0.0 };
+        //        matT0.sx = 1.0f;
+        //        matT0.sy = 1.0f;
+        //        matT0.sz = 1.0f;
+        //        matT0.qx = rot.x;
+        //        matT0.qy = rot.y;
+        //        matT0.qz = rot.z;
+        //        matT0.qw = rot.w;
+        //        matT0.tx = 0.0f;
+        //        matT0.ty = 0.f;
+        //        matT0.tz = 0.f;
+
+        //        VkSRTDataNV matT1 = matT0;  // setting a position (x)
+        //        matT1.tx          = -0.1f;
+
+        //        vk::AccelerationStructureSRTMotionInstanceNV asInstance;
+        //        asInstance.transformT0                            = matT0;
+        //        asInstance.transformT1                            = matT1;
+        //        asInstance.accelerationStructureReference         = blas->getVkDeviceAddress();
+        //        asInstance.instanceShaderBindingTableRecordOffset = 0;
+        //        asInstance.flags                                  = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+        //        asInstance.instanceCustomIndex                    = i;
+        //        asInstance.mask                                   = templateDesc.mask;
+        //        vk2s::AccelerationStructure::MotionInstancePadNV padInst;
+        //        padInst.type                   = vk::AccelerationStructureMotionInstanceTypeNV::eSrtMotion;
+        //        padInst.data.srtMotionInstance = asInstance;
+        //        asInstances.emplace_back(padInst);
+        //    }
+        //    else
+        //    {
+        //        const auto transform                = glm::mat4(1.f);
+        //        vk::TransformMatrixKHR mtxTransform = convert(transform);
+        //        //vk::AccelerationStructureInstanceKHR asInstance   = templateDesc;
+        //        vk::AccelerationStructureMatrixMotionInstanceNV asInstance;
+        //        asInstance.mask                                   = templateDesc.mask;
+        //        asInstance.instanceCustomIndex                    = i;
+        //        asInstance.flags                                  = templateDesc.flags;
+        //        asInstance.transformT0                            = mtxTransform;
+        //        asInstance.transformT1                            = mtxTransform;
+        //        asInstance.accelerationStructureReference         = blas->getVkDeviceAddress();
+        //        asInstance.instanceShaderBindingTableRecordOffset = 0;
+        //        vk2s::AccelerationStructure::MotionInstancePadNV padInst;
+        //        padInst.type                = vk::AccelerationStructureMotionInstanceTypeNV::eMatrixMotion;
+        //        padInst.data.matrixMotionInstance = asInstance;
+        //        asInstances.emplace_back(padInst);
+        //    }
+        //}
 
         // create TLAS
         auto tlas = device.create<vk2s::AccelerationStructure>(asInstances);
@@ -276,10 +285,10 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
 
         // create shader binding table
 
-        // If you want to create a simple shader with no additional entries and a one-to-one correspondence between entries and SBT, use this one
+        // if you want to create a simple shader with no additional entries and a one-to-one correspondence between entries and SBT, use this one
         auto shaderBindingTable = device.create<vk2s::ShaderBindingTable>(raytracePipeline.get(), 1, 2, 1, 0, rpi.shaderGroups);
 
-        // Otherwise...
+        // otherwise...
         //auto shaderBindingTable = [&]()
         //{
         //    vk2s::ShaderBindingTable::RegionInfo raygenInfo{

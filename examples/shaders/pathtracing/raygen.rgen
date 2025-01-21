@@ -61,9 +61,10 @@ vec3 sampleLi(const uint sampleIndex)
   const Ray primaryRay = getCameraRay(payload.prngState);
 
   // trace primary ray
-  //traceRayEXT(TLAS, flags, 0xFF, 0, 0, 0, primaryRay.origin, tmin, primaryRay.direction, tmax, 0);
-  float time = stepAndOutputRNGFloat(payload.prngState);
-  traceRayMotionNV(TLAS, flags, 0xFF, 0, 0, 0, primaryRay.origin, tmin, primaryRay.direction, tmax, time, 0);
+  traceRayEXT(TLAS, flags, 0xFF, 0, 0, 0, primaryRay.origin, tmin, primaryRay.direction, tmax, 0);
+  // motion blur
+  //float time = stepAndOutputRNGFloat(payload.prngState);
+  //traceRayMotionNV(TLAS, flags, 0xFF, 0, 0, 0, primaryRay.origin, tmin, primaryRay.direction, tmax, time, 0);
 
   while (payload.intersected && !payload.emissive)
   {
@@ -95,9 +96,10 @@ vec3 sampleLi(const uint sampleIndex)
     beta *= payload.bsdf.f * abs(dot(payload.normal, payload.bsdf.wi)) / max(EPS, payload.bsdf.pdf);
 
     // trace next ray
-    //traceRayEXT(TLAS, flags, 0xFF, 0, 0, 0, payload.x, tmin, payload.bsdf.wi, tmax, 0);
-    time = stepAndOutputRNGFloat(payload.prngState);
-    traceRayMotionNV(TLAS, flags, 0xFF, 0, 0, 0, payload.x, tmin, payload.bsdf.wi, tmax, time, 0);
+    traceRayEXT(TLAS, flags, 0xFF, 0, 0, 0, payload.x, tmin, payload.bsdf.wi, tmax, 0);
+    // motion blur
+    //time = stepAndOutputRNGFloat(payload.prngState);
+    //traceRayMotionNV(TLAS, flags, 0xFF, 0, 0, 0, payload.x, tmin, payload.bsdf.wi, tmax, time, 0);
   }
 
   // add emissive contribution
