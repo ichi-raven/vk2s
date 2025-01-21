@@ -31,6 +31,12 @@ namespace vk2s
         void update(GLFWwindow* pWindow, const double moveSpeed, const double mouseSpeed, const bool reset = false);
 
         /**
+         * @brief setter and getter of camera's up vector
+         */
+        void setUpVector(const glm::vec3& pos);
+        const glm::vec3& getUpVector() const;
+
+        /**
          * @brief setter and getter of camera's point
          */
         void setPos(const glm::vec3& pos);

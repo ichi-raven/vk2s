@@ -1,4 +1,4 @@
-/*****************************************************************//**
+/*****************************************************************/ /**
  * @file   Camera.cpp
  * @brief  source file of Camera class
  * 
@@ -104,6 +104,18 @@ namespace vk2s
 
         updateViewMat();
         updateProjMat();
+    }
+
+    void Camera::setUpVector(const glm::vec3& up)
+    {
+        mUp = up;
+        updateViewMat();
+        mMoved = true;
+    }
+
+    const glm::vec3& Camera::getUpVector() const
+    {
+        return mUp;
     }
 
     void Camera::setPos(const glm::vec3& pos)

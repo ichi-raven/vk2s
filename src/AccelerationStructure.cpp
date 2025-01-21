@@ -54,11 +54,11 @@ namespace vk2s
         geometryInfo.flags        = vk::GeometryFlagBitsKHR::eOpaque;
         geometryInfo.geometryType = vk::GeometryTypeKHR::eTriangles;
             
-        vk::AccelerationStructureGeometryMotionTrianglesDataNV motionTriangles;
-        if (motion && mDevice.getVkAvailableExtensions().useNVMotionBlurExt)
-        {
-            geometryInfo.geometry.triangles.pNext = &motionTriangles;
-        }
+        //vk::AccelerationStructureGeometryMotionTrianglesDataNV motionTriangles;
+        //if (motion && mDevice.getVkAvailableExtensions().useNVMotionBlurExt)
+        //{
+        //    geometryInfo.geometry.triangles.pNext = &motionTriangles;
+        //}
 
         {
             vk::BufferDeviceAddressInfo VBdeviceAddressInfo(vertexBuffer.getVkBuffer().get());
@@ -183,7 +183,7 @@ namespace vk2s
         // for NV_Motion_blur
         vk::AccelerationStructureMotionInfoNV motionInfo(asBuildRangeInfo.back().primitiveCount);
         
-        if (motion)
+        if (motion && mDevice.getVkAvailableExtensions().useNVMotionBlurExt)
         {
             asCreateInfo.createFlags = vk::AccelerationStructureCreateFlagBitsKHR::eMotionNV;
             asCreateInfo.pNext       = &motionInfo;
