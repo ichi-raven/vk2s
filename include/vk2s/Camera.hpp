@@ -31,6 +31,11 @@ namespace vk2s
         void update(GLFWwindow* pWindow, const double moveSpeed, const double mouseSpeed, const bool reset = false);
 
         /**
+         * @brief update camera without key input
+         */
+        void update(bool reset = false);
+
+        /**
          * @brief setter and getter of camera's up vector
          */
         void setUpVector(const glm::vec3& pos);

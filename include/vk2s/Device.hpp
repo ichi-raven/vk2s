@@ -97,6 +97,15 @@ namespace vk2s
                 Extensions ext;
                 ext.useRayTracingExt = true;
                 ext.useNVMotionBlurExt = true;
+                return ext;
+            }
+
+            static Extensions useNothing()
+            {
+                Extensions ext;
+                ext.useRayTracingExt   = false;
+                ext.useNVMotionBlurExt = false;
+                return ext;
             }
 
             bool useRayTracingExt = false;
@@ -106,14 +115,14 @@ namespace vk2s
     public:  // methods
         /**
          * @brief  constructor
-         * @detail if your environment does not support hardware accelerated ray tracing, pass false as an argument
+         * @detail if you would not use window, pass false
          */
-        Device(const bool supportRayTracing = true);
+        Device(const bool useWindow = true);
 
         /**
-         * @brief constructor (with minor extension)
+         * @brief constructor (with extensions)
          */
-        Device(const Extensions extensions);
+        Device(const Extensions extensions, const bool useWindow = true);
 
         /**
          * @brief  destructor
@@ -281,7 +290,7 @@ namespace vk2s
         /**
          * @brief summarizing vulkan physical/logical device creation
          */
-        void pickAndCreateDevice();
+        void pickAndCreateDevice(const bool useWindow);
 
         /**
          * @brief pick the vulkan physical device to be used from the surface criteria 

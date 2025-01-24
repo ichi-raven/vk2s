@@ -22,7 +22,12 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
 {
     try
     {
-        vk2s::Device device(false);
+        vk2s::Device::Extensions ext
+        {
+            .useRayTracingExt = false,
+            .useNVMotionBlurExt = false
+        };
+        vk2s::Device device(ext);
 
         auto window = device.create<vk2s::Window>(windowWidth, windowHeight, frameCount, "rasterize window");
 

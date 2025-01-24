@@ -11,12 +11,12 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace vk2s
 {
-    Device::Device(const bool supportRayTracing)
-        : Device(Extensions{ supportRayTracing, false })
+    Device::Device(const bool useWindow)
+        : Device(Extensions::useNothing(), useWindow)
     {
     }
 
-    Device::Device(const Extensions extensions)
+    Device::Device(const Extensions extensions, const bool useWindow)
         : mQueriedExtensions(extensions)
         , mImGuiActive(false)
     {
@@ -24,7 +24,7 @@ namespace vk2s
 
         createInstance();
         setupDebugMessenger();
-        pickAndCreateDevice();
+        pickAndCreateDevice(useWindow);
         createCommandPool();
 
         createDescriptorPoolForImGui();
@@ -33,13 +33,13 @@ namespace vk2s
     }
 
     template <size_t N = 0, typename T>
-    void iterateTuple(T& t)
+    void iterateTupleAndClear(T& t)
     {
         if constexpr (N < std::tuple_size<T>::value)
         {
             auto& x = std::get<N>(t);
             x.clear();
-            iterateTuple<N + 1>(t);
+            iterateTupleAndClear<N + 1>(t);
         }
     }
 
@@ -47,7 +47,7 @@ namespace vk2s
     {
         mDevice->waitIdle();
 
-        iterateTuple(mPools);
+        iterateTupleAndClear(mPools);
 
         destroyImGui();
         if (ImGui::GetCurrentContext())
@@ -253,26 +253,35 @@ namespace vk2s
         mDebugUtilsMessenger = mInstance->createDebugUtilsMessengerEXTUnique(vk::DebugUtilsMessengerCreateInfoEXT({}, severityFlags, messageTypeFlags, &debugUtilsMessengerCallback));
     }
 
-    void Device::pickAndCreateDevice()
+    void Device::pickAndCreateDevice(const bool useWindow)
     {
         // HACK: create test surface
-        VkSurfaceKHR surface;
-
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        const auto pTestWindow = glfwCreateWindow(1, 1, "surface test", nullptr, nullptr);
-        auto res               = glfwCreateWindowSurface(VkInstance(mInstance.get()), pTestWindow, nullptr, &surface);
-        if (res != VK_SUCCESS)
+        if (useWindow)
         {
-            throw std::runtime_error("failed to create window surface!");
+            VkSurfaceKHR surface;
+
+            glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+            glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+            const auto pTestWindow = glfwCreateWindow(1, 1, "surface test", nullptr, nullptr);
+            auto res               = glfwCreateWindowSurface(VkInstance(mInstance.get()), pTestWindow, nullptr, &surface);
+            if (res != VK_SUCCESS)
+            {
+                throw std::runtime_error("failed to create window surface!");
+            }
+            const auto testSurface = vk::UniqueSurfaceKHR(surface, { mInstance.get() });
+
+            pickPhysicalDevice(testSurface);
+
+            createLogicalDevice(testSurface);
+
+            glfwDestroyWindow(pTestWindow);
         }
-        const auto testSurface = vk::UniqueSurfaceKHR(surface, { mInstance.get() });
+        else
+        {
+            pickPhysicalDevice(vk::UniqueSurfaceKHR());
 
-        pickPhysicalDevice(testSurface);
-
-        createLogicalDevice(testSurface);
-
-        glfwDestroyWindow(pTestWindow);
+            createLogicalDevice(vk::UniqueSurfaceKHR());
+        }
     }
 
     void Device::pickPhysicalDevice(const vk::UniqueSurfaceKHR& testSurface)
@@ -455,6 +464,12 @@ namespace vk2s
         bool extensionsSupported = checkDeviceExtensionSupport(mDevice);
 
         bool swapChainAdequate = false;
+        
+        if (!testSurface)
+        {
+            return indices.isComplete() && extensionsSupported;
+        }
+
         if (extensionsSupported)
         {
             SwapChainSupportDetails swapChainSupport = SwapChainSupportDetails::querySwapChainSupport(mDevice, testSurface);
@@ -482,10 +497,18 @@ namespace vk2s
                 indices.graphicsFamily = i;
             }
 
-            const auto presentSupport = physDev.getSurfaceSupportKHR(i, testSurface.get());
-            if (presentSupport)
+            if (testSurface)
             {
-                indices.presentFamily = i;
+                const auto presentSupport = physDev.getSurfaceSupportKHR(i, testSurface.get());
+                if (presentSupport)
+                {
+                    indices.presentFamily = i;
+                }
+            }
+            else
+            {
+                // don't care about presenting
+                indices.presentFamily = indices.graphicsFamily;
             }
 
             if (indices.isComplete())
@@ -502,9 +525,12 @@ namespace vk2s
     Device::SwapChainSupportDetails Device::SwapChainSupportDetails::querySwapChainSupport(vk::PhysicalDevice physDev, const vk::UniqueSurfaceKHR& testSurface)
     {
         SwapChainSupportDetails details;
-        details.capabilities = physDev.getSurfaceCapabilitiesKHR(testSurface.get());
-        details.formats      = physDev.getSurfaceFormatsKHR(testSurface.get());
-        details.presentModes = physDev.getSurfacePresentModesKHR(testSurface.get());
+        if (testSurface)
+        {
+            details.capabilities = physDev.getSurfaceCapabilitiesKHR(testSurface.get());
+            details.formats      = physDev.getSurfaceFormatsKHR(testSurface.get());
+            details.presentModes = physDev.getSurfacePresentModesKHR(testSurface.get());
+        }
 
         return details;
     }
@@ -514,7 +540,6 @@ namespace vk2s
         std::vector<vk::ExtensionProperties> availableExtensions = mDevice.enumerateDeviceExtensionProperties();
 
         std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
-        std::set<std::string> requiredRTExtensions(rayTracingDeviceExtensions.begin(), rayTracingDeviceExtensions.end());
 
         for (const auto& extension : availableExtensions)
         {
@@ -528,6 +553,20 @@ namespace vk2s
             {
                 requiredRTExtensions.erase(extension.extensionName);
             }
+
+            if (mQueriedExtensions.useNVMotionBlurExt)
+            {
+                for (const auto& extension : availableExtensions)
+                {
+                    if (std::strcmp(nvRayTracingMotionBlurExtension, extension.extensionName) == 0)
+                    {
+                        return requiredExtensions.empty() && requiredRTExtensions.empty();
+                    }
+                }
+
+                return false;
+            }
+
             return requiredExtensions.empty() && requiredRTExtensions.empty();
         }
 
