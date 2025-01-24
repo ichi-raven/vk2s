@@ -236,7 +236,7 @@ namespace vk2s
             // create compile request for adding capability
             const auto spvImageQueryCapabilityID      = slangGlobalSession->findCapability("spvImageQuery");
             const auto spvSparseResidencyCapabilityID = slangGlobalSession->findCapability("spvSparseResidency");
-            const auto spvNVMotionBlurCapabilityID = slangGlobalSession->findCapability("SPV_NV_ray_tracing_motion_blur");
+            const auto spvNVMotionBlurCapabilityID = slangGlobalSession->findCapability("spvRayTracingMotionBlurNV");
             Slang::ComPtr<slang::ICompileRequest> compileRequest;
             session->createCompileRequest(compileRequest.writeRef());
             compileRequest->addTargetCapability(0, spvImageQueryCapabilityID);
