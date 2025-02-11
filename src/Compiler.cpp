@@ -236,7 +236,7 @@ namespace vk2s
             // create compile request for adding capability
             const auto spvImageQueryCapabilityID      = slangGlobalSession->findCapability("spvImageQuery");
             const auto spvSparseResidencyCapabilityID = slangGlobalSession->findCapability("spvSparseResidency");
-            const auto spvNVMotionBlurCapabilityID = slangGlobalSession->findCapability("spvRayTracingMotionBlurNV");
+            const auto spvNVMotionBlurCapabilityID    = slangGlobalSession->findCapability("spvRayTracingMotionBlurNV");
             Slang::ComPtr<slang::ICompileRequest> compileRequest;
             session->createCompileRequest(compileRequest.writeRef());
             compileRequest->addTargetCapability(0, spvImageQueryCapabilityID);
@@ -384,7 +384,10 @@ namespace vk2s
                 inputVars.resize(count);
                 result = spvReflectEnumerateInputVariables(&module, &count, inputVars.data());
                 assert(result == SPV_REFLECT_RESULT_SUCCESS);
-                if (!inputVars.empty()) std::sort(inputVars.begin(), inputVars.end(), lmdComp);
+                if (!inputVars.empty())
+                {
+                    std::sort(inputVars.begin(), inputVars.end(), lmdComp);
+                }
             }
 
             std::vector<SpvReflectInterfaceVariable*> outputVars;
