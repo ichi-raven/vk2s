@@ -87,12 +87,42 @@ namespace vk2s
             SwapChainSupportDetails static querySwapChainSupport(vk::PhysicalDevice device, const vk::UniqueSurfaceKHR& testSurface);
         };
 
+        /**
+         * @brief  Vulkan Extensions available in this library
+         */
+        struct Extensions
+        {
+            static Extensions useAll()
+            {
+                Extensions ext;
+                ext.useRayTracingExt = true;
+                ext.useNVMotionBlurExt = true;
+                return ext;
+            }
+
+            static Extensions useNothing()
+            {
+                Extensions ext;
+                ext.useRayTracingExt   = false;
+                ext.useNVMotionBlurExt = false;
+                return ext;
+            }
+
+            bool useRayTracingExt = false;
+            bool useNVMotionBlurExt = false;
+        };
+
     public:  // methods
         /**
          * @brief  constructor
-         * @detail if your environment does not support hardware accelerated ray tracing, pass false as an argument
+         * @detail if you would not use window, pass false
          */
-        Device(const bool supportRayTracing = true);
+        Device(const bool useWindow = true);
+
+        /**
+         * @brief constructor (with extensions)
+         */
+        Device(const Extensions extensions, const bool useWindow = true);
 
         /**
          * @brief  destructor
@@ -149,6 +179,11 @@ namespace vk2s
         uint32_t getVkMemoryTypeIndex(uint32_t requestBits, vk::MemoryPropertyFlags requestProps) const;
 
         /**
+         * @brief  get the status of the active extension
+         */
+        Extensions getVkAvailableExtensions() const;
+
+        /**
          * @brief get vulkan instance handle
          */
         const vk::UniqueInstance& getVkInstance();
@@ -166,7 +201,7 @@ namespace vk2s
         /**
          * @brief  get index of each vulkan command queue
          */
-        const QueueFamilyIndices getVkQueueFamilyIndices();
+        const QueueFamilyIndices getVkQueueFamilyIndices() const;
 
         /**
          * @brief  get vulkan queue to submit graphics commands
@@ -227,13 +262,16 @@ namespace vk2s
         constexpr static std::array deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_ROBUSTNESS_2_EXTENSION_NAME };
         //! device extensions required for hardware accelerated ray tracing
         constexpr static std::array rayTracingDeviceExtensions = { VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, VK_KHR_RAY_QUERY_EXTENSION_NAME, VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME };
+        //! NV_Motion_blur extension
+        constexpr static const char* nvRayTracingMotionBlurExtension = VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME;
         //! all device extensions
         constexpr static std::array allExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME,
                                                       VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
                                                       VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
                                                       VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
                                                       VK_KHR_RAY_QUERY_EXTENSION_NAME,
-                                                      VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME };
+                                                      VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+                                                      VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME };
 
         //! maximum number of descriptors allocated by one DescriptorPool (adhoc)
         constexpr static uint32_t kMaxDescriptorNum = 256;
@@ -252,7 +290,7 @@ namespace vk2s
         /**
          * @brief summarizing vulkan physical/logical device creation
          */
-        void pickAndCreateDevice();
+        void pickAndCreateDevice(const bool useWindow);
 
         /**
          * @brief pick the vulkan physical device to be used from the surface criteria 
@@ -316,7 +354,11 @@ namespace vk2s
         vk::UniqueDebugUtilsMessengerEXT mDebugUtilsMessenger;
 
         //! whether hardware accelerated ray tracing is supported
-        const bool mRayTracingSupported;
+        //const bool mRayTracingSupported;
+
+        //! whether various extensions are requested (synonymous with available extensions if created on device success)
+        const Extensions mQueriedExtensions;
+
         //! vulkan physical device
         vk::PhysicalDevice mPhysicalDevice;
         //! vulkan memory properties of the selected physical device

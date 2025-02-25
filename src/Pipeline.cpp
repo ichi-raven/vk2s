@@ -1,6 +1,6 @@
-/*****************************************************************//**
+/*****************************************************************/ /**
  * @file   Pipeline.cpp
- * @brief  
+ * @brief  source file of Pipeline class
  * 
  * @author ichi-raven
  * @date   November 2023
@@ -24,7 +24,7 @@ namespace vk2s
         {
             layouts.emplace_back(layout->getVkDescriptorSetLayout().get());
         }
-        
+
         pipelineLayoutInfo.setSetLayouts(layouts);
 
         mLayout = vkDevice->createPipelineLayoutUnique(pipelineLayoutInfo);
@@ -34,8 +34,8 @@ namespace vk2s
 
         std::array shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
 
-        vk::GraphicsPipelineCreateInfo pipelineInfo({}, shaderStages, &info.inputState, &info.inputAssembly, {}, &info.viewportState, &info.rasterizer, &info.multiSampling, &info.depthStencil, &info.colorBlending, {}, mLayout.get(),
-                                                    info.renderPass->getVkRenderPass().get(), 0, {}, {});
+        vk::GraphicsPipelineCreateInfo pipelineInfo({}, shaderStages, &info.inputState, &info.inputAssembly, {}, &info.viewportState, &info.rasterizer, &info.multiSampling, &info.depthStencil, &info.colorBlending, &info.dynamicStates,
+                                                    mLayout.get(), info.renderPass->getVkRenderPass().get(), 0, {}, {});
 
         vk::ResultValue<vk::UniquePipeline> result = vkDevice->createGraphicsPipelineUnique({}, pipelineInfo);
         if (result.result == vk::Result::eSuccess)
@@ -130,8 +130,12 @@ namespace vk2s
         rtPipelineCI.pStages                      = stages.data();
         rtPipelineCI.groupCount                   = uint32_t(info.shaderGroups.size());
         rtPipelineCI.pGroups                      = info.shaderGroups.data();
-        rtPipelineCI.maxPipelineRayRecursionDepth = 2; // HACK:
+        rtPipelineCI.maxPipelineRayRecursionDepth = 2;  // HACK:
         rtPipelineCI.layout                       = mLayout.get();
+        if (mDevice.getVkAvailableExtensions().useNVMotionBlurExt)
+        {
+            rtPipelineCI.flags = vk::PipelineCreateFlagBits::eRayTracingAllowMotionNV;
+        }
 
         vk::ResultValue<vk::UniquePipeline> result = vkDevice->createRayTracingPipelineKHRUnique({}, {}, rtPipelineCI);
         if (result.result == vk::Result::eSuccess)

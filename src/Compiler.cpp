@@ -1,4 +1,4 @@
-/*****************************************************************//**
+/*****************************************************************/ /**
  * @file   Compiler.cpp
  * @brief  source files of Compiler functions 
  * 
@@ -156,22 +156,10 @@ namespace vk2s
             std::string preprocessed = { result.cbegin(), result.cend() };
 
             // Compiling
-
             if (optimize)
             {
                 options.SetOptimizationLevel(shaderc_optimization_level_performance);
             }
-
-            // disassemble
-            //result = compiler.CompileGlslToSpvAssembly(preprocessed, kind, fileName.c_str(), options);
-
-            //if (result.GetCompilationStatus() != shaderc_compilation_status_success)
-            //{
-            //    std::cerr << result.GetErrorMessage();
-            //    return SPIRVCode();
-            //}
-            //std::string assembly = { result.cbegin(), result.cend() };
-            //std::cout << "SPIR-V assembly:" << std::endl << assembly << std::endl;
 
             shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(preprocessed, kind, fileName.c_str(), options);
 
@@ -181,8 +169,6 @@ namespace vk2s
                 assert(!"failed to compile shader!");
                 return SPIRVCode();
             }
-
-            //std::cout << "Compiled to an binary module with " << spirv.size() << " words." << std::endl;
 
             return SPIRVCode(module.cbegin(), module.cend());
         }
@@ -205,6 +191,7 @@ namespace vk2s
             useEntryPointName.value.intValue0 = 1;
             useEntryPointName.value.intValue1 = 1;
 
+            // invert Y coordinates for Vulkan specification
             slang::CompilerOptionEntry invertYName{ .name = slang::CompilerOptionName::VulkanInvertY };
             invertYName.value.intValue0 = 1;
             invertYName.value.intValue1 = 1;
@@ -216,14 +203,17 @@ namespace vk2s
 
             std::array compilerOptionEntries{ useEntryPointName, invertYName, setColumnMajor };
 
-            // Next we create a compilation session to generate SPIRV code from Slang source.
-            slang::SessionDesc sessionDesc = {};
-            slang::TargetDesc targetDesc   = {};
-            targetDesc.format              = SLANG_SPIRV;
-            targetDesc.profile             = slangGlobalSession->findProfile("spirv_1_6");
-            targetDesc.flags               = SLANG_TARGET_FLAG_GENERATE_SPIRV_DIRECTLY;
+            constexpr size_t spirv1_6Targetindex = 0;
+            const auto spirv1_6ID                = slangGlobalSession->findProfile("spirv_1_6");
 
-            sessionDesc.targets                  = &targetDesc;
+            // Next we create a compilation session to generate SPIRV code from Slang source.
+            slang::SessionDesc sessionDesc   = {};
+            slang::TargetDesc spirv1_6Target = {};
+            spirv1_6Target.format            = SLANG_SPIRV;
+            spirv1_6Target.profile           = spirv1_6ID;
+            spirv1_6Target.flags             = SLANG_TARGET_FLAG_GENERATE_SPIRV_DIRECTLY;
+
+            sessionDesc.targets                  = &spirv1_6Target;
             sessionDesc.targetCount              = 1;
             sessionDesc.compilerOptionEntryCount = compilerOptionEntries.size();
             sessionDesc.compilerOptionEntries    = compilerOptionEntries.data();
@@ -242,6 +232,18 @@ namespace vk2s
                 assert(!"failed to create session!");
                 return SPIRVCode();
             }
+
+            // create compile request for adding capability
+            const auto spvImageQueryCapabilityID      = slangGlobalSession->findCapability("spvImageQuery");
+            const auto spvSparseResidencyCapabilityID = slangGlobalSession->findCapability("spvSparseResidency");
+            const auto spvNVMotionBlurCapabilityID    = slangGlobalSession->findCapability("spvRayTracingMotionBlurNV");
+            Slang::ComPtr<slang::ICompileRequest> compileRequest;
+            session->createCompileRequest(compileRequest.writeRef());
+            compileRequest->addTargetCapability(0, spvImageQueryCapabilityID);
+            compileRequest->addTargetCapability(0, spvSparseResidencyCapabilityID);
+            compileRequest->addTargetCapability(0, spvNVMotionBlurCapabilityID);
+
+            // loading modules
 
             std::vector<Slang::ComPtr<slang::IModule>> slangModules;
             {
@@ -321,16 +323,6 @@ namespace vk2s
             const uint32_t* cend   = cbegin + (spirvCode->getBufferSize() / sizeof(SPIRVCode::value_type));
             SPIRVCode code(cbegin, cend);
 
-            /*spvtools::SpirvTools spirvTools(SPV_ENV_VULKAN_1_3);
-            std::string spirvAssembly;
-            if (!spirvTools.Disassemble(code, &spirvAssembly, SPV_BINARY_TO_TEXT_OPTION_INDENT))
-            {
-                std::cerr << "Failed to disassemble SPIR-V binary!" << std::endl;
-                return SPIRVCode();
-            }
-
-            saveAssemblyToFile(std::string("./compiled_") + std::string(entrypoint) + std::string(".spv"), spirvAssembly);*/
-
             return code;
         }
 
@@ -392,7 +384,10 @@ namespace vk2s
                 inputVars.resize(count);
                 result = spvReflectEnumerateInputVariables(&module, &count, inputVars.data());
                 assert(result == SPV_REFLECT_RESULT_SUCCESS);
-                if (!inputVars.empty()) std::sort(inputVars.begin(), inputVars.end(), lmdComp);
+                if (!inputVars.empty())
+                {
+                    std::sort(inputVars.begin(), inputVars.end(), lmdComp);
+                }
             }
 
             std::vector<SpvReflectInterfaceVariable*> outputVars;

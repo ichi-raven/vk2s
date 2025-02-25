@@ -11,15 +11,20 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace vk2s
 {
-    Device::Device(const bool supportRayTracing)
-        : mRayTracingSupported(supportRayTracing)
+    Device::Device(const bool useWindow)
+        : Device(Extensions::useNothing(), useWindow)
+    {
+    }
+
+    Device::Device(const Extensions extensions, const bool useWindow)
+        : mQueriedExtensions(extensions)
         , mImGuiActive(false)
     {
         glfwInit();
 
         createInstance();
         setupDebugMessenger();
-        pickAndCreateDevice();
+        pickAndCreateDevice(useWindow);
         createCommandPool();
 
         createDescriptorPoolForImGui();
@@ -28,13 +33,13 @@ namespace vk2s
     }
 
     template <size_t N = 0, typename T>
-    void iterateTuple(T& t)
+    void iterateTupleAndClear(T& t)
     {
         if constexpr (N < std::tuple_size<T>::value)
         {
             auto& x = std::get<N>(t);
             x.clear();
-            iterateTuple<N + 1>(t);
+            iterateTupleAndClear<N + 1>(t);
         }
     }
 
@@ -42,7 +47,7 @@ namespace vk2s
     {
         mDevice->waitIdle();
 
-        iterateTuple(mPools);
+        iterateTupleAndClear(mPools);
 
         destroyImGui();
         if (ImGui::GetCurrentContext())
@@ -88,8 +93,9 @@ namespace vk2s
         init_info.MinImageCount             = 2;
         init_info.ImageCount                = window.getFrameCount();
         init_info.CheckVkResultFn           = nullptr;
-        ImGui_ImplVulkan_Init(&init_info, renderpass.getVkRenderPass().get());
-
+        init_info.RenderPass                = renderpass.getVkRenderPass().get();
+        ImGui_ImplVulkan_Init(&init_info);
+        
         mImGuiActive = true;
     }
 
@@ -124,7 +130,7 @@ namespace vk2s
         return mDevice;
     }
 
-    const QueueFamilyIndices Device::getVkQueueFamilyIndices()
+    const QueueFamilyIndices Device::getVkQueueFamilyIndices() const
     {
         return mQueueFamilyIndices;
     }
@@ -247,26 +253,35 @@ namespace vk2s
         mDebugUtilsMessenger = mInstance->createDebugUtilsMessengerEXTUnique(vk::DebugUtilsMessengerCreateInfoEXT({}, severityFlags, messageTypeFlags, &debugUtilsMessengerCallback));
     }
 
-    void Device::pickAndCreateDevice()
+    void Device::pickAndCreateDevice(const bool useWindow)
     {
         // HACK: create test surface
-        VkSurfaceKHR surface;
-
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        const auto pTestWindow = glfwCreateWindow(1, 1, "surface test", nullptr, nullptr);
-        auto res               = glfwCreateWindowSurface(VkInstance(mInstance.get()), pTestWindow, nullptr, &surface);
-        if (res != VK_SUCCESS)
+        if (useWindow)
         {
-            throw std::runtime_error("failed to create window surface!");
+            VkSurfaceKHR surface;
+
+            glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+            glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+            const auto pTestWindow = glfwCreateWindow(1, 1, "surface test", nullptr, nullptr);
+            auto res               = glfwCreateWindowSurface(VkInstance(mInstance.get()), pTestWindow, nullptr, &surface);
+            if (res != VK_SUCCESS)
+            {
+                throw std::runtime_error("failed to create window surface!");
+            }
+            const auto testSurface = vk::UniqueSurfaceKHR(surface, { mInstance.get() });
+
+            pickPhysicalDevice(testSurface);
+
+            createLogicalDevice(testSurface);
+
+            glfwDestroyWindow(pTestWindow);
         }
-        const auto testSurface = vk::UniqueSurfaceKHR(surface, { mInstance.get() });
+        else
+        {
+            pickPhysicalDevice(vk::UniqueSurfaceKHR());
 
-        pickPhysicalDevice(testSurface);
-
-        createLogicalDevice(testSurface);
-
-        glfwDestroyWindow(pTestWindow);
+            createLogicalDevice(vk::UniqueSurfaceKHR());
+        }
     }
 
     void Device::pickPhysicalDevice(const vk::UniqueSurfaceKHR& testSurface)
@@ -322,6 +337,9 @@ namespace vk2s
         enabledDescriptorIndexingFeatures.descriptorBindingVariableDescriptorCount   = VK_TRUE;
         enabledDescriptorIndexingFeatures.runtimeDescriptorArray                     = VK_TRUE;
 
+        // for NV motion blur extension
+        vk::PhysicalDeviceRayTracingMotionBlurFeaturesNV enabledRTMotionBlurFeatures(VK_TRUE);
+
         vk::PhysicalDeviceRobustness2FeaturesEXT robustness2Features(VK_TRUE, VK_TRUE, VK_TRUE);
 
         vk::PhysicalDeviceVulkan13Features vk1_3features;
@@ -332,19 +350,31 @@ namespace vk2s
 
         vk::PhysicalDeviceFeatures2 physicalDeviceFeatures2(features, &vk1_3features);
 
-        vk::DeviceCreateInfo createInfo{};
-        if (mRayTracingSupported)
+        vk::DeviceCreateInfo createInfo({}, queueCreateInfos, {}, {}, &deviceFeatures);
+
+        std::vector<const char*> extensionNames;
+        extensionNames.reserve(allExtensions.size());
+        extensionNames.resize(deviceExtensions.size());
+        std::copy(deviceExtensions.begin(), deviceExtensions.end(), extensionNames.begin());
+
+        if (mQueriedExtensions.useRayTracingExt)
         {
             robustness2Features.pNext = &enabledDescriptorIndexingFeatures;
-            createInfo = vk::DeviceCreateInfo({}, queueCreateInfos, {}, allExtensions, &deviceFeatures);
-        }
-        else
-        {
-            createInfo = vk::DeviceCreateInfo({}, queueCreateInfos, {}, deviceExtensions, &deviceFeatures);
+
+            extensionNames.resize(extensionNames.size() + rayTracingDeviceExtensions.size());
+            std::copy(rayTracingDeviceExtensions.begin(), rayTracingDeviceExtensions.end(), extensionNames.end() - rayTracingDeviceExtensions.size());
+
+            if (mQueriedExtensions.useNVMotionBlurExt)
+            {
+                enabledBufferDeviceAddressFeatures.pNext = &enabledRTMotionBlurFeatures;
+                extensionNames.emplace_back(nvRayTracingMotionBlurExtension);
+            }
         }
 
-        createInfo.pNext            = &physicalDeviceFeatures2;
-        createInfo.pEnabledFeatures = nullptr;
+        createInfo.pNext                   = &physicalDeviceFeatures2;
+        createInfo.pEnabledFeatures        = nullptr;
+        createInfo.enabledExtensionCount   = extensionNames.size();
+        createInfo.ppEnabledExtensionNames = extensionNames.data();
 
         if (enableValidationLayers)
         {
@@ -374,7 +404,7 @@ namespace vk2s
             vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, kMaxDescriptorNum),        vk::DescriptorPoolSize(vk::DescriptorType::eAccelerationStructureKHR, kMaxDescriptorNum),
         };
 
-        if (!mRayTracingSupported)
+        if (!mQueriedExtensions.useRayTracingExt)
         {
             poolSize.pop_back();
         }
@@ -434,6 +464,12 @@ namespace vk2s
         bool extensionsSupported = checkDeviceExtensionSupport(mDevice);
 
         bool swapChainAdequate = false;
+        
+        if (!testSurface)
+        {
+            return indices.isComplete() && extensionsSupported;
+        }
+
         if (extensionsSupported)
         {
             SwapChainSupportDetails swapChainSupport = SwapChainSupportDetails::querySwapChainSupport(mDevice, testSurface);
@@ -461,10 +497,18 @@ namespace vk2s
                 indices.graphicsFamily = i;
             }
 
-            VkBool32 presentSupport = physDev.getSurfaceSupportKHR(i, testSurface.get());
-            if (presentSupport)
+            if (testSurface)
             {
-                indices.presentFamily = i;
+                const auto presentSupport = physDev.getSurfaceSupportKHR(i, testSurface.get());
+                if (presentSupport)
+                {
+                    indices.presentFamily = i;
+                }
+            }
+            else
+            {
+                // don't care about presenting
+                indices.presentFamily = indices.graphicsFamily;
             }
 
             if (indices.isComplete())
@@ -481,9 +525,12 @@ namespace vk2s
     Device::SwapChainSupportDetails Device::SwapChainSupportDetails::querySwapChainSupport(vk::PhysicalDevice physDev, const vk::UniqueSurfaceKHR& testSurface)
     {
         SwapChainSupportDetails details;
-        details.capabilities = physDev.getSurfaceCapabilitiesKHR(testSurface.get());
-        details.formats      = physDev.getSurfaceFormatsKHR(testSurface.get());
-        details.presentModes = physDev.getSurfacePresentModesKHR(testSurface.get());
+        if (testSurface)
+        {
+            details.capabilities = physDev.getSurfaceCapabilitiesKHR(testSurface.get());
+            details.formats      = physDev.getSurfaceFormatsKHR(testSurface.get());
+            details.presentModes = physDev.getSurfacePresentModesKHR(testSurface.get());
+        }
 
         return details;
     }
@@ -493,20 +540,33 @@ namespace vk2s
         std::vector<vk::ExtensionProperties> availableExtensions = mDevice.enumerateDeviceExtensionProperties();
 
         std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
-        std::set<std::string> requiredRTExtensions(rayTracingDeviceExtensions.begin(), rayTracingDeviceExtensions.end());
 
         for (const auto& extension : availableExtensions)
         {
             requiredExtensions.erase(extension.extensionName);
         }
 
-        if (mRayTracingSupported)
+        if (mQueriedExtensions.useRayTracingExt)
         {
             std::set<std::string> requiredRTExtensions(rayTracingDeviceExtensions.begin(), rayTracingDeviceExtensions.end());
             for (const auto& extension : availableExtensions)
             {
                 requiredRTExtensions.erase(extension.extensionName);
             }
+
+            if (mQueriedExtensions.useNVMotionBlurExt)
+            {
+                for (const auto& extension : availableExtensions)
+                {
+                    if (std::strcmp(nvRayTracingMotionBlurExtension, extension.extensionName) == 0)
+                    {
+                        return requiredExtensions.empty() && requiredRTExtensions.empty();
+                    }
+                }
+
+                return false;
+            }
+
             return requiredExtensions.empty() && requiredRTExtensions.empty();
         }
 
@@ -531,6 +591,11 @@ namespace vk2s
             requestBits >>= 1;
         }
         return result;
+    }
+
+    Device::Extensions Device::getVkAvailableExtensions() const
+    {
+        return mQueriedExtensions;
     }
 
     VKAPI_ATTR VkBool32 VKAPI_CALL Device::debugUtilsMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes, VkDebugUtilsMessengerCallbackDataEXT const* pCallbackData,

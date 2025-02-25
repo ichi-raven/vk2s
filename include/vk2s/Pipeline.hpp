@@ -60,6 +60,8 @@ namespace vk2s
             vk::PipelineDepthStencilStateCreateInfo depthStencil;
             //! specifies how to blend the original colors in the frame buffer with the new colors to be written
             vk::PipelineColorBlendStateCreateInfo colorBlending;
+            //! specify states that are dynamically determined at runtime, optional
+            vk::PipelineDynamicStateCreateInfo dynamicStates;
         };
 
         /**
