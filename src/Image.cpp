@@ -1,4 +1,4 @@
-/*****************************************************************//**
+/*****************************************************************/ /**
  * @file   Image.cpp
  * @brief  
  * 
@@ -44,6 +44,47 @@ namespace vk2s
         mAspectFlag = aspectFlags;
     }
 
+    Image::Image(Device& device, std::string_view path)
+        : mDevice(device)
+    {
+        const auto& vkDevice = mDevice.getVkDevice();
+
+        int width = 0, height = 0, bpp = 0;
+        void* pData = reinterpret_cast<void*>(stbi_load(path.data(), &width, &height, &bpp, STBI_rgb_alpha));
+
+        const auto size = width * height * bpp * static_cast<uint32_t>(STBI_rgb_alpha);
+
+        vk::ImageCreateInfo ii;
+        ii.arrayLayers   = 1;
+        ii.extent        = vk::Extent3D(width, height, 1);
+        ii.format        = vk::Format::eR8G8B8A8Srgb;
+        ii.imageType     = vk::ImageType::e2D;
+        ii.mipLevels     = 1;
+        ii.usage         = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
+        ii.initialLayout = vk::ImageLayout::eUndefined;
+
+        mImage                      = vkDevice->createImageUnique(ii);
+        vk::MemoryRequirements reqs = vkDevice->getImageMemoryRequirements(mImage.get());
+        const auto pbs              = vk::MemoryPropertyFlagBits::eDeviceLocal;
+        vk::MemoryAllocateInfo ai(reqs.size, mDevice.getVkMemoryTypeIndex(reqs.memoryTypeBits, pbs));
+        mMemory = vkDevice->allocateMemoryUnique(ai);
+
+        vkDevice->bindImageMemory(mImage.get(), mMemory.get(), 0);
+
+        vk::ImageViewCreateInfo viewInfo;
+        viewInfo.image                           = mImage.get();
+        viewInfo.viewType                        = vk::ImageViewType::e2D;
+        viewInfo.format                          = ii.format;
+        viewInfo.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
+        viewInfo.subresourceRange.baseMipLevel   = 0;
+        viewInfo.subresourceRange.levelCount     = 1;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount     = 1;
+
+        write(pData, static_cast<size_t>(width * height * bpp));
+        stbi_image_free(pData);
+    }
+
     Image::~Image()
     {
     }
@@ -77,7 +118,6 @@ namespace vk2s
         write(pData, static_cast<size_t>(width * height * bpp));
         stbi_image_free(pData);
     }
-
 
     const vk::UniqueImage& Image::getVkImage()
     {

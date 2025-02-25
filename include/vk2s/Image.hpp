@@ -32,6 +32,11 @@ namespace vk2s
         Image(Device& device, const vk::ImageCreateInfo& ii, vk::MemoryPropertyFlags pbs, const size_t size, vk::ImageAspectFlags aspectFlags);
 
         /**
+         * @brief  constructor with image data path
+         */
+        Image(Device& device, std::string_view path);
+
+        /**
          * @brief  destructor
          */
         ~Image();
