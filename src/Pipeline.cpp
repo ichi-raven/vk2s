@@ -18,6 +18,8 @@ namespace vk2s
         const auto& vkDevice = mDevice.getVkDevice();
 
         vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
+        pipelineLayoutInfo.setPushConstantRanges(info.pushConstantRanges);
+
         std::vector<vk::DescriptorSetLayout> layouts;
         layouts.reserve(info.bindLayouts.size());
         for (const auto& layout : info.bindLayouts)
@@ -55,6 +57,8 @@ namespace vk2s
         const auto& vkDevice = mDevice.getVkDevice();
 
         vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
+        pipelineLayoutInfo.setPushConstantRanges(info.pushConstantRanges);
+
         std::vector<vk::DescriptorSetLayout> layouts;
         layouts.reserve(info.bindLayouts.size());
         for (const auto& layout : info.bindLayouts)
@@ -88,6 +92,8 @@ namespace vk2s
         const auto& vkDevice = mDevice.getVkDevice();
 
         vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
+        pipelineLayoutInfo.setPushConstantRanges(info.pushConstantRanges);
+
         std::vector<vk::DescriptorSetLayout> layouts;
         layouts.reserve(info.bindLayouts.size());
         for (const auto& layout : info.bindLayouts)

@@ -97,6 +97,11 @@ namespace vk2s
         void setScissor(const uint32_t firstScissor, const vk::ArrayProxy<vk::Rect2D> scissors);
 
         /**
+         * @brief set PushConstant
+         */
+        void setPushConstant(const vk::ShaderStageFlags shaderStage, const size_t offset, const size_t size, const void* const pData);
+
+        /**
          * @brief  set VertexBuffer
          */
         void bindVertexBuffer(Buffer& vertexBuffer);

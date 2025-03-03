@@ -77,20 +77,46 @@ namespace vk2s
 
     void Command::setBindGroup(const uint8_t set, BindGroup& bindGroup, vk::ArrayProxy<const uint32_t> const& dynamicOffsets)
     {
-        assert(mNowPipeline || !"pipeline isn't set yet!");
+        if (!mNowPipeline)
+        {
+            throw std::runtime_error("pipeline isn't set yet!");
+            return;
+        }
+
         mCommandBuffer->bindDescriptorSets(mNowPipeline->getVkPipelineBindPoint(), mNowPipeline->getVkPipelineLayout().get(), set, bindGroup.getVkDescriptorSet(), dynamicOffsets);
     }
 
     void Command::setViewport(const uint32_t firstViewport, const vk::ArrayProxy<vk::Viewport> viewports)
     {
-        assert(mNowPipeline || !"pipeline isn't set yet!");
+        if (!mNowPipeline)
+        {
+            throw std::runtime_error("pipeline isn't set yet!");
+            return;
+        }
+
         mCommandBuffer->setViewport(firstViewport, viewports);
     }
 
     void Command::setScissor(const uint32_t firstScissor, const vk::ArrayProxy<vk::Rect2D> scissors)
     {
-        assert(mNowPipeline || !"pipeline isn't set yet!");
+        if (!mNowPipeline)
+        {
+            throw std::runtime_error("pipeline isn't set yet!");
+            return;
+        }
+
         mCommandBuffer->setScissor(firstScissor, scissors);
+    }
+
+    void Command::setPushConstant(const vk::ShaderStageFlags shaderStage, const size_t offset, const size_t size, const void* const pData)
+    {
+        if (!mNowPipeline)
+        {
+            throw std::runtime_error("pipeline isn't set yet!");
+            return;
+        }
+
+        mCommandBuffer->pushConstants(mNowPipeline->getVkPipelineLayout().get(), shaderStage, offset, size, pData);
     }
 
     void Command::bindVertexBuffer(Buffer& vertexBuffer)

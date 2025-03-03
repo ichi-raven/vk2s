@@ -62,6 +62,8 @@ namespace vk2s
             vk::PipelineColorBlendStateCreateInfo colorBlending;
             //! specify states that are dynamically determined at runtime, optional
             vk::PipelineDynamicStateCreateInfo dynamicStates;
+            //! specify push constant ranges
+            vk::ArrayProxyNoTemporaries<vk::PushConstantRange> pushConstantRanges;
         };
 
         /**
@@ -73,6 +75,8 @@ namespace vk2s
             Handle<Shader> cs;
             //! bind layouts (used for pipeline layout creation)
             vk::ArrayProxyNoTemporaries<Handle<BindLayout>> bindLayouts;
+            //! specify push constant ranges
+            vk::ArrayProxyNoTemporaries<vk::PushConstantRange> pushConstantRanges;
         };
 
         /**
@@ -92,6 +96,8 @@ namespace vk2s
             vk::ArrayProxyNoTemporaries<Handle<BindLayout>> bindLayouts;
             //! shader groups (registration of each shader by shader stage)
             std::vector<vk::RayTracingShaderGroupCreateInfoKHR> shaderGroups;
+            //! specify push constant ranges
+            vk::ArrayProxyNoTemporaries<vk::PushConstantRange> pushConstantRanges;
         };
 
     public:  // methods

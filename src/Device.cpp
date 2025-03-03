@@ -93,7 +93,8 @@ namespace vk2s
         init_info.MinImageCount             = 2;
         init_info.ImageCount                = window.getFrameCount();
         init_info.CheckVkResultFn           = nullptr;
-        ImGui_ImplVulkan_Init(&init_info, renderpass.getVkRenderPass().get());
+        init_info.RenderPass                = renderpass.getVkRenderPass().get();
+        ImGui_ImplVulkan_Init(&init_info);
         
         mImGuiActive = true;
     }
