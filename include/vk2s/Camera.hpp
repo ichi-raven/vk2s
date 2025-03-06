@@ -42,6 +42,15 @@ namespace vk2s
         const glm::vec3& getUpVector() const;
 
         /**
+         * @brief setter and getter of camera's polar angles
+         */
+        void setPhi(const double phi);
+        double getPhi() const;
+
+        void setTheta(const double theta);
+        double getTheta() const;
+
+        /**
          * @brief setter and getter of camera's point
          */
         void setPos(const glm::vec3& pos);

@@ -130,6 +130,30 @@ namespace vk2s
         return mPos;
     }
 
+    void Camera::setPhi(const double phi)
+    {
+        mPhi = phi;
+        updateViewMat();
+        mMoved = true;
+    }
+
+    double Camera::getPhi() const
+    {
+        return mPhi;
+    }
+
+    void Camera::setTheta(const double theta)
+    {
+        mTheta = theta;
+        updateViewMat();
+        mMoved = true;
+    }
+
+    double Camera::getTheta() const
+    {
+        return mTheta;
+    }
+
     void Camera::setLookAt(const glm::vec3& lookAt)
     {
         const auto diff = glm::normalize(lookAt - mPos);
