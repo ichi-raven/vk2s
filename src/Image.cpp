@@ -50,8 +50,9 @@ namespace vk2s
         const auto& vkDevice = mDevice.getVkDevice();
 
         int width = 0, height = 0, bpp = 0;
-        void* pData = reinterpret_cast<void*>(stbi_load(path.data(), &width, &height, &bpp, STBI_rgb_alpha));
+        void* const pData = reinterpret_cast<void*>(stbi_load(path.data(), &width, &height, &bpp, STBI_rgb_alpha));
 
+        // allocate in RGBA (not actual bpp) to match the format on the GPU side
         const auto size = width * height * static_cast<size_t>(STBI_rgb_alpha);
 
         vk::ImageCreateInfo ii;
@@ -83,12 +84,11 @@ namespace vk2s
 
         mImageView = vkDevice->createImageViewUnique(viewInfo);
 
-        mFormat = ii.format;
-
         mExtent     = ii.extent;
+        mFormat     = ii.format;
         mAspectFlag = vk::ImageAspectFlagBits::eColor;
 
-        write(pData, width * height * bpp);
+        write(pData, size);
         stbi_image_free(pData);
     }
 
