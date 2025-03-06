@@ -81,7 +81,14 @@ namespace vk2s
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount     = 1;
 
-        write(pData, static_cast<size_t>(width * height * bpp));
+        mImageView = vkDevice->createImageViewUnique(viewInfo);
+
+        mFormat = ii.format;
+
+        mExtent     = ii.extent;
+        mAspectFlag = vk::ImageAspectFlagBits::eColor;
+
+        write(pData, size);
         stbi_image_free(pData);
     }
 
