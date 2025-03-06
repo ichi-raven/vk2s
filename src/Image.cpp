@@ -52,7 +52,7 @@ namespace vk2s
         int width = 0, height = 0, bpp = 0;
         void* pData = reinterpret_cast<void*>(stbi_load(path.data(), &width, &height, &bpp, STBI_rgb_alpha));
 
-        const auto size = width * height * bpp * static_cast<uint32_t>(STBI_rgb_alpha);
+        const auto size = width * height * bpp;
 
         vk::ImageCreateInfo ii;
         ii.arrayLayers   = 1;
