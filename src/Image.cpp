@@ -52,7 +52,7 @@ namespace vk2s
         int width = 0, height = 0, bpp = 0;
         void* pData = reinterpret_cast<void*>(stbi_load(path.data(), &width, &height, &bpp, STBI_rgb_alpha));
 
-        const auto size = width * height * bpp;
+        const auto size = width * height * static_cast<size_t>(STBI_rgb_alpha);
 
         vk::ImageCreateInfo ii;
         ii.arrayLayers   = 1;
@@ -88,7 +88,7 @@ namespace vk2s
         mExtent     = ii.extent;
         mAspectFlag = vk::ImageAspectFlagBits::eColor;
 
-        write(pData, size);
+        write(pData, width * height * bpp);
         stbi_image_free(pData);
     }
 
