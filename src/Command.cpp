@@ -1,4 +1,4 @@
-/*****************************************************************//**
+/*****************************************************************/ /**
  * @file   Command.cpp
  * @brief  source file of Command class
  * 
@@ -134,9 +134,19 @@ namespace vk2s
         mCommandBuffer->draw(vertexCount, instanceCount, firstVertex, firstInstance);
     }
 
+    void Command::drawIndirect(Buffer& infoBuffer, const vk::DeviceSize offset, const uint32_t drawCount, const uint32_t stride)
+    {
+        mCommandBuffer->drawIndirect(infoBuffer.getVkBuffer().get(), infoBuffer.getOffset(), drawCount, stride);
+    }
+
     void Command::drawIndexed(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance)
     {
         mCommandBuffer->drawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+    }
+
+    void Command::drawIndexedIndirect(Buffer& infoBuffer, const vk::DeviceSize offset, const uint32_t drawCount, const uint32_t stride)
+    {
+        mCommandBuffer->drawIndexedIndirect(infoBuffer.getVkBuffer().get(), offset, drawCount, stride);
     }
 
     void Command::traceRays(const ShaderBindingTable& shaderBindingTable, const uint32_t width, const uint32_t height, const uint32_t depth)
@@ -145,14 +155,40 @@ namespace vk2s
         mCommandBuffer->traceRaysKHR(sbtInfo.rgen, sbtInfo.miss, sbtInfo.hit, sbtInfo.callable, width, height, depth);
     }
 
-    void Command::dispatch(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ)
+    void Command::traceRaysIndirect(const ShaderBindingTable& shaderBindingTable, const vk::DeviceAddress infoBufferDeviceAddress)
     {
-        mCommandBuffer->dispatch(groupCountX, groupCountY, groupCountZ);
+        const auto& sbtInfo = shaderBindingTable.getVkSBTInfo();
+        mCommandBuffer->traceRaysIndirectKHR(sbtInfo.rgen, sbtInfo.miss, sbtInfo.hit, sbtInfo.callable, infoBufferDeviceAddress);
     }
 
-    void Command::pipelineBarrier(const vk::MemoryBarrier barrier, const vk::PipelineStageFlagBits from, const vk::PipelineStageFlagBits to)
+    void Command::traceRaysIndirect2(const vk::DeviceAddress infoBufferDeviceAddress)
     {
-        mCommandBuffer->pipelineBarrier(from, to, {}, { barrier }, {}, {});
+        mCommandBuffer->traceRaysIndirect2KHR(infoBufferDeviceAddress);
+    }
+
+    void Command::dispatch(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ, const uint32_t countBaseX, const uint32_t countBaseY, const uint32_t countBaseZ)
+    {
+        mCommandBuffer->dispatchBase(countBaseX, countBaseY, countBaseZ, groupCountX, groupCountY, groupCountZ);
+    }
+
+    void Command::dispatchIndirect(Buffer& infoBuffer, vk::DeviceSize offset)
+    {
+        mCommandBuffer->dispatchIndirect(infoBuffer.getVkBuffer().get(), offset);
+    }
+
+    void Command::globalPipelineBarrier(const vk::MemoryBarrier barrier, const vk::PipelineStageFlagBits from, const vk::PipelineStageFlagBits to)
+    {
+        mCommandBuffer->pipelineBarrier(from, to, {}, barrier, {}, {});
+    }
+
+    void Command::bufferPipelineBarrier(const vk::BufferMemoryBarrier barrier, const vk::PipelineStageFlagBits from, const vk::PipelineStageFlagBits to)
+    {
+        mCommandBuffer->pipelineBarrier(from, to, {}, {}, barrier, {});
+    }
+
+    void Command::imagePipelineBarrier(const vk::ImageMemoryBarrier barrier, const vk::PipelineStageFlagBits from, const vk::PipelineStageFlagBits to)
+    {
+        mCommandBuffer->pipelineBarrier(from, to, {}, {}, {}, barrier);
     }
 
     void Command::transitionImageLayout(Image& image, const vk::ImageLayout from, const vk::ImageLayout to)
@@ -214,7 +250,7 @@ namespace vk2s
         {
             mCommandBuffer->clearColorImage(target.getVkImage().get(), layout, clearValue.color, ranges);
         }
-        else// depth
+        else  // depth
         {
             mCommandBuffer->clearDepthStencilImage(target.getVkImage().get(), layout, clearValue.depthStencil, ranges);
         }

@@ -238,7 +238,7 @@ namespace vk2s
             barrier.srcAccessMask = vk::AccessFlagBits::eAccelerationStructureReadKHR | vk::AccessFlagBits::eAccelerationStructureWriteKHR;
             barrier.dstAccessMask = vk::AccessFlagBits::eAccelerationStructureReadKHR;
 
-            command->pipelineBarrier(barrier, vk::PipelineStageFlagBits::eAccelerationStructureBuildKHR, vk::PipelineStageFlagBits::eAccelerationStructureBuildKHR);
+            command->globalPipelineBarrier(barrier, vk::PipelineStageFlagBits::eAccelerationStructureBuildKHR, vk::PipelineStageFlagBits::eAccelerationStructureBuildKHR);
 
             if (!buildCommand)
             {

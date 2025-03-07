@@ -117,9 +117,19 @@ namespace vk2s
         void draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance);
 
         /**
+         * @brief  indirect version of draw()
+         */
+        void drawIndirect(Buffer& infoBuffer, const vk::DeviceSize offset, const uint32_t drawCount, const uint32_t stride);
+
+        /**
          * @brief  drawing with specified settings (with index)
          */
         void drawIndexed(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance);
+
+        /**
+         * @brief  indirect version of drawIndexed()
+         */
+        void drawIndexedIndirect(Buffer& infoBuffer, const vk::DeviceSize offset, const uint32_t drawCount, const uint32_t stride);
 
         /**
          * @brief  shooting (tracing) a ray
@@ -127,14 +137,39 @@ namespace vk2s
         void traceRays(const ShaderBindingTable& shaderBindingTable, const uint32_t width, const uint32_t height, const uint32_t depth);
 
         /**
-         * @brief  dispatch operations (compute)
+         * @brief  indirect version of traceRays()
          */
-        void dispatch(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ);
+        void traceRaysIndirect(const ShaderBindingTable& shaderBindingTable, const vk::DeviceAddress infoBufferDeviceAddress);
 
         /**
-         * @brief  create pipeline barriers to resources
+         * @   indirect version 2 of traceRays() (SBT also reads from a buffer)
          */
-        void pipelineBarrier(const vk::MemoryBarrier barrier, const vk::PipelineStageFlagBits from, const vk::PipelineStageFlagBits to);
+        void traceRaysIndirect2(const vk::DeviceAddress infoBufferDeviceAddress);
+
+        /**
+         * @brief  dispatch operations (compute)
+         */
+        void dispatch(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ, const uint32_t countBaseX = 0, const uint32_t countBaseY = 0, const uint32_t countBaseZ = 0);
+
+        /**
+         * @brief indirect version of dispatch()
+         */
+        void dispatchIndirect(Buffer& infoBuffer, vk::DeviceSize offset);
+
+        /**
+         * @brief  create pipeline barriers to global resources
+         */
+        void globalPipelineBarrier(const vk::MemoryBarrier barrier, const vk::PipelineStageFlagBits from, const vk::PipelineStageFlagBits to);
+
+        /**
+         * @brief  create pipeline barriers to buffer resources
+         */
+        void bufferPipelineBarrier(const vk::BufferMemoryBarrier barrier, const vk::PipelineStageFlagBits from, const vk::PipelineStageFlagBits to);
+
+        /**
+         * @brief  create pipeline barriers to image resources
+         */
+        void imagePipelineBarrier(const vk::ImageMemoryBarrier barrier, const vk::PipelineStageFlagBits from, const vk::PipelineStageFlagBits to);
 
         /**
          * @brief  transitioning the internal layout of an Image 

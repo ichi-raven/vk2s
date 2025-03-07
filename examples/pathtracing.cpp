@@ -511,7 +511,6 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
                 FilterUB filterUBO{
                     .sigma = inputSigma,
                     .h     = inputSigma,
-                    // 0 : do nothing, 1 : filter only, 2 : event camera only, 3 : both
                     .filterMode = static_cast<uint32_t>(applyFilter),
                     .kernelSize = inputKernel,
                     .windowSize = inputWindow,
@@ -552,6 +551,11 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
 
             if (applyFilter)
             {  // compute
+                vk::ImageMemoryBarrier imgBarrier(vk::AccessFlagBits::eShaderWrite, vk::AccessFlagBits::eShaderRead, vk::ImageLayout::eGeneral, vk::ImageLayout::eGeneral);
+                imgBarrier.image = resultImage->getVkImage().get();
+                imgBarrier.setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+                
+                command->imagePipelineBarrier(imgBarrier, vk::PipelineStageFlagBits::eRayTracingShaderKHR, vk::PipelineStageFlagBits::eComputeShader);
                 command->setPipeline(computePipeline);
                 command->setBindGroup(0, computeBindGroup.get(), { static_cast<uint32_t>(now * filterBuffer->getBlockSize()) });
                 command->dispatch(windowWidth / 16 + 1, windowHeight / 16 + 1, 1);

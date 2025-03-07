@@ -29,8 +29,10 @@ float distribute(float norm)
 float comparePatches(ivec2 patch_, ivec2 original) 
 {
     float w = 0.0;
-    for(int i = -params.window; i < params.window; i++) {
-        for(int j = -params.window; j < params.window; j++) {
+    for(int i = -params.window; i < params.window; i++) 
+    {
+        for(int j = -params.window; j < params.window; j++) 
+        {
             ivec2 offset = ivec2(i, j);
             vec3 diff = imageLoad(srcImage, patch_ + offset).rgb - imageLoad(srcImage, original + offset).rgb;
             w += dot(diff, diff);
@@ -44,8 +46,10 @@ vec3 nlmeans(ivec2 coords)
 {
     vec3 processed = vec3(0.0);
     float weights = 0.0;
-    for(int i = -params.kernel; i < params.kernel; i++) {
-        for(int j = -params.kernel; j < params.kernel; j++) {
+    for(int i = -params.kernel; i < params.kernel; i++) 
+    {
+        for(int j = -params.kernel; j < params.kernel; j++) 
+        {
             const ivec2 patchCoord = coords + ivec2(i, j);
             const float w = comparePatches(patchCoord, coords);
             processed += w * imageLoad(srcImage, patchCoord).rgb;
