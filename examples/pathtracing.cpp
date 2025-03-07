@@ -31,11 +31,7 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
 
     try
     {
-        vk2s::Device::Extensions ext
-        { 
-            .useRayTracingExt = true,
-            .useNVMotionBlurExt = true
-        };
+        vk2s::Device::Extensions ext{ .useRayTracingExt = true, .useNVMotionBlurExt = true };
 
         vk2s::Device device(ext);
 
@@ -209,7 +205,7 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
                 asInstance.accelerationStructureReference         = blas->getVkDeviceAddress();
                 asInstance.instanceShaderBindingTableRecordOffset = 0;
                 vk2s::AccelerationStructure::MotionInstancePadNV padInst;
-                padInst.type                = vk::AccelerationStructureMotionInstanceTypeNV::eMatrixMotion;
+                padInst.type                      = vk::AccelerationStructureMotionInstanceTypeNV::eMatrixMotion;
                 padInst.data.matrixMotionInstance = asInstance;
                 asInstances.emplace_back(padInst);
             }
@@ -509,8 +505,8 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
                                   .padding      = 0.f };
 
                 FilterUB filterUBO{
-                    .sigma = inputSigma,
-                    .h     = inputSigma,
+                    .sigma      = inputSigma,
+                    .h          = inputSigma,
                     .filterMode = static_cast<uint32_t>(applyFilter),
                     .kernelSize = inputKernel,
                     .windowSize = inputWindow,
@@ -552,9 +548,8 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
             if (applyFilter)
             {  // compute
                 vk::ImageMemoryBarrier imgBarrier(vk::AccessFlagBits::eShaderWrite, vk::AccessFlagBits::eShaderRead, vk::ImageLayout::eGeneral, vk::ImageLayout::eGeneral);
-                imgBarrier.image = resultImage->getVkImage().get();
-                imgBarrier.setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
-                
+                imgBarrier.setImage(resultImage->getVkImage().get()).setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+
                 command->imagePipelineBarrier(imgBarrier, vk::PipelineStageFlagBits::eRayTracingShaderKHR, vk::PipelineStageFlagBits::eComputeShader);
                 command->setPipeline(computePipeline);
                 command->setBindGroup(0, computeBindGroup.get(), { static_cast<uint32_t>(now * filterBuffer->getBlockSize()) });
