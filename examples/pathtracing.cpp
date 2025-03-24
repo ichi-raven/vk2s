@@ -31,7 +31,11 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
 
     try
     {
-        vk2s::Device::Extensions ext{ .useRayTracingExt = true, .useNVMotionBlurExt = true };
+        vk2s::Device::Extensions ext{
+            .useRayTracingExt     = true,
+            .useNVMotionBlurExt   = true,
+            .useExternalMemoryExt = true,
+        };
 
         vk2s::Device device(ext);
 

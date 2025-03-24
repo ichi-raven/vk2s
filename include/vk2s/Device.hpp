@@ -95,21 +95,24 @@ namespace vk2s
             static Extensions useAll()
             {
                 Extensions ext;
-                ext.useRayTracingExt = true;
-                ext.useNVMotionBlurExt = true;
+                ext.useRayTracingExt     = true;
+                ext.useNVMotionBlurExt   = true;
+                ext.useExternalMemoryExt = true;
                 return ext;
             }
 
             static Extensions useNothing()
             {
                 Extensions ext;
-                ext.useRayTracingExt   = false;
-                ext.useNVMotionBlurExt = false;
+                ext.useRayTracingExt     = false;
+                ext.useNVMotionBlurExt   = false;
+                ext.useExternalMemoryExt = false;
                 return ext;
             }
 
-            bool useRayTracingExt = false;
-            bool useNVMotionBlurExt = false;
+            bool useRayTracingExt     = false;
+            bool useNVMotionBlurExt   = false;
+            bool useExternalMemoryExt = false;
         };
 
     public:  // methods
@@ -248,30 +251,73 @@ namespace vk2s
         };
 
     private:  // compile time constant
-
-        //! flag to enable or disable the verification layer
+              //! flag to enable or disable the verification layer
 #ifdef NDEBUG
         constexpr static bool enableValidationLayers = false;
 #else
         constexpr static bool enableValidationLayers = true;
 #endif
 
+#ifdef WIN32
+        // ADHOC?:
+#define VK_KHR_EXTERNAL_MEMORY_PLATFORM_EXTENSION_NAME "VK_KHR_external_memory_win32" 
+#else
+#define VK_KHR_EXTERNAL_MEMORY_PLATFORM_EXTENSION_NAME VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME
+#endif
+
+#define VK_KHR_VALIDATION_LAYER_NAME "VK_LAYER_KHRONOS_validation"
+
         //! name of the validation layer
-        constexpr static std::array validationLayers = { "VK_LAYER_KHRONOS_validation" };
+        constexpr static std::array validationLayers = { VK_KHR_VALIDATION_LAYER_NAME };
         //! normal device extensions required for vk2s
-        constexpr static std::array deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_ROBUSTNESS_2_EXTENSION_NAME };
+        constexpr static std::array baseDeviceExtensions = {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+            VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
+        };
+
         //! device extensions required for hardware accelerated ray tracing
-        constexpr static std::array rayTracingDeviceExtensions = { VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, VK_KHR_RAY_QUERY_EXTENSION_NAME, VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME };
+        constexpr static std::array rayTracingDeviceExtensions = {
+            VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+            VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+            VK_KHR_RAY_QUERY_EXTENSION_NAME,
+            VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+        };
         //! NV_Motion_blur extension
         constexpr static const char* nvRayTracingMotionBlurExtension = VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME;
+        
+        //! external memory instance extensions
+        constexpr static std::array externalMemoryInstanceExtensions = {
+            VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
+            VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
+            VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME,
+        };
+
+        //! external memory device extensions
+        constexpr static std::array externalMemoryDeviceExtensions = {
+            VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
+            VK_KHR_EXTERNAL_MEMORY_PLATFORM_EXTENSION_NAME,
+            VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
+            VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME,
+        };
+
+        //! all instance extensions
+        constexpr static std::array allInstanceExtensions = {
+            VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
+            VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
+        };
+
         //! all device extensions
-        constexpr static std::array allExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-                                                      VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
-                                                      VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
-                                                      VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
-                                                      VK_KHR_RAY_QUERY_EXTENSION_NAME,
-                                                      VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
-                                                      VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME };
+        constexpr static std::array allDeviceExtensions = {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+            VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
+            VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+            VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+            VK_KHR_RAY_QUERY_EXTENSION_NAME,
+            VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+            VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME,
+            VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
+            VK_KHR_EXTERNAL_MEMORY_PLATFORM_EXTENSION_NAME,
+        };
 
         //! maximum number of descriptors allocated by one DescriptorPool (adhoc)
         constexpr static uint32_t kMaxDescriptorNum = 256;
@@ -329,9 +375,14 @@ namespace vk2s
          */
         std::vector<const char*> getRequiredExtensions();
         /**
-         * @brief  check if the verification layer is supported in your environment
+         * @brief  check if the instance layer is supported in your environment
          */
-        bool checkValidationLayerSupport();
+        bool checkInstanceLayerSupport();
+
+        /**
+         * @brief  check if the instance extension is supported in your environment
+         */
+        bool checkInstanceExtensionSupport();
         /**
          * @brief  verify that the specified physical devices and surfaces meet our requirements
          */
@@ -375,7 +426,7 @@ namespace vk2s
 
         //! vulkan command pool
         vk::UniqueCommandPool mCommandPool;
-        
+
         //! vulkan descriptor pools (simple linear allocation)
         std::vector<DescriptorPool> mDescriptorPools;
 

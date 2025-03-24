@@ -95,7 +95,7 @@ namespace vk2s
         init_info.CheckVkResultFn           = nullptr;
         init_info.RenderPass                = renderpass.getVkRenderPass().get();
         ImGui_ImplVulkan_Init(&init_info);
-        
+
         mImGuiActive = true;
     }
 
@@ -210,9 +210,9 @@ namespace vk2s
         auto vkGetInstanceProcAddr = dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
         VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
-        if (enableValidationLayers && !checkValidationLayerSupport())
+        if (enableValidationLayers && !(checkInstanceLayerSupport() && checkInstanceExtensionSupport()))
         {
-            throw std::runtime_error("validation layers requested, but not available!");
+            throw std::runtime_error("instance extension layers requested, but not available!");
         }
 
         vk::ApplicationInfo appInfo(applicationName.data(), VK_MAKE_VERSION(1, 0, 0), "vk2s", VK_MAKE_VERSION(1, 0, 0), VK_API_VERSION_1_3);
@@ -352,21 +352,29 @@ namespace vk2s
 
         vk::DeviceCreateInfo createInfo({}, queueCreateInfos, {}, {}, &deviceFeatures);
 
-        std::vector<const char*> extensionNames;
-        extensionNames.reserve(allExtensions.size());
-        extensionNames.resize(deviceExtensions.size());
-        std::copy(deviceExtensions.begin(), deviceExtensions.end(), extensionNames.begin());
+        std::vector<const char*> extensionNames(baseDeviceExtensions.begin(), baseDeviceExtensions.end());
+        extensionNames.reserve(allDeviceExtensions.size());
+
+        void** ppNext = &(robustness2Features.pNext);
+
+        if (mQueriedExtensions.useExternalMemoryExt)
+        {
+            extensionNames.resize(extensionNames.size() + externalMemoryDeviceExtensions.size());
+            std::copy(externalMemoryDeviceExtensions.begin(), externalMemoryDeviceExtensions.end(), extensionNames.end() - externalMemoryDeviceExtensions.size());
+        }
 
         if (mQueriedExtensions.useRayTracingExt)
         {
-            robustness2Features.pNext = &enabledDescriptorIndexingFeatures;
+            *ppNext = &enabledDescriptorIndexingFeatures;
+            ppNext  = &(enabledBufferDeviceAddressFeatures.pNext);
 
             extensionNames.resize(extensionNames.size() + rayTracingDeviceExtensions.size());
             std::copy(rayTracingDeviceExtensions.begin(), rayTracingDeviceExtensions.end(), extensionNames.end() - rayTracingDeviceExtensions.size());
 
             if (mQueriedExtensions.useNVMotionBlurExt)
             {
-                enabledBufferDeviceAddressFeatures.pNext = &enabledRTMotionBlurFeatures;
+                *ppNext = &enabledRTMotionBlurFeatures;
+                ppNext = &(enabledRTMotionBlurFeatures.pNext);
                 extensionNames.emplace_back(nvRayTracingMotionBlurExtension);
             }
         }
@@ -418,11 +426,13 @@ namespace vk2s
 
     // utility----------------------------------------------
 
-    bool Device::checkValidationLayerSupport()
+    bool Device::checkInstanceLayerSupport()
     {
         std::vector<vk::LayerProperties> availableLayers = vk::enumerateInstanceLayerProperties();
 
-        for (const char* layerName : validationLayers)
+        std::vector<const char*> requestedLayers(validationLayers.begin(), validationLayers.end());
+
+        for (const char* layerName : requestedLayers)
         {
             bool layerFound = false;
             for (const auto& layerProperties : availableLayers)
@@ -434,6 +444,31 @@ namespace vk2s
                 }
             }
             if (!layerFound)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool Device::checkInstanceExtensionSupport()
+    {
+        const auto availableExtensions = vk::enumerateInstanceExtensionProperties();
+
+        std::vector<const char*> requiredExtensions(allInstanceExtensions.begin(), allInstanceExtensions.end());
+
+        for (const char* extension : requiredExtensions)
+        {
+            bool extFound = false;
+            for (const auto& extensionProperties : availableExtensions)
+            {
+                if (strcmp(extension, extensionProperties.extensionName) == 0)
+                {
+                    extFound = true;
+                    break;
+                }
+            }
+            if (!extFound)
             {
                 return false;
             }
@@ -454,6 +489,11 @@ namespace vk2s
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
 
+        if (mQueriedExtensions.useExternalMemoryExt)
+        {
+            std::copy(externalMemoryInstanceExtensions.begin(), externalMemoryInstanceExtensions.end(), std::back_inserter(extensions));
+        }
+
         return extensions;
     }
 
@@ -464,7 +504,7 @@ namespace vk2s
         bool extensionsSupported = checkDeviceExtensionSupport(mDevice);
 
         bool swapChainAdequate = false;
-        
+
         if (!testSurface)
         {
             return indices.isComplete() && extensionsSupported;
@@ -539,7 +579,7 @@ namespace vk2s
     {
         std::vector<vk::ExtensionProperties> availableExtensions = mDevice.enumerateDeviceExtensionProperties();
 
-        std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+        std::set<std::string> requiredExtensions(baseDeviceExtensions.begin(), baseDeviceExtensions.end());
 
         for (const auto& extension : availableExtensions)
         {
