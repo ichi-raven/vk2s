@@ -256,6 +256,11 @@ namespace vk2s
         }
     }
 
+    void Command::fillBuffer(Buffer& buffer, const vk::DeviceSize offset, const vk::DeviceSize size, const uint32_t value)
+	{
+		mCommandBuffer->fillBuffer(buffer.getVkBuffer().get(), offset, size, value);
+	}
+
     void Command::drawImGui()
     {
         // ImGui command write

@@ -269,6 +269,7 @@ namespace vk2s
 
         //! name of the validation layer
         constexpr static std::array validationLayers = { VK_KHR_VALIDATION_LAYER_NAME };
+
         //! normal device extensions required for vk2s
         constexpr static std::array baseDeviceExtensions = {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -282,6 +283,7 @@ namespace vk2s
             VK_KHR_RAY_QUERY_EXTENSION_NAME,
             VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
         };
+
         //! NV_Motion_blur extension
         constexpr static const char* nvRayTracingMotionBlurExtension = VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME;
         

@@ -202,6 +202,11 @@ namespace vk2s
         void clearImage(Image& target, const vk::ImageLayout layout, const vk::ClearValue& clearValue, const vk::ArrayProxy<vk::ImageSubresourceRange>& ranges);
 
         /**
+         * @brief fill buffer with data
+         */
+        void fillBuffer(Buffer& buffer, const vk::DeviceSize offset, const vk::DeviceSize size, const uint32_t value);
+
+        /**
          * @brief  drawing ImGui
          */
         void drawImGui();
