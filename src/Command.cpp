@@ -421,6 +421,22 @@ namespace vk2s
             sourceStage      = vk::PipelineStageFlagBits::eTransfer;
             destinationStage = vk::PipelineStageFlagBits::eAllCommands;
         }
+        else if (from == vk::ImageLayout::eShaderReadOnlyOptimal && to == vk::ImageLayout::eGeneral)
+        {
+            barrier.srcAccessMask = vk::AccessFlagBits::eShaderRead;
+            barrier.dstAccessMask = vk::AccessFlagBits::eNone;
+
+            sourceStage      = vk::PipelineStageFlagBits::eFragmentShader;
+            destinationStage = vk::PipelineStageFlagBits::eAllCommands;
+        }
+		else if (from == vk::ImageLayout::eGeneral && to == vk::ImageLayout::eShaderReadOnlyOptimal)
+		{
+			barrier.srcAccessMask = vk::AccessFlagBits::eNone;
+			barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+			sourceStage      = vk::PipelineStageFlagBits::eAllCommands;
+			destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
+		}
         else if (from == vk::ImageLayout::eTransferDstOptimal && to == vk::ImageLayout::eTransferSrcOptimal)
         {
             barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
