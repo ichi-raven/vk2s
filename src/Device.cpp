@@ -324,6 +324,7 @@ namespace vk2s
         vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR enabledBufferDeviceAddressFeatures(VK_TRUE);
 
         vk::PhysicalDeviceRayTracingPipelineFeaturesKHR enabledRayTracingPipelineFeatures(VK_TRUE);
+        enabledRayTracingPipelineFeatures.setRayTracingPipelineTraceRaysIndirect(VK_TRUE);
         enabledRayTracingPipelineFeatures.pNext = &enabledBufferDeviceAddressFeatures;
 
         vk::PhysicalDeviceAccelerationStructureFeaturesKHR enabledAccelerataionStuctureFeatures(VK_TRUE);
