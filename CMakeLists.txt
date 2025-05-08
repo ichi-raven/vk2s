@@ -156,5 +156,6 @@ add_subdirectory(src)
 
 # examples
 if (BUILD_EXAMPLES)
+  message("build with examples")
   add_subdirectory(examples)
 endif()
