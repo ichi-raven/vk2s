@@ -184,7 +184,7 @@ namespace vk2s
         /**
          * @brief  copy Image contents to Buffer
          */
-        void copyImageToBuffer(Image& image, Buffer& buffer, const uint32_t width, const uint32_t height);
+        void copyImageToBuffer(Image& image, Buffer& buffer, const vk::BufferImageCopy& copyInfo);
 
         /**
          * @brief  copy Image contents to Image
