@@ -29,7 +29,12 @@ namespace vk2s
         /**
          * @brief  constructor
          */
-        Image(Device& device, const vk::ImageCreateInfo& ii, vk::MemoryPropertyFlags pbs, const size_t size, vk::ImageAspectFlags aspectFlags);
+        Image(Device& device, const vk::ImageCreateInfo& ii, const vk::MemoryPropertyFlags pbs, const size_t size, const vk::ImageAspectFlags aspectFlags);
+
+        /**
+         * @brief  constructor with imageview crate info
+         */
+        Image(Device& device, const vk::ImageCreateInfo& ii, const vk::MemoryPropertyFlags pbs, const size_t size, const vk::ImageViewType viewType, const vk::ImageSubresourceRange subresourceRange);
 
         /**
          * @brief  constructor with image data path
