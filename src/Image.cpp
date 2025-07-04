@@ -17,14 +17,31 @@ namespace vk2s
     Image::Image(Device& device, const vk::ImageCreateInfo& ii, const vk::MemoryPropertyFlags pbs, const size_t size, const vk::ImageAspectFlags aspectFlags)
         : mDevice(device)
     {
-        vk::ImageSubresourceRange subresourceRange = {};
-        subresourceRange.aspectMask     = aspectFlags;
-        subresourceRange.baseMipLevel   = 0;
-        subresourceRange.levelCount     = 1;
-        subresourceRange.baseArrayLayer = 0;
-        subresourceRange.layerCount     = 1;
+        const auto& vkDevice                       = mDevice.getVkDevice();
 
-        Image::Image(device, ii, pbs, size, vk::ImageViewType::e2D, subresourceRange);
+        mImage                      = vkDevice->createImageUnique(ii);
+        vk::MemoryRequirements reqs = vkDevice->getImageMemoryRequirements(mImage.get());
+        vk::MemoryAllocateInfo ai(reqs.size, mDevice.getVkMemoryTypeIndex(reqs.memoryTypeBits, pbs));
+        mMemory = vkDevice->allocateMemoryUnique(ai);
+
+        vkDevice->bindImageMemory(mImage.get(), mMemory.get(), 0);
+        
+        vk::ImageViewCreateInfo viewInfo;
+        viewInfo.image            = mImage.get();
+        viewInfo.viewType         = vk::ImageViewType::e2D;
+        viewInfo.format           = ii.format;
+        viewInfo.subresourceRange.aspectMask     = aspectFlags;
+        viewInfo.subresourceRange.baseMipLevel   = 0;
+        viewInfo.subresourceRange.levelCount     = 1;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount     = 1;
+
+        mImageView = vkDevice->createImageViewUnique(viewInfo);
+
+        mFormat = ii.format;
+
+        mExtent     = ii.extent;
+        mAspectFlag = aspectFlags;
     }
 
     Image::Image(Device& device, const vk::ImageCreateInfo& ii, const vk::MemoryPropertyFlags pbs, const size_t size, const vk::ImageViewType viewType, const vk::ImageSubresourceRange subresourceRange)
