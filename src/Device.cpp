@@ -200,13 +200,19 @@ namespace vk2s
         mDevice->freeDescriptorSets(allocatedPool.descriptorPool.get(), set);
     }
 
+#if VK_HEADER_VERSION >= 301
+    using VulkanDynamicLoader = vk::detail::DynamicLoader;
+#else
+    using VulkanDynamicLoader = vk::DynamicLoader;
+#endif
+
     void Device::createInstance()
     {
         // TODO: change application name
         constexpr std::string_view applicationName = "vk2s application";
 
         // get the instance independent function pointers
-        static vk::DynamicLoader dl;
+        static VulkanDynamicLoader dl;
         auto vkGetInstanceProcAddr = dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
         VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
