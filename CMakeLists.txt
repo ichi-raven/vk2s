@@ -79,7 +79,8 @@ add_subdirectory(${ASSIMP_DIR})
 set(ASSIMP_LIB_NAME assimp-vc143-mt)
 
 # slang
-set(SLANG_VERSION "2024.13")
+#set(SLANG_VERSION "2024.13")
+set(SLANG_VERSION "2025.12")
 # set install dir
 set(SLANG_INSTALL_DIR "./ThirdParty/slang")
 set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${SLANG_INSTALL_DIR}")
@@ -95,9 +96,9 @@ if (NOT slang_FOUND)
         message(STATUS "Slang not found. Downloading and installing it...")
         
         if (WIN32)
-            set(SLANG_ZIP_URL "https://github.com/shader-slang/slang/releases/download/v2024.13/slang-2024.13-windows-x86_64.zip")
+            set(SLANG_ZIP_URL "https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-windows-x86_64.zip")
         elseif (UNIX)
-            set(SLANG_ZIP_URL "https://github.com/shader-slang/slang/releases/download/v2024.13/slang-2024.13-linux-x86_64.zip")
+            set(SLANG_ZIP_URL "https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-linux-x86_64.zip")
         else()
             message(FATAL_ERROR "Unsupported OS.")
         endif()
