@@ -180,7 +180,8 @@ namespace vk2s
             const std::string fileName  = std::string(path).substr(path.find_last_of("/\\") + 1, path.size());
 
             Slang::ComPtr<slang::IGlobalSession> slangGlobalSession;
-            if (SLANG_FAILED(slang::createGlobalSession(slangGlobalSession.writeRef())))
+            slangGlobalSession.attach(spCreateSession(NULL));
+            if (!slangGlobalSession)
             {
                 assert(!"failed to create global session!");
                 return SPIRVCode();
