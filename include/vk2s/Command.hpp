@@ -159,17 +159,17 @@ namespace vk2s
         /**
          * @brief  create pipeline barriers to global resources
          */
-        void globalPipelineBarrier(const vk::MemoryBarrier barrier, const vk::PipelineStageFlagBits from, const vk::PipelineStageFlagBits to);
+        void globalPipelineBarrier(const vk::MemoryBarrier barrier, const vk::PipelineStageFlags from, const vk::PipelineStageFlags to);
 
         /**
          * @brief  create pipeline barriers to buffer resources
          */
-        void bufferPipelineBarrier(const vk::BufferMemoryBarrier barrier, const vk::PipelineStageFlagBits from, const vk::PipelineStageFlagBits to);
+        void bufferPipelineBarrier(const vk::BufferMemoryBarrier barrier, const vk::PipelineStageFlags from, const vk::PipelineStageFlags to);
 
         /**
          * @brief  create pipeline barriers to image resources
          */
-        void imagePipelineBarrier(const vk::ImageMemoryBarrier barrier, const vk::PipelineStageFlagBits from, const vk::PipelineStageFlagBits to);
+        void imagePipelineBarrier(const vk::ImageMemoryBarrier barrier, const vk::PipelineStageFlags from, const vk::PipelineStageFlags to);
 
         /**
          * @brief  transitioning the internal layout of an Image 

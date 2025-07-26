@@ -176,17 +176,17 @@ namespace vk2s
         mCommandBuffer->dispatchIndirect(infoBuffer.getVkBuffer().get(), offset);
     }
 
-    void Command::globalPipelineBarrier(const vk::MemoryBarrier barrier, const vk::PipelineStageFlagBits from, const vk::PipelineStageFlagBits to)
+    void Command::globalPipelineBarrier(const vk::MemoryBarrier barrier, const vk::PipelineStageFlags from, const vk::PipelineStageFlags to)
     {
         mCommandBuffer->pipelineBarrier(from, to, {}, barrier, {}, {});
     }
 
-    void Command::bufferPipelineBarrier(const vk::BufferMemoryBarrier barrier, const vk::PipelineStageFlagBits from, const vk::PipelineStageFlagBits to)
+    void Command::bufferPipelineBarrier(const vk::BufferMemoryBarrier barrier, const vk::PipelineStageFlags from, const vk::PipelineStageFlags to)
     {
         mCommandBuffer->pipelineBarrier(from, to, {}, {}, barrier, {});
     }
 
-    void Command::imagePipelineBarrier(const vk::ImageMemoryBarrier barrier, const vk::PipelineStageFlagBits from, const vk::PipelineStageFlagBits to)
+    void Command::imagePipelineBarrier(const vk::ImageMemoryBarrier barrier, const vk::PipelineStageFlags from, const vk::PipelineStageFlags to)
     {
         mCommandBuffer->pipelineBarrier(from, to, {}, {}, {}, barrier);
     }
