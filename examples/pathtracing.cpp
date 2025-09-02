@@ -369,7 +369,7 @@ void pathtracing(const uint32_t windowWidth, const uint32_t windowHeight, const 
 
         const auto clearValue = vk::ClearValue(std::array{ 0.2f, 0.2f, 0.2f, 1.0f });
         double lastTime       = 0;
-        vk2s::Camera camera(60., 1. * windowWidth / windowHeight);
+        vk2s::Camera camera(glm::radians(60.), 1. * windowWidth / windowHeight);
         camera.setPos(glm::vec3(0.0, 0.8, 3.0));
         camera.setLookAt(glm::vec3(0.0, 0.8, -2.0));
         bool timeSeed      = true;
