@@ -164,7 +164,7 @@ void rasterize(uint32_t windowWidth, uint32_t windowHeight, const uint32_t frame
         const auto depthClearValue   = vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0));
         const std::array clearValues = { colorClearValue, depthClearValue };
         double lastTime              = 0;
-        vk2s::Camera camera(60., 1. * windowWidth / windowHeight);
+        vk2s::Camera camera(glm::radians(60.), 1. * windowWidth / windowHeight);
         camera.setPos(glm::vec3(0.0, 0.8, 3.0));
         camera.setLookAt(glm::vec3(0.0, 0.8, -2.0));
         int inputSpp = 1;

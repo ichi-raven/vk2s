@@ -19,15 +19,15 @@ inline const double sgn(double x)
 namespace vk2s
 {
     Camera::Camera(const double fov, const double aspect, const double near, const double far)
-        : mFOV(glm::radians(fov))
+        : mFOV(fov)
         , mAspect(aspect)
         , mNear(near)
         , mFar(far)
         , mPos(0., 0., 0.)
-        , mUp(0., 0., 1.)
+        , mUp(0., 1., 0.)
         , mMoved(false)
     {
-        setLookAt(glm::vec3(0.f, 0.f, 1.f));
+        setLookAt(glm::vec3(0.f, 0.f, -1.f));
 
         updateViewMat();
         updateProjMat();
@@ -44,16 +44,22 @@ namespace vk2s
             glfwGetCursorPos(pWindow, &mx, &my);
             glfwGetWindowSize(pWindow, &width, &height);
             glfwSetCursorPos(pWindow, width / 2, height / 2);
-            mPhi += mouseSpeed * static_cast<double>(1. * width / 2. - mx);
-            mTheta += mouseSpeed * static_cast<double>(my - 1. * height / 2.);
+            mPhi += glm::radians(mouseSpeed * static_cast<double>(1. * width / 2. - mx));
+            mTheta += glm::radians(-mouseSpeed * static_cast<double>(my - 1. * height / 2.));
 
-            if (mTheta > 89.f) mTheta = 89.f;
-            if (mTheta < -89.f) mTheta = -89.f;
+            if (mTheta > glm::radians(179.))
+            {
+                mTheta = glm::radians(179.);
+            }
+            if (mTheta < glm::radians(1.))
+            {
+                mTheta = glm::radians(1.);
+            }
 
             mMoved = true;
         }
 
-        glm::vec3 direction(cos(glm::radians(mTheta)) * sin(glm::radians(mPhi)), sin(glm::radians(mTheta)), cos(glm::radians(mTheta)) * cos(glm::radians(mPhi)));
+        glm::vec3 direction(sin(mTheta) * sin(mPhi), cos(mTheta), sin(mTheta) * cos(mPhi));
         glm::vec3 right = glm::normalize(glm::cross(glm::vec3(0.f, 1.f, 0.f), direction));  //(sin(mPhi - kPI / 2.), 0, cos(mPhi - kPI / 2.));
         mUp             = glm::normalize(glm::cross(right, direction));
 
@@ -158,27 +164,18 @@ namespace vk2s
     {
         const auto diff = glm::normalize(lookAt - mPos);
 
-        mPhi = glm::degrees(acos(diff.z / sqrt(diff.x * diff.x + diff.y * diff.y + diff.z * diff.z)));
+        mPhi   = atan2(diff.x, diff.z);
+        mTheta = acos(diff.y);
 
-        if (diff.x == 0. && diff.y == 0.)
-        {
-            mTheta = 0.;
-        }
-        else
-        {
-            mTheta = glm::degrees(sgn(diff.y) * acos(diff.x / sqrt(diff.x * diff.x + diff.y * diff.y)));
-        }
-
-        glm::vec3 direction(cos(glm::radians(mTheta)) * sin(glm::radians(mPhi)), sin(glm::radians(mTheta)), cos(glm::radians(mTheta)) * cos(glm::radians(mPhi)));
-        glm::vec3 right = glm::normalize(glm::cross(glm::vec3(0.f, 1.f, 0.f), direction));  //(sin(mPhi - kPI / 2.), 0, cos(mPhi - kPI / 2.));
-        mUp             = glm::normalize(glm::cross(right, direction));
+        glm::vec3 right = glm::normalize(glm::cross(glm::vec3(0.f, 1.f, 0.f), diff));  //(sin(mPhi - kPI / 2.), 0, cos(mPhi - kPI / 2.));
+        mUp             = glm::normalize(glm::cross(right, diff));
 
         updateViewMat();
     }
 
     const glm::vec3 Camera::getLookAt() const
     {
-        return mPos + glm::vec3(cos(glm::radians(mTheta)) * sin(glm::radians(mPhi)), sin(glm::radians(mTheta)), cos(glm::radians(mTheta)) * cos(glm::radians(mPhi)));
+        return mPos + glm::vec3(sin(mTheta) * sin(mPhi), cos(mTheta), sin(mTheta) * cos(mPhi));
     }
 
     void Camera::setFOV(const double fov)
