@@ -72,14 +72,28 @@ namespace vk2s
 
         std::string readFile(std::string_view path)
         {
-            std::ifstream file(path.data());
+            std::ifstream file(path.data(), std::ios::binary);
             if (!file.is_open())
             {
                 throw std::runtime_error("failed to open file: " + std::string(path));
             }
+
             std::stringstream buffer;
             buffer << file.rdbuf();
             return buffer.str();
+
+            //file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
+            //try
+            //{
+            //    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+            //    return content;
+            //}
+            //catch (const std::ios_base::failure& e)
+            //{
+            //    throw std::runtime_error("failed to read file: " + std::string(path));
+            //    return "ERROR!";
+            //}
         }
 
         shaderc_shader_kind getShaderStage(std::string_view filepath)
@@ -238,11 +252,23 @@ namespace vk2s
             const auto spvImageQueryCapabilityID      = slangGlobalSession->findCapability("spvImageQuery");
             const auto spvSparseResidencyCapabilityID = slangGlobalSession->findCapability("spvSparseResidency");
             const auto spvNVMotionBlurCapabilityID    = slangGlobalSession->findCapability("spvRayTracingMotionBlurNV");
+            // 'SPV_GOOGLE_user_type + spvDerivativeControl + spvImageGatherExtended + spvMinLod + spvFragmentFullyCoveredEXT'
+            const auto spvGoogleUserTypeCapabilityID          = slangGlobalSession->findCapability("SPV_GOOGLE_user_type");
+            const auto spvDerivativeControlCapabilityID       = slangGlobalSession->findCapability("spvDerivativeControl");
+            const auto spvImageGatherExtendedCapabilityID     = slangGlobalSession->findCapability("spvImageGatherExtended");
+            const auto spvMinLodCapabilityID                  = slangGlobalSession->findCapability("spvMinLod");
+            const auto spvFragmentFullyCoveredEXTCapabilityID = slangGlobalSession->findCapability("spvFragmentFullyCoveredEXT");
+
             Slang::ComPtr<slang::ICompileRequest> compileRequest;
             session->createCompileRequest(compileRequest.writeRef());
             compileRequest->addTargetCapability(0, spvImageQueryCapabilityID);
             compileRequest->addTargetCapability(0, spvSparseResidencyCapabilityID);
             compileRequest->addTargetCapability(0, spvNVMotionBlurCapabilityID);
+            compileRequest->addTargetCapability(0, spvGoogleUserTypeCapabilityID);
+            compileRequest->addTargetCapability(0, spvDerivativeControlCapabilityID);
+            compileRequest->addTargetCapability(0, spvImageGatherExtendedCapabilityID);
+            compileRequest->addTargetCapability(0, spvMinLodCapabilityID);
+            compileRequest->addTargetCapability(0, spvFragmentFullyCoveredEXTCapabilityID);
 
             // loading modules
 
